@@ -102,6 +102,27 @@ than gating on storage, and `ApiKeyScreen` filled a genuine gap, since there had
 been no way to enter an API key at all. But the lesson for next time is to get the log or a
 screenshot before building a fix on an untestable theory.
 
+## Found by play-testing, now fixed
+
+Four defects that only a running client could reveal, none of which any test would have
+caught:
+
+* The **models screen drew the embedding label inside its own field.** The labels computed
+  their positions from `height / 2` while the fields used a running offset; the two drifted.
+  Labels now hang off the recorded field positions.
+* The **key screen rebuilt itself forever.** `init()` called `loadKeys()`, which called
+  `rebuildWidgets()`, which re-entered `init()`. Widgets were destroyed several times a
+  second, so nothing could hold focus and the entry box could not be clicked into — and the
+  database was queried in a loop. Guarded by a `loaded` flag, and a rebuild now happens only
+  when the list actually changed.
+* **No way to rename a conversation.** Double-click a row to edit in place.
+* **No way to delete one.** Hover a row for a `×`, behind a confirmation, because it
+  cascades to every message and cannot be undone.
+
+The pattern worth remembering: every one of these is a layout or lifecycle problem, and the
+whole test suite lives in `common/`, where there is no layout and no lifecycle. **Screens
+are only verified by running them.**
+
 ## Known gap: nothing tells a new player the key is G
 
 There is no first-run hint, no message on join, and no entry anywhere the player would look

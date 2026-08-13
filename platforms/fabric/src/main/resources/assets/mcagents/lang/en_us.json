@@ -9,6 +9,10 @@
   "gui.mcagents.waiting": "Waiting",
 
   "gui.mcagents.session.new": "New chat",
+  "gui.mcagents.session.rename": "Rename chat",
+  "gui.mcagents.session.delete.title": "Delete this chat?",
+  "gui.mcagents.session.delete.message": "\"%s\" and every message in it will be deleted. This cannot be undone.",
+  "gui.mcagents.session.delete.confirm": "Delete",
   "gui.mcagents.sessions.loading": "Loading chats",
   "gui.mcagents.sessions.empty": "No chats yet",
 

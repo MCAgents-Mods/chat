@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -70,6 +71,11 @@ public final class AgentChatScreen extends Screen {
     /** Text kept across a resize, which rebuilds every widget from scratch. */
     private String pendingSearch = "";
     private String pendingPrompt = "";
+
+    /** The conversation being renamed in place, or null when nothing is. */
+    private String renamingId;
+    private String renameDraft = "";
+    private EditBox renameBox;
 
     public AgentChatScreen() {
         super(Component.translatable("gui.mcagents.title"));
@@ -138,7 +144,8 @@ public final class AgentChatScreen extends Screen {
                         Component.translatable("gui.mcagents.models.title")))
                 .build());
 
-        sessionList = new SessionListPanel(font, this::openSession);
+        sessionList = new SessionListPanel(
+                font, this::openSession, this::beginRename, this::confirmDelete);
         sessionList.setBounds(MARGIN, contentTop, sidebarWidth, contentHeight);
 
         conversation = new ConversationPanel(font);
@@ -163,6 +170,23 @@ public final class AgentChatScreen extends Screen {
                 .bounds(conversationLeft + conversationWidth - sendWidth,
                         height - MARGIN - FOOTER_HEIGHT, sendWidth, LINE)
                 .build());
+
+        renameBox = null;
+        if (renamingId != null) {
+            sessionList.rowTop(renamingId).ifPresent(rowTop -> {
+                renameBox = new EditBox(font, MARGIN + 1, rowTop - 2, sidebarWidth - 2,
+                        sessionList.rowHeight() + 2, Component.translatable("gui.mcagents.session.rename"));
+                renameBox.setMaxLength(255);
+                renameBox.setValue(renameDraft);
+                renameBox.setResponder(text -> renameDraft = text);
+                addRenderableWidget(renameBox);
+                setInitialFocus(renameBox);
+            });
+            if (renameBox == null) {
+                // The row scrolled out of view; there is nothing to edit over.
+                renamingId = null;
+            }
+        }
 
         if (!hasStorage()) {
             // The one control that matters when storage is down. Placed where the send
@@ -240,6 +264,76 @@ public final class AgentChatScreen extends Screen {
                 loadSessions(pendingSearch);
             }
         }, "Could not reopen the local database");
+    }
+
+    // ------------------------------------------------- renaming and deleting
+
+    /**
+     * Puts an edit box over the conversation's row in the list.
+     *
+     * <p>Renaming in place rather than on another screen: the title is one short line, and
+     * bouncing the player to a separate screen to change it costs more than it explains.
+     */
+    private void beginRename(ChatSession session) {
+        if (!hasStorage()) {
+            return;
+        }
+        renamingId = session.id();
+        renameDraft = session.title();
+        rebuildWidgets();
+    }
+
+    private void commitRename() {
+        String id = renamingId;
+        String title = renameBox == null ? renameDraft : renameBox.getValue().trim();
+        cancelRename();
+
+        if (id == null || title.isEmpty()) {
+            return;
+        }
+        onClientThread(waiting.track(database.chat().renameSession(id, title)),
+                renamed -> loadSessions(pendingSearch), "Could not rename the conversation");
+    }
+
+    private void cancelRename() {
+        renamingId = null;
+        renameDraft = "";
+        rebuildWidgets();
+    }
+
+    /**
+     * Asks before deleting.
+     *
+     * <p>Deleting a conversation cascades to every message in it and cannot be undone, so
+     * it is the one action here that does not happen on a single click.
+     */
+    private void confirmDelete(ChatSession session) {
+        if (minecraft == null || !hasStorage()) {
+            return;
+        }
+        minecraft.setScreenAndShow(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        deleteSession(session);
+                    }
+                    if (minecraft != null) {
+                        minecraft.setScreenAndShow(this);
+                    }
+                },
+                Component.translatable("gui.mcagents.session.delete.title"),
+                Component.translatable("gui.mcagents.session.delete.message", session.title()),
+                Component.translatable("gui.mcagents.session.delete.confirm"),
+                Component.translatable("gui.cancel")));
+    }
+
+    private void deleteSession(ChatSession session) {
+        onClientThread(waiting.track(database.chat().deleteSession(session.id())), deleted -> {
+            if (session.id().equals(activeSessionId)) {
+                activeSessionId = null;
+                conversation.clear();
+            }
+            loadSessions(pendingSearch);
+        }, "Could not delete the conversation");
     }
 
     private void openKeySettings() {
@@ -398,7 +492,12 @@ public final class AgentChatScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (sessionList.click(event.x(), event.y())) {
+        if (renameBox != null && !renameBox.isMouseOver(event.x(), event.y())) {
+            // Clicking away commits, which is what a player expects from an inline edit.
+            commitRename();
+            return true;
+        }
+        if (sessionList.click(event.x(), event.y(), doubleClick)) {
             return true;
         }
         return super.mouseClicked(event, doubleClick);
@@ -417,6 +516,16 @@ public final class AgentChatScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (renamingId != null) {
+            if (isEnter(event.key())) {
+                commitRename();
+                return true;
+            }
+            if (event.key() == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+                cancelRename();
+                return true;
+            }
+        }
         // Enter sends from the prompt box; every other key belongs to the focused widget.
         if (promptBox.isFocused() && isEnter(event.key())) {
             send();
