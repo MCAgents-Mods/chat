@@ -4,21 +4,37 @@
 
 | Tool | Version | Note |
 |---|---|---|
-| JDK | 25 | Minecraft 26.2 requires it. Gradle's toolchain resolver can download it for you. |
-| Gradle | 8.14.3 or newer | The wrapper in the repository is authoritative — use `./gradlew`. |
+| JDK | 21 or newer to launch Gradle; 25 to compile | The `foojay-resolver-convention` plugin downloads JDK 25 if you do not have it. |
+| Gradle | 9.7.0 | Comes from the committed wrapper. Use `./gradlew`, never a system `gradle`. |
 | Git | any recent | |
 
-Target platform, fixed in `gradle.properties`:
+## Where versions live
 
-| Property | Value |
+`gradle.properties` holds the project's identity only:
+
+```properties
+git-org=MCAgents
+git-repo=client-fabric
+project-version=0.0.0
+```
+
+Every dependency coordinate lives in the Gradle version catalog at
+`gradle/libs.versions.toml`:
+
+| Entry | Value |
 |---|---|
 | Minecraft | 26.2 |
 | Fabric Loader | 0.19.3 |
 | Fabric API | 0.157.0+26.2 |
+| Fabric Loom | 1.17.19 |
+| Java | 25 |
 
-Minecraft 26.x has no Yarn mappings and no intermediary. Fabric Loom resolves Mojang's
-official mappings on its own; there is no `mappings` line to add. Check
-`https://meta.fabricmc.net/v2/versions/game` before changing the Minecraft version.
+Change a platform version there, not in `gradle.properties`.
+
+Minecraft 26.x has no Yarn mappings and no intermediary — Fabric Loom resolves Mojang's
+official mappings on its own, so there is no `mappings` line to add and no `remapJar` task
+in the build. Check `https://meta.fabricmc.net/v2/versions/game` before changing the
+Minecraft version.
 
 ## Commands
 
@@ -29,11 +45,16 @@ official mappings on its own; there is no `mappings` line to add. Check
 | Run the client | `./gradlew :mcagents-fabric:runClient` |
 | Produce the mod jar | `./gradlew :mcagents-fabric:build` |
 
-The mod jar lands in `platforms/fabric/build/libs/`. `runClient` opens a real Minecraft
-window and needs a display; it will not work over a headless connection.
+The mod jar lands in `platforms/fabric/build/libs/`. It carries the classes of all three
+modules — `api/` and `common/` are merged into it rather than nested as separate mods.
+`runClient` opens a real Minecraft window and needs a display; it will not work over a
+headless connection.
 
-The first build downloads Minecraft and decompiles it. Expect it to take several minutes
-and a few gigabytes of disk. Subsequent builds reuse the Loom cache.
+The first build downloads and processes Minecraft. Expect it to take several minutes and a
+few gigabytes of disk. Subsequent builds reuse the Loom cache. If it runs out of memory,
+raise the daemon heap in your own `~/.gradle/gradle.properties`
+(`org.gradle.jvmargs=-Xmx2G`) — the committed `gradle.properties` is reserved for project
+identity.
 
 ## Runtime files
 

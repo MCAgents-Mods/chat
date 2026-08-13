@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "mcagents",
+  "version": "${version}",
+  "name": "MCAgentsClient",
+  "description": "A client-side AI assistant for Minecraft. Chat with an LLM agent using your own OpenRouter key, with downloadable Knowledge Packs retrieved by embedding similarity. Works offline once packs are downloaded.",
+  "authors": [
+    "MCAgents"
+  ],
+  "contact": {
+    "homepage": "https://mcagents.mcrealms.space",
+    "sources": "https://github.com/MCAgents/client-fabric",
+    "issues": "https://github.com/MCAgents/client-fabric/issues"
+  },
+  "license": "LicenseRef-MCAgents-Commercial",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.mcagents.clientfabric.fabric.MCAgentsClientMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

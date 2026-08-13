@@ -1,9 +1,22 @@
 # 0.0.0
 
-Initial repository scaffold. No code yet — this version establishes the conventions,
-documentation, and licensing the project is built under.
+Initial repository scaffold — the conventions, documentation, licensing, and build the
+project is developed under.
 
 ## Added
+
+* **Multi-module Gradle build.** `mcagents-fabric-api` (`api/`),
+  `mcagents-fabric-common` (`common/`), and `mcagents-fabric` (`platforms/fabric/`), wired
+  by `settings.gradle` and built with Fabric Loom 1.17.19 on Gradle 9.7.0 and a Java 25
+  toolchain. `./gradlew build` produces a loadable mod jar carrying all three modules'
+  classes, `fabric.mod.json`, and the license.
+* **Version catalog.** `gradle/libs.versions.toml` pins Minecraft 26.2, Fabric Loader
+  0.19.3, Fabric API 0.157.0+26.2, Fabric Loom 1.17.19, sqlite-jdbc 3.53.2.1, and Java 25.
+  `gradle.properties` carries the project's identity only.
+* **First classes.** `MCAgents` — mod identity and the layout it owns on disk;
+  `ClientPaths` — resolves that layout from a game directory it is handed, with no
+  knowledge of Minecraft; `MCAgentsClientMod` — the `ClientModInitializer`, which resolves
+  the game directory once at startup and contacts nothing over the network.
 
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
@@ -26,8 +39,9 @@ documentation, and licensing the project is built under.
 
 ## Notes
 
-* Target platform recorded for the build that follows: Minecraft 26.2, Fabric Loader
-  0.19.3, Fabric API 0.157.0+26.2, Java 25, group `io.github.mcagents`, base package
-  `io.github.mcagents.clientfabric`.
+* Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
 * Minecraft 26.x publishes no Yarn mappings and no intermediary; Fabric Loom uses Mojang's
-  official mappings. Verified against `meta.fabricmc.net`.
+  official mappings and **no `remapJar` task runs** — `jar` produces the final artifact.
+  Fabric API and the loader are declared with plain `implementation` for the same reason.
+* `api/` and `common/` are plain `java-library` modules merged into the mod jar rather than
+  nested as Jar-in-Jar mods; they are not Fabric mods and carry no `fabric.mod.json`.
