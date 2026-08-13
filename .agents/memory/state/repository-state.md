@@ -52,7 +52,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 * Streaming responses. An answer arrives whole, after the whole generation.
 * The embedding and retrieval layer.
-* The content browser and the key-management screen. Only the chat screen exists.
+* The content browser. Chat, models, and API keys have screens.
 * Any download path from the central service — `ContentRepository` can store a pack, but
   nothing fetches one yet.
 * Any CI workflow.
@@ -84,6 +84,25 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   `GuiGraphics`, `extractRenderState` replaces `render`, the current screen lives on
   `Minecraft#gui`, and input arrives as `KeyEvent`/`MouseButtonEvent` records. The
   differences are tabulated in `.agents/wiki/context/repository-map.md`.
+
+## Reported and fixed from a real game
+
+A player on a live server pressed `G` and nothing happened. Ruled out by inspection:
+`fabric.mod.json` (entrypoint, `environment`, `depends`) is correct, and the nested
+sqlite jar is properly wrapped by Loom with Windows natives present. The root cause could
+not be isolated from the build alone, because **all three candidates — storage never
+opened, the keybind never reached `options.keyMappings`, a screen already open — looked
+identical to the player.** Every failure path was silent.
+
+**Root cause established by elimination.** `KeyMappingRegistryImpl` throws if registration
+happens after `Minecraft.options` exists, and that exception crashes startup — so a game
+that reached the main menu had registered its keybind. The keypress was arriving; the
+launcher was refusing to open because `database()` was empty, and returning silently.
+
+Fixed by making the screen open unconditionally and report storage state inside itself with
+a Retry button, rather than gating on storage. `ApiKeyScreen` was added at the same time —
+there had been no way to enter a key at all, so the model client was complete and
+unreachable. Still unconfirmed against a real client run.
 
 ## Verification status
 

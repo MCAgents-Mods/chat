@@ -20,8 +20,10 @@ chatbot that has never heard of it.
 ### Local agent
 
 The player supplies an OpenRouter API key. The mod sends the prompt, the conversation
-history, and the retrieved context to OpenRouter and streams the answer back into the chat
-screen. Multiple keys can be stored; an expired key is deactivated and the next one is used.
+history, and the retrieved context to OpenRouter and shows the answer in the chat screen —
+whole, when it is ready; responses are not streamed yet. Multiple keys can be stored, and a
+key the provider rejects is deactivated so the next one takes over without interrupting the
+conversation.
 
 ### Knowledge Packs and retrieval
 
@@ -72,16 +74,21 @@ a "new chat" button, the selected conversation on the right, and a prompt box al
 bottom. Every conversation is kept, titled, and searchable — including by what was said in
 it, not only by its title.
 
-The gear button opens the model settings. Pick a chat model and an embedding model from the
-suggested lists, or type any OpenRouter model id you like — the lists are a convenience, not
-a limit, because OpenRouter adds models faster than this mod ships.
+The key button opens API key management — add your OpenRouter key there; stored keys are
+only ever shown masked. The gear button opens the model settings: pick a chat model and an
+embedding model from the suggested lists, or type any OpenRouter model id you like. The
+lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
+ships.
+
+If local storage cannot be opened, the screen still opens and says so, with a Retry button.
+It never simply fails to appear.
 
 ## What is planned but not built
 
-The mod does not yet call OpenRouter, so the agent stores what you ask and replies that it
-is not connected. The content browser, key-management screen, and retrieval are also still
-to come, as is context injection — inventory, the block you are looking at, chat logs and
-scoreboard. See [`architecture.md`](architecture.md) for where each will live.
+Retrieval is not wired up yet, so the agent answers from your conversation rather than from
+downloaded Knowledge Packs. The content browser is still to come, as is streaming, and so is
+context injection — inventory, the block you are looking at, chat logs and scoreboard. See
+[`architecture.md`](architecture.md) for where each will live.
 
 ## Related
 

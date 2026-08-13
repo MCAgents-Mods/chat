@@ -183,6 +183,7 @@ Check the class with `javap` before assuming a signature.
 | `Screen#render(GuiGraphics, int, int, float)` | `Screen#extractRenderState(GuiGraphicsExtractor, int, int, float)`, which draws **widgets only** — the background is a separate `extractBackground` call made by the caller |
 | `graphics.drawString(...)` | `graphics.text(font, …)`, `centeredText`, `textWithWordWrap` |
 | `Minecraft#screen` | `Minecraft#gui.screen()`; `setScreen` is `setScreenAndShow` |
+| `player.displayClientMessage(c, false)` | `player.sendSystemMessage(c)` |
 | `keyPressed(int, int, int)` | `keyPressed(net.minecraft.client.input.KeyEvent)` |
 | `mouseClicked(double, double, int)` | `mouseClicked(MouseButtonEvent, boolean)` |
 | `ResourceLocation` | `net.minecraft.resources.Identifier` |
@@ -190,6 +191,24 @@ Check the class with `javap` before assuming a signature.
 
 The decompiled jar to inspect is
 `~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.2/`.
+
+## Reaching the mod in game
+
+The `G` key, and nothing else. That is enough, and it is provably enough:
+
+> `KeyMappingRegistryImpl.registerKeyMapping` throws `IllegalStateException` if
+> `Minecraft.options` already exists. An exception out of `onInitializeClient` crashes
+> startup with a Fabric error screen. **So a game that reaches the main menu has already
+> proven its key mappings registered** — a key that appears to do nothing is never a
+> registration problem.
+
+**The screen therefore opens unconditionally.** It does not require the database, because
+requiring it is what made this ship broken: `open()` returned silently when storage was not
+ready, and a dead key is indistinguishable from a mod that never loaded. Storage state is
+reported *inside* the screen, with a Retry button, where the player is already looking.
+
+Everything the player configures lives in the interface — sessions, models (gear), and API
+keys (key icon). There is no command, and adding one would be treating a symptom.
 
 ## Gotchas
 
