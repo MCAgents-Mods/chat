@@ -4,6 +4,7 @@ import io.github.mcagents.clientfabric.api.MCAgents;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.storage.sqlite.SqliteDatabase;
+import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public final class MCAgentsClientMod implements ClientModInitializer {
 
         openDatabase();
         registerShutdownHook();
+        MCAgentsKeyMappings.register();
     }
 
     private void openDatabase() {

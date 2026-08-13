@@ -37,7 +37,7 @@ exists because the architecture mentions it — check.
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`), `api.storage` (`LocalDatabase` and the three repository interfaces). | The OpenRouter and retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
 | `common/` | `mcagents-fabric-common` | `ClientPaths`, and `common.storage.sqlite` — the SQLite implementation of every storage contract. | The OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` — the `ClientModInitializer`, which resolves the game directory and opens the database. | Screens, key bindings, mixins, event listeners. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, and `client.gui` — the chat screen and its panels. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -146,6 +146,25 @@ exception for it.
 player's machine. `data.db` holds OpenRouter API keys in the clear as a design decision, so
 **never log its contents, never attach it to an issue, and never write a fixture copy into
 this repository.**
+
+## The Minecraft 26.x client API is not the one you remember
+
+Every one of these changed, and each fails as "cannot find symbol" against older knowledge.
+Check the class with `javap` before assuming a signature.
+
+| What you would reach for | What 26.2 has |
+|---|---|
+| `GuiGraphics` | `net.minecraft.client.gui.GuiGraphicsExtractor` |
+| `Screen#render(GuiGraphics, int, int, float)` | `Screen#extractRenderState(GuiGraphicsExtractor, int, int, float)`, which draws **widgets only** — the background is a separate `extractBackground` call made by the caller |
+| `graphics.drawString(...)` | `graphics.text(font, …)`, `centeredText`, `textWithWordWrap` |
+| `Minecraft#screen` | `Minecraft#gui.screen()`; `setScreen` is `setScreenAndShow` |
+| `keyPressed(int, int, int)` | `keyPressed(net.minecraft.client.input.KeyEvent)` |
+| `mouseClicked(double, double, int)` | `mouseClicked(MouseButtonEvent, boolean)` |
+| `ResourceLocation` | `net.minecraft.resources.Identifier` |
+| `KeyBindingHelper` | `net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper`, and `KeyMapping.Category` is a registered record, not a string |
+
+The decompiled jar to inspect is
+`~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.2/`.
 
 ## Gotchas
 

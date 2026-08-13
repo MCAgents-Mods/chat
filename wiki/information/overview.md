@@ -65,11 +65,19 @@ The OpenRouter API is a separate matter: without a key or without internet, the 
 produce new answers, but the interface, the history, and the stored knowledge remain fully
 accessible.
 
+## Using it
+
+Press `G` in game to open the chat screen: conversations on the left with a search box and
+a "new chat" button, the selected conversation on the right, and a prompt box along the
+bottom. Every conversation is kept, titled, and searchable — including by what was said in
+it, not only by its title.
+
 ## What is planned but not built
 
-Context injection — inventory, the block the player is looking at, chat logs and
-scoreboard — is part of the design and is not implemented yet. See
-[`architecture.md`](architecture.md) for where it will live.
+The mod does not yet call OpenRouter, so the agent stores what you ask and replies that it
+is not connected. The content browser, key-management screen, and retrieval are also still
+to come, as is context injection — inventory, the block you are looking at, chat logs and
+scoreboard. See [`architecture.md`](architecture.md) for where each will live.
 
 ## Related
 
