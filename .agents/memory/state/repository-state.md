@@ -85,6 +85,20 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   `Minecraft#gui`, and input arrives as `KeyEvent`/`MouseButtonEvent` records. The
   differences are tabulated in `.agents/wiki/context/repository-map.md`.
 
+## Reported and fixed from a real game
+
+A player on a live server pressed `G` and nothing happened. Ruled out by inspection:
+`fabric.mod.json` (entrypoint, `environment`, `depends`) is correct, and the nested
+sqlite jar is properly wrapped by Loom with Windows natives present. The root cause could
+not be isolated from the build alone, because **all three candidates — storage never
+opened, the keybind never reached `options.keyMappings`, a screen already open — looked
+identical to the player.** Every failure path was silent.
+
+Fixed by making the mod reachable two independent ways (`G` and `/mcagents`), giving every
+failure path a visible message, adding `/mcagents status` and `/mcagents reload`, and
+registering the key and command before anything that can fail. Still unconfirmed against
+the reporting player's log.
+
 ## Verification status
 
 The chat screen and the model settings screen are **compile-verified only**. This

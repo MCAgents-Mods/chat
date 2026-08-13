@@ -183,6 +183,7 @@ Check the class with `javap` before assuming a signature.
 | `Screen#render(GuiGraphics, int, int, float)` | `Screen#extractRenderState(GuiGraphicsExtractor, int, int, float)`, which draws **widgets only** — the background is a separate `extractBackground` call made by the caller |
 | `graphics.drawString(...)` | `graphics.text(font, …)`, `centeredText`, `textWithWordWrap` |
 | `Minecraft#screen` | `Minecraft#gui.screen()`; `setScreen` is `setScreenAndShow` |
+| `player.displayClientMessage(c, false)` | `player.sendSystemMessage(c)` |
 | `keyPressed(int, int, int)` | `keyPressed(net.minecraft.client.input.KeyEvent)` |
 | `mouseClicked(double, double, int)` | `mouseClicked(MouseButtonEvent, boolean)` |
 | `ResourceLocation` | `net.minecraft.resources.Identifier` |
@@ -190,6 +191,25 @@ Check the class with `javap` before assuming a signature.
 
 The decompiled jar to inspect is
 `~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.2/`.
+
+## Reaching the mod in game
+
+Two independent entry points, on purpose:
+
+| Way in | Registered through |
+|---|---|
+| The `G` key | `KeyMappingHelper`, dispatched on the client tick |
+| `/mcagents` | `ClientCommandRegistrationCallback` |
+
+They share no failure mode. A key binding can be rebound, collide with another mod, or fail
+to reach the game's key map at all; a command does none of those. **`/mcagents status` is
+the diagnostic**: it reports whether storage is opening, ready, or failed, what the key is
+currently bound to, and the exact failure if there was one.
+
+**No path may fail silently.** A keypress that does nothing is indistinguishable from a mod
+that never loaded, and that is what made the first version undiagnosable in a real game.
+Every failure either opens the screen or writes a line in the player's chat, and startup
+logs at INFO so `logs/latest.log` answers the question without a debug build.
 
 ## Gotchas
 
