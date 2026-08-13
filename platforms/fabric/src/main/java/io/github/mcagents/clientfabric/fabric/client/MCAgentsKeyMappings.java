@@ -5,7 +5,6 @@ import io.github.mcagents.clientfabric.api.MCAgents;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.fabric.MCAgentsClientMod;
 import io.github.mcagents.clientfabric.fabric.client.gui.AgentChatScreen;
-import io.github.mcagents.clientfabric.fabric.client.gui.AgentReply;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
@@ -60,6 +59,8 @@ public final class MCAgentsKeyMappings {
             LOGGER.warn("The chat screen was requested before the local database was ready");
             return;
         }
-        client.setScreenAndShow(new AgentChatScreen(database.get(), AgentReply.notConfigured()));
+        client.setScreenAndShow(new AgentChatScreen(
+                database.get(),
+                AgentFactory.create(database.get(), MCAgentsClientMod.paths())));
     }
 }

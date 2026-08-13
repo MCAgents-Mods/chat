@@ -46,7 +46,6 @@ dependencies {
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
-    implementation libs.sqlite.jdbc
     include libs.sqlite.jdbc
 }
 

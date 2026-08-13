@@ -1,5 +1,6 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
+import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
@@ -35,8 +36,8 @@ import java.util.concurrent.Executor;
  *
  * <p><strong>Nothing here needs the network.</strong> The conversation list, the history,
  * and the prompt box all work with no internet at all. Only producing a new answer does,
- * and that goes through {@link AgentReply}, which reports its own failure without taking
- * the screen down.
+ * and that goes through {@link Agent}, which reports its own failure without taking the
+ * screen down.
  */
 public final class AgentChatScreen extends Screen {
 
@@ -51,7 +52,7 @@ public final class AgentChatScreen extends Screen {
     private static final int PROMPT_LIMIT = 4000;
 
     private final LocalDatabase database;
-    private final AgentReply agentReply;
+    private final Agent agent;
     private final WaitingIndicator waiting = new WaitingIndicator();
 
     private SessionListPanel sessionList;
@@ -66,10 +67,10 @@ public final class AgentChatScreen extends Screen {
     private String pendingSearch = "";
     private String pendingPrompt = "";
 
-    public AgentChatScreen(LocalDatabase database, AgentReply agentReply) {
+    public AgentChatScreen(LocalDatabase database, Agent agent) {
         super(Component.translatable("gui.mcagents.title"));
         this.database = database;
-        this.agentReply = agentReply;
+        this.agent = agent;
     }
 
     @Override
@@ -220,7 +221,7 @@ public final class AgentChatScreen extends Screen {
                         activeSessionId = id;
                         loadMessages(id);
                     });
-                    return agentReply.respond(sessionId, prompt)
+                    return agent.respond(sessionId, prompt)
                             .thenCompose(answer -> database.chat()
                                     .appendMessage(sessionId, ChatRole.ASSISTANT, answer)
                                     .thenApply(ChatMessage::sessionId));

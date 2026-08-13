@@ -1,0 +1,65 @@
+package io.github.mcagents.clientfabric.fabric.client;
+
+import io.github.mcagents.clientfabric.api.agent.Agent;
+import io.github.mcagents.clientfabric.api.agent.ModelClient;
+import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.common.ClientPaths;
+import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
+import io.github.mcagents.clientfabric.common.agent.OpenRouterAgent;
+import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
+import io.github.mcagents.clientfabric.common.agent.openrouter.OpenRouterClient;
+
+/**
+ * Builds the agent the chat screen uses, and owns the model client's lifetime.
+ *
+ * <p>The client is created once and reused: it holds an HTTP connection pool and a
+ * scheduler for retry backoff, and building one per question would throw both away every
+ * time.
+ *
+ * <p>Nothing here checks whether the player has a key. That check belongs at request time,
+ * not at construction time — a player who adds a key while the game is running should not
+ * have to restart, and a player who has none still gets a screen that opens.
+ */
+public final class AgentFactory {
+
+    private static volatile ModelClient modelClient;
+
+    private AgentFactory() {
+        throw new AssertionError("No instances.");
+    }
+
+    /**
+     * The agent for this session.
+     *
+     * @param database the player's local store
+     * @param paths    the mod's on-disk layout, for the persona file
+     */
+    public static Agent create(LocalDatabase database, ClientPaths paths) {
+        return new OpenRouterAgent(database, sharedClient(database), paths.instructions());
+    }
+
+    private static ModelClient sharedClient(LocalDatabase database) {
+        ModelClient existing = modelClient;
+        if (existing != null) {
+            return existing;
+        }
+        synchronized (AgentFactory.class) {
+            if (modelClient == null) {
+                modelClient = new OpenRouterClient(
+                        new JdkHttpTransport(),
+                        new RepositoryApiKeySource(database.apiKeys()));
+            }
+            return modelClient;
+        }
+    }
+
+    /** Releases the HTTP client and its retry scheduler. Called on game shutdown. */
+    public static void close() {
+        synchronized (AgentFactory.class) {
+            if (modelClient != null) {
+                modelClient.close();
+                modelClient = null;
+            }
+        }
+    }
+}
