@@ -22,7 +22,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 * **The complete local storage layer.** `api.model` records, `api.storage` contracts
   (`LocalDatabase`, `ApiKeyRepository`, `ChatRepository`, `ContentRepository` — all
   `CompletableFuture`), and `common.storage.sqlite` implementing them against the schema
-  the user specified. Tests live in `common/`; 77 pass.
+  the user specified. Tests live in `common/`; 91 pass.
 * `MCAgentsClientMod` opens the database asynchronously at startup and exposes it as
   `Optional<LocalDatabase>`; a failure to open leaves the game running.
 * **The chat screen.** `AgentChatScreen` with a session list on the left, the conversation
@@ -34,6 +34,11 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   a swappable `HttpTransport`, key rotation on 401/402/403, retry with jittered backoff on
   429/5xx/transport, and timeouts. Wired into the chat screen through `AgentFactory`.
   `AgentReply` is gone — the contract moved to `api/` as `Agent`, as planned.
+* **Prompt caching.** `PromptAssembler` places exactly two `cache_control: ephemeral`
+  breakpoints — after the persona and after the newest completed answer — and keeps
+  retrieved context out of the cached prefix. `TokenUsage#cachedTokens` reports what the
+  provider actually reused. `CachingModelClient` caches embeddings locally and deliberately
+  never caches completions.
 * **Model selection.** A `settings` table, `SettingsRepository`, `ModelPreferences`, and
   `ModelCatalog` with the suggested chat and embedding models. `ModelSettingsScreen` is
   reached from the gear button on the chat screen; `EditableDropdown` lets the player pick

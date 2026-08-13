@@ -49,18 +49,39 @@ public final class PromptAssembler {
         String instructions = persona == null || persona.isBlank()
                 ? defaultPersona()
                 : persona.trim();
-        prompt.add(PromptMessage.system(instructions));
+        // Breakpoint one: the persona is byte-identical until the player edits their file.
+        prompt.add(PromptMessage.system(instructions).asCacheBreakpoint());
 
-        for (ChatMessage message : messages) {
+        int lastSettledTurn = lastSettledTurnIndex(messages);
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage message = messages.get(i);
             // A stored system message is context that was deliberately persisted; a stored
             // user or assistant message is a turn. All three replay as they were.
-            prompt.add(new PromptMessage(message.role(), message.content()));
+            PromptMessage entry = new PromptMessage(message.role(), message.content());
+            // Breakpoint two: everything up to the newest completed answer is settled and
+            // will never change again. The new question sits after it, uncached.
+            prompt.add(i == lastSettledTurn ? entry.asCacheBreakpoint() : entry);
         }
 
         if (prompt.size() == 1) {
             throw new IllegalArgumentException("A prompt needs at least one stored message");
         }
         return List.copyOf(prompt);
+    }
+
+    /**
+     * The index of the newest assistant message, which is where settled history ends.
+     *
+     * <p>Returns {@code -1} on the first turn of a conversation, when there is no answer
+     * yet and so nothing beyond the persona is worth a breakpoint.
+     */
+    private static int lastSettledTurnIndex(List<ChatMessage> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if (messages.get(i).role() == ChatRole.ASSISTANT) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
