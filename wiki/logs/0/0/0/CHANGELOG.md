@@ -51,6 +51,13 @@ project is developed under.
   heard of is stored as typed, and a blank field resolves to the catalog default rather than
   to no model.
 * **`en_us` translations** for every string the screens show.
+* **A cache layer.** `TtlCache` — a bounded LRU whose entries also expire — behind the
+  `Cache` contract, and `CachingContentRepository` decorating the SQLite repository. Pack
+  bodies and the category list are cached because they are read far more often than they
+  change; searches, the stored-version map, and absent packs deliberately are not. Writes
+  invalidate in the same call, so a downloaded pack is visible immediately rather than when
+  a timer expires. The database stays the record: everything cached can be dropped at any
+  moment without changing what the mod knows.
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
   table. The shared instruction set is resolved over the connector and never copied here.

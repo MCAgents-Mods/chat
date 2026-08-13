@@ -22,7 +22,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 * **The complete local storage layer.** `api.model` records, `api.storage` contracts
   (`LocalDatabase`, `ApiKeyRepository`, `ChatRepository`, `ContentRepository` — all
   `CompletableFuture`), and `common.storage.sqlite` implementing them against the schema
-  the user specified. 33 tests in `common/`, all passing.
+  the user specified. Tests live in `common/`; 63 pass.
 * `MCAgentsClientMod` opens the database asynchronously at startup and exposes it as
   `Optional<LocalDatabase>`; a failure to open leaves the game running.
 * **The chat screen.** `AgentChatScreen` with a session list on the left, the conversation
@@ -36,6 +36,9 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   reached from the gear button on the chat screen; `EditableDropdown` lets the player pick
   from the list **or type any model id**, because the lists are suggestions, not a
   whitelist.
+* **A cache layer.** `Cache`/`CacheStats` in `api.cache`, `TtlCache` (bounded LRU plus
+  per-entry lifetime) in `common.cache`, and `CachingContentRepository` decorating the
+  SQLite repository. Wired in by default: `LocalDatabase#contents()` is the caching one.
 
 ## What does not exist yet
 

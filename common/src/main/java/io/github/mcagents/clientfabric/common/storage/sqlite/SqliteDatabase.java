@@ -6,6 +6,7 @@ import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.storage.SettingsRepository;
+import io.github.mcagents.clientfabric.common.storage.CachingContentRepository;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
@@ -56,7 +57,10 @@ public final class SqliteDatabase implements LocalDatabase {
 
         SqlWorker worker = new SqlWorker(connection, executor);
         this.apiKeys = new SqliteApiKeyRepository(worker);
-        this.contents = new SqliteContentRepository(worker);
+        // Packs carry the largest rows in the database and are read on every question the
+        // player asks, so reads of them go through a cache. The database stays the record;
+        // the cache is dropped whenever a write touches what it holds.
+        this.contents = new CachingContentRepository(new SqliteContentRepository(worker));
         this.chat = new SqliteChatRepository(worker);
         this.settings = new SqliteSettingsRepository(worker);
     }
