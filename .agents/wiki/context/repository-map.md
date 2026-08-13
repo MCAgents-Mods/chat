@@ -66,9 +66,31 @@ entry point. What is worth knowing before changing it:
   database", because that file is the player's whole history.
 * **Search text is escaped** before it reaches a `LIKE` clause, so typing `100%` searches
   for that rather than matching everything.
+* **Reads of packs go through a cache.** `SqliteDatabase` wraps `SqliteContentRepository`
+  in `CachingContentRepository`, so `contents()` is the caching one. The cache is never the
+  source of truth — see the section below.
 * **The `settings` table was appended to `SqliteSchema`, not inserted.** That list's order
   is the migration history — see [`../../database/schema.md`](../../database/schema.md),
   which is the authority on every rule in this section.
+
+## Caching
+
+`TtlCache` is a bounded LRU with a per-entry lifetime; `CachingContentRepository` decorates
+the SQLite repository with it. What matters before changing either:
+
+* **The database is the record.** Everything cached can be dropped at any moment without
+  changing what the mod knows, which is what makes it safe to bound and to expire.
+* **Writes invalidate, in the same call.** A downloaded pack is visible immediately; expiry
+  is a backstop for changes made outside this instance's sight, not the mechanism.
+* **Only two things are cached**: a pack by id (the largest rows, read on every question)
+  and the category list (tiny, read on every render). Searches and `findStoredVersions` are
+  deliberately **not** cached — a search key changes on nearly every keystroke and would
+  evict the pack bodies, and a stale version map would re-download or skip a pack.
+* **Absence is never cached.** A pack missing now may be downloaded a moment later.
+* **The size bound is not decoration.** This runs inside Minecraft; memory taken here is
+  memory the game does not have.
+* Nothing cached is written to disk. A cache file would be a second copy of player data to
+  keep in step, and a second place an API key could end up.
 
 ## Where versions live
 
