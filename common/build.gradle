@@ -1,0 +1,33 @@
+// Implementations of the api/ contracts: storage, the OpenRouter client, retrieval.
+//
+// This module must compile and be testable without Minecraft on the classpath. If a class
+// here needs a Minecraft type, the value belongs in an api/ contract supplied by the
+// platform module instead — see .agents/rules/repository.md.
+
+plugins {
+    id 'java-library'
+}
+
+base {
+    archivesName = 'mcagents-fabric-common'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = libs.versions.java.get() as int
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api project(':mcagents-fabric-api')
+}

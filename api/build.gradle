@@ -1,0 +1,29 @@
+// Contracts only: interfaces, records, enums, abstract classes.
+//
+// This module compiles against the JDK and nothing else. It must never gain a dependency
+// on Minecraft, on Fabric, or on any third-party library — see
+// .agents/rules/repository.md.
+
+plugins {
+    id 'java-library'
+}
+
+base {
+    archivesName = 'mcagents-fabric-api'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = libs.versions.java.get() as int
+}
+
+repositories {
+    mavenCentral()
+}

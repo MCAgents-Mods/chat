@@ -1,0 +1,76 @@
+// The Fabric mod itself: initializer, screens, key bindings, mixins, event listeners, and
+// the resolution of paths from the game directory.
+//
+// This is the only module that may reference Minecraft or Fabric types. It wires and
+// renders; the logic lives in common/ — see .agents/rules/repository.md.
+
+plugins {
+    alias(libs.plugins.fabric.loom)
+}
+
+base {
+    archivesName = 'mcagents-client-fabric'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = libs.versions.java.get() as int
+}
+
+repositories {
+    mavenCentral()
+}
+
+loom {
+    mods {
+        'mcagents' {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    minecraft libs.minecraft
+    implementation libs.fabric.loader
+    implementation libs.fabric.api
+
+    implementation project(':mcagents-fabric-api')
+    implementation project(':mcagents-fabric-common')
+}
+
+// api/ and common/ are plain JVM modules, so their classes are merged into the mod jar
+// rather than nested as separate Fabric mods. Third-party runtime libraries are bundled
+// with Loom's `include` instead.
+def bundledModules = [':mcagents-fabric-api', ':mcagents-fabric-common']
+
+tasks.named('jar', Jar) {
+    bundledModules.each { path ->
+        from project(path).sourceSets.main.output
+    }
+}
+
+processResources {
+    def modVersion = project.version
+    inputs.property 'version', modVersion
+
+    filesMatching('fabric.mod.json') {
+        expand version: modVersion
+    }
+}
+
+// The license travels with the jar, renamed so it cannot be mistaken for a dependency's.
+tasks.named('jar', Jar) {
+    def projectName = project.name
+    inputs.property 'projectName', projectName
+
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${projectName}" }
+    }
+}
