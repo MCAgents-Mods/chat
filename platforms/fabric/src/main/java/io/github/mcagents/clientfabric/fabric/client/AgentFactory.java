@@ -4,6 +4,7 @@ import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
+import io.github.mcagents.clientfabric.common.agent.CachingModelClient;
 import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
 import io.github.mcagents.clientfabric.common.agent.OpenRouterAgent;
 import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
@@ -45,9 +46,12 @@ public final class AgentFactory {
         }
         synchronized (AgentFactory.class) {
             if (modelClient == null) {
-                modelClient = new OpenRouterClient(
+                // Embeddings are cached locally; completions are not, and the prompt
+                // itself is reused provider-side through the breakpoints the assembler
+                // places. See CachingModelClient.
+                modelClient = new CachingModelClient(new OpenRouterClient(
                         new JdkHttpTransport(),
-                        new RepositoryApiKeySource(database.apiKeys()));
+                        new RepositoryApiKeySource(database.apiKeys())));
             }
             return modelClient;
         }

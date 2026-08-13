@@ -40,9 +40,8 @@ project is developed under.
     failed;
   * results applied on the client thread through `Minecraft#execute`, and discarded if the
     player has closed the screen in the meantime;
-  * `AgentReply`, the seam the OpenRouter client will implement. Until it exists the screen
-    stores the player's message and answers that the agent is not connected yet, rather
-    than failing.
+  * the model call behind the `Agent` contract, so the screen never knows about models,
+    keys, or retries — only that it asked something and an answer will arrive.
 * **Model selection.** A `settings` table appended to the schema, `SettingsRepository`,
   `ModelPreferences`, and `ModelCatalog`. The settings screen is reached from the chat
   screen and offers both a chat model and an embedding model through `EditableDropdown` — a
@@ -50,6 +49,18 @@ project is developed under.
   any id at all**. The lists are suggestions, never a whitelist: a model the mod has not
   heard of is stored as typed, and a blank field resolves to the catalog default rather than
   to no model.
+* **The OpenRouter client.** Contracts in `api.agent`, implementation in `common.agent`
+  behind a swappable `HttpTransport`. Rotates past a key the provider rejects — including
+  402 out of credit — so another key still serves the turn. Retries rate limits, provider
+  failures, and transport failures with jittered backoff; never retries a bad request, and
+  never retries a malformed 200, because that request was already billed.
+* **Prompt caching.** Two `cache_control: ephemeral` breakpoints per request: after the
+  persona, and after the newest completed answer. Retrieved Knowledge Pack content is kept
+  out of the cached prefix and travels with the question instead — putting it first would
+  invalidate the whole conversation behind it on every turn. `usage.include` is requested so
+  `cachedTokens` reports what was actually reused.
+* **A local embedding cache**, since the same text and model always give the same vector.
+  Completions are deliberately not cached: asking again should be able to answer differently.
 * **`en_us` translations** for every string the screens show.
 * **A cache layer.** `TtlCache` — a bounded LRU whose entries also expire — behind the
   `Cache` contract, and `CachingContentRepository` decorating the SQLite repository. Pack
@@ -82,7 +93,12 @@ project is developed under.
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
 * Minecraft 26.x publishes no Yarn mappings and no intermediary; Fabric Loom uses Mojang's
   official mappings and **no `remapJar` task runs** — `jar` produces the final artifact.
-  Fabric API and the loader are declared with plain `implementation` for the same reason.
+* Dependency scopes, measured rather than assumed. In Loom, `implementation` bundles
+  nothing — only `include` does. Fabric Loader and Fabric API are `implementation` because
+  `compileOnly` would strip them from `runtimeClasspath` and break `runClient` in
+  development, while producing an identical shipped jar. Gson is `compileOnly` because
+  Minecraft provides it. sqlite-jdbc is the only bundled library, and Fabric has no
+  equivalent of Spigot's runtime Maven `libraries:` — Jar-in-Jar is the only option.
 * `api/` and `common/` are plain `java-library` modules merged into the mod jar rather than
   nested as Jar-in-Jar mods; they are not Fabric mods and carry no `fabric.mod.json`.
 * Minecraft 26.x reworked the client GUI API — `GuiGraphicsExtractor` for `GuiGraphics`,

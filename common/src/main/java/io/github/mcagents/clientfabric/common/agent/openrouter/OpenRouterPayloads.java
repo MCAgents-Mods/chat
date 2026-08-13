@@ -28,7 +28,22 @@ final class OpenRouterPayloads {
         throw new AssertionError("No instances.");
     }
 
-    /** Builds the body of a chat completion request. */
+    /**
+     * Builds the body of a chat completion request.
+     *
+     * <p>A message with no cache breakpoint is written the plain way, with {@code content}
+     * as a string. A message that carries one is written as a single-part content array
+     * with {@code cache_control: {"type": "ephemeral"}} on the part, which is what Anthropic
+     * and Gemini models require through OpenRouter to reuse the prefix ending there.
+     *
+     * <p>Providers that cache implicitly — OpenAI, DeepSeek and others — ignore the marker
+     * and cache on prefix stability alone. That is why the marker is additive: emitting it
+     * never costs anything on a provider that does not read it, and the message order does
+     * the work in both cases.
+     *
+     * <p>{@code usage.include} is requested so the response reports how much of the prompt
+     * was actually reused. Without it there is no way to tell caching from wishful thinking.
+     */
     static String chatRequestBody(ChatRequest request) {
         JsonObject body = new JsonObject();
         body.addProperty("model", request.model());
@@ -37,12 +52,35 @@ final class OpenRouterPayloads {
         for (PromptMessage message : request.messages()) {
             JsonObject entry = new JsonObject();
             entry.addProperty("role", message.role().wireName());
-            entry.addProperty("content", message.text());
+            if (message.cacheBreakpoint()) {
+                entry.add("content", cacheableContent(message.text()));
+            } else {
+                entry.addProperty("content", message.text());
+            }
             messages.add(entry);
         }
         body.add("messages", messages);
 
+        JsonObject usage = new JsonObject();
+        usage.addProperty("include", true);
+        body.add("usage", usage);
+
         return body.toString();
+    }
+
+    /** A one-part content array carrying an ephemeral cache breakpoint. */
+    private static JsonArray cacheableContent(String text) {
+        JsonObject cacheControl = new JsonObject();
+        cacheControl.addProperty("type", "ephemeral");
+
+        JsonObject part = new JsonObject();
+        part.addProperty("type", "text");
+        part.addProperty("text", text);
+        part.add("cache_control", cacheControl);
+
+        JsonArray content = new JsonArray();
+        content.add(part);
+        return content;
     }
 
     /** Builds the body of an embeddings request. */
@@ -133,7 +171,27 @@ final class OpenRouterPayloads {
         }
         return new TokenUsage(
                 optionalInt(usage, "prompt_tokens"),
-                optionalInt(usage, "completion_tokens"));
+                optionalInt(usage, "completion_tokens"),
+                readCachedTokens(usage));
+    }
+
+    /**
+     * How many prompt tokens the provider served from its cache.
+     *
+     * <p>OpenRouter normalises this into {@code prompt_tokens_details.cached_tokens}, but
+     * not every upstream provider fills it in, and some report it at the top level instead.
+     * Both are read, because a zero here is indistinguishable from "caching is broken" and
+     * that is exactly the thing this number exists to answer.
+     */
+    private static int readCachedTokens(JsonObject usage) {
+        JsonObject details = usage.getAsJsonObject("prompt_tokens_details");
+        if (details != null) {
+            int cached = optionalInt(details, "cached_tokens");
+            if (cached > 0) {
+                return cached;
+            }
+        }
+        return optionalInt(usage, "cached_tokens");
     }
 
     private static JsonObject parseObject(String body) {
