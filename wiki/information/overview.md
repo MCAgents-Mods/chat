@@ -74,6 +74,10 @@ a "new chat" button, the selected conversation on the right, and a prompt box al
 bottom. Every conversation is kept, titled, and searchable — including by what was said in
 it, not only by its title.
 
+**Double-click a conversation to rename it**, and hover it to reveal a `×` that deletes it.
+Deleting asks first, because it takes every message in that conversation with it and cannot
+be undone.
+
 The key button opens API key management — add your OpenRouter key there; stored keys are
 only ever shown masked. The gear button opens the model settings: pick a chat model and an
 embedding model from the suggested lists, or type any OpenRouter model id you like. The
