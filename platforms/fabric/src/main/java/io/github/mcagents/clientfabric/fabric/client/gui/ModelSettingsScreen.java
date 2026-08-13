@@ -30,6 +30,9 @@ public final class ModelSettingsScreen extends Screen {
     private static final int FIELD_WIDTH = 240;
     private static final int FIELD_HEIGHT = 20;
     private static final int ROW_GAP = 30;
+    /** Vertical space reserved for a field's label, so the two never collide. */
+    private static final int LABEL_HEIGHT = 11;
+    private static final int ROW_SPACING = 8;
 
     private final LocalDatabase database;
     private final Screen parent;
@@ -38,6 +41,17 @@ public final class ModelSettingsScreen extends Screen {
     private EditableDropdown chatModel;
     private EditableDropdown embeddingModel;
     private Button saveButton;
+
+    /**
+     * Where the layout actually put things.
+     *
+     * <p>Recorded rather than recomputed. The labels used to derive their own positions
+     * from {@code height / 2}, which drifted out of step with the fields and drew the
+     * embedding label on top of the embedding box.
+     */
+    private int contentLeft;
+    private int chatFieldTop;
+    private int embeddingFieldTop;
 
     /** Kept across a resize, which rebuilds every widget from scratch. */
     private ModelPreferences current = ModelPreferences.defaults();
@@ -51,23 +65,27 @@ public final class ModelSettingsScreen extends Screen {
 
     @Override
     protected void init() {
-        int left = (width - FIELD_WIDTH) / 2;
-        int top = height / 2 - ROW_GAP;
+        contentLeft = (width - FIELD_WIDTH) / 2;
+        int left = contentLeft;
+        // Each row is a label above a field. LABEL_HEIGHT reserves the label's line so the
+        // two can never overlap, whatever the window size.
+        chatFieldTop = height / 2 - ROW_GAP;
+        embeddingFieldTop = chatFieldTop + FIELD_HEIGHT + LABEL_HEIGHT + ROW_SPACING;
 
         chatModel = new EditableDropdown(font, ModelCatalog.SUGGESTED_CHAT_MODELS,
                 Component.translatable("gui.mcagents.models.chat"));
-        chatModel.setBounds(left, top, FIELD_WIDTH, FIELD_HEIGHT);
+        chatModel.setBounds(left, chatFieldTop, FIELD_WIDTH, FIELD_HEIGHT);
         chatModel.setValue(current.chatModel());
         addRenderableWidget(chatModel.field());
 
         embeddingModel = new EditableDropdown(font, ModelCatalog.SUGGESTED_EMBEDDING_MODELS,
                 Component.translatable("gui.mcagents.models.embedding"));
-        embeddingModel.setBounds(left, top + ROW_GAP + 12, FIELD_WIDTH, FIELD_HEIGHT);
+        embeddingModel.setBounds(left, embeddingFieldTop, FIELD_WIDTH, FIELD_HEIGHT);
         embeddingModel.setValue(current.embeddingModel());
         addRenderableWidget(embeddingModel.field());
 
         int buttonWidth = 100;
-        int buttonTop = top + ROW_GAP * 2 + 20;
+        int buttonTop = embeddingFieldTop + FIELD_HEIGHT + ROW_SPACING * 2;
 
         saveButton = addRenderableWidget(Button.builder(
                         Component.translatable("gui.mcagents.models.save"), button -> save())
@@ -81,7 +99,8 @@ public final class ModelSettingsScreen extends Screen {
 
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.done"), button -> onClose())
-                .bounds(left + FIELD_WIDTH - buttonWidth, buttonTop + ROW_GAP, buttonWidth, FIELD_HEIGHT)
+                .bounds(left + FIELD_WIDTH - buttonWidth, buttonTop + FIELD_HEIGHT + ROW_SPACING,
+                        buttonWidth, FIELD_HEIGHT)
                 .build());
 
         if (!loaded) {
@@ -150,19 +169,19 @@ public final class ModelSettingsScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
-        int left = (width - FIELD_WIDTH) / 2;
-        graphics.centeredText(font, title, width / 2, height / 2 - ROW_GAP - 34, 0xFFFFFFFF);
+        graphics.centeredText(font, title, width / 2, chatFieldTop - LABEL_HEIGHT - 24, 0xFFFFFFFF);
+        // Anchored to the fields themselves, so a label can never land inside its box.
         graphics.text(font, Component.translatable("gui.mcagents.models.chat"),
-                left, height / 2 - ROW_GAP - 12, 0xFFC0C0C8);
+                contentLeft, chatFieldTop - LABEL_HEIGHT, 0xFFC0C0C8);
         graphics.text(font, Component.translatable("gui.mcagents.models.embedding"),
-                left, height / 2 + 18, 0xFFC0C0C8);
+                contentLeft, embeddingFieldTop - LABEL_HEIGHT, 0xFFC0C0C8);
 
         chatModel.render(graphics, mouseX, mouseY);
         embeddingModel.render(graphics, mouseX, mouseY);
 
         if (waiting.isWaiting()) {
             graphics.centeredText(font, waiting.label(Component.translatable("gui.mcagents.waiting")),
-                    width / 2, height / 2 + ROW_GAP * 2 + 34, 0xFFFFFFFF);
+                    width / 2, embeddingFieldTop + FIELD_HEIGHT + ROW_SPACING, 0xFFFFFFFF);
         }
 
         // Last: an open list floats over everything, including the widgets above.

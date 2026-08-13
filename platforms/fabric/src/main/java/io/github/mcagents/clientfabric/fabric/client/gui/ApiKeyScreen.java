@@ -44,6 +44,20 @@ public final class ApiKeyScreen extends Screen {
     private EditBox entryBox;
     private List<ApiKey> keys = List.of();
 
+    /**
+     * Whether the key list has been read once.
+     *
+     * <p>This guard is load-bearing. {@code init()} used to call {@link #loadKeys()}
+     * unconditionally, and {@code loadKeys} calls {@code rebuildWidgets()}, which calls
+     * {@code init()} again — an endless rebuild that destroyed every widget several times a
+     * second. Nothing could hold focus, so the entry box could not be clicked into, and the
+     * database was queried forever.
+     */
+    private boolean loaded;
+
+    /** Kept across a rebuild, so a half-typed key is not thrown away. */
+    private String pendingEntry = "";
+
     public ApiKeyScreen(LocalDatabase database, Screen parent) {
         super(Component.translatable("gui.mcagents.keys.title"));
         this.database = database;
@@ -60,7 +74,11 @@ public final class ApiKeyScreen extends Screen {
         entryBox.setHint(Component.translatable("gui.mcagents.keys.add"));
         // Long enough for any provider key; the value itself is never rendered back.
         entryBox.setMaxLength(400);
+        entryBox.setValue(pendingEntry);
+        entryBox.setResponder(text -> pendingEntry = text);
         addRenderableWidget(entryBox);
+        // The player opened this screen to type a key; put the cursor where they expect it.
+        setInitialFocus(entryBox);
 
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.mcagents.keys.save"), button -> addKey())
@@ -84,13 +102,26 @@ public final class ApiKeyScreen extends Screen {
                 .bounds(left + FIELD_WIDTH - 100, height - 34, 100, LINE)
                 .build());
 
-        loadKeys();
+        if (!loaded) {
+            loadKeys();
+        }
     }
 
+    /**
+     * Reads the stored keys and rebuilds only if the list actually changed.
+     *
+     * <p>Rebuilding unconditionally is what caused the endless loop described on
+     * {@link #loaded}: a rebuild re-enters {@code init()}, so a read that always rebuilds
+     * never terminates.
+     */
     private void loadKeys() {
         onClientThread(waiting.track(database.apiKeys().findAll()), stored -> {
+            boolean changed = !stored.equals(keys);
             keys = stored;
-            rebuildWidgets();
+            loaded = true;
+            if (changed) {
+                rebuildWidgets();
+            }
         }, "Could not read the stored API keys");
     }
 
@@ -102,6 +133,7 @@ public final class ApiKeyScreen extends Screen {
         // Cleared immediately: the key must not sit in a visible text box after it has been
         // stored, where it would survive into a screenshot or a stream.
         entryBox.setValue("");
+        pendingEntry = "";
 
         onClientThread(waiting.track(database.apiKeys().add(value)), stored -> loadKeys(),
                 "Could not store the API key");
