@@ -89,6 +89,9 @@ rows for this repository's own instructions are appended after them.
 | Report finished work back to the user | `{shared}/rules/work-summary.md` |
 | Need project facts, commands, or orientation | [`.agents/wiki/context/repository-map.md`](.agents/wiki/context/repository-map.md) |
 | Do anything at all in this project | [`.agents/rules/repository.md`](.agents/rules/repository.md) |
+| Touch the local database — a table, a query, or a schema change | [`.agents/database/schema.md`](.agents/database/schema.md) |
+| Store, display, log, or send an OpenRouter API key | [`.agents/security/api-keys.md`](.agents/security/api-keys.md) |
+| Call a model provider, or choose a chat or embedding model | [`.agents/api/openrouter.md`](.agents/api/openrouter.md) |
 
 ## Reading Order
 

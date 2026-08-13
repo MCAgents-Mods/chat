@@ -14,6 +14,24 @@ description: Index of MCAgentsClient's local instruction folders — the rules t
 |---|---|
 | [`../rules/repository.md`](../rules/repository.md) | The rules specific to this repository — module boundaries, offline-first mandate, build commands, what must not be introduced. |
 
+## database
+
+| File | Purpose |
+|---|---|
+| [`../database/schema.md`](../database/schema.md) | The local SQLite tables, the invariants code depends on, and how a schema change ships without destroying player data. |
+
+## security
+
+| File | Purpose |
+|---|---|
+| [`../security/api-keys.md`](../security/api-keys.md) | Where an OpenRouter key may and may not appear, and how a rejected one is rotated. |
+
+## api
+
+| File | Purpose |
+|---|---|
+| [`../api/openrouter.md`](../api/openrouter.md) | Request shape, model selection, retry and timeout policy, and what is never sent to the model provider. |
+
 ## Maintenance
 
 Any instruction file added to or removed from `.agents/` is reflected here **in the same
