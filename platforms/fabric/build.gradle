@@ -43,6 +43,11 @@ dependencies {
 
     implementation project(':mcagents-fabric-api')
     implementation project(':mcagents-fabric-common')
+
+    // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
+    // Bundling it is what lets the mod store data on a machine that has never been online.
+    implementation libs.sqlite.jdbc
+    include libs.sqlite.jdbc
 }
 
 // api/ and common/ are plain JVM modules, so their classes are merged into the mod jar
