@@ -1,0 +1,21 @@
+{
+  "key.categories.mcagents.main": "MCAgents",
+  "key.mcagents.open_chat": "Open agent chat",
+
+  "gui.mcagents.title": "MCAgents",
+  "gui.mcagents.search": "Search chats",
+  "gui.mcagents.prompt": "Ask the agent",
+  "gui.mcagents.send": "Send",
+  "gui.mcagents.waiting": "Waiting",
+
+  "gui.mcagents.session.new": "New chat",
+  "gui.mcagents.sessions.loading": "Loading chats",
+  "gui.mcagents.sessions.empty": "No chats yet",
+
+  "gui.mcagents.conversation.loading": "Loading messages",
+  "gui.mcagents.conversation.empty": "Ask something to start",
+
+  "gui.mcagents.role.user": "You",
+  "gui.mcagents.role.assistant": "Agent",
+  "gui.mcagents.role.system": "Context"
+}
