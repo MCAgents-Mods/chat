@@ -1,0 +1,8 @@
+plugins {
+    alias(libs.plugins.fabric.loom) apply false
+}
+
+allprojects {
+    group = 'io.github.mcagents'
+    version = providers.gradleProperty('project-version').get()
+}

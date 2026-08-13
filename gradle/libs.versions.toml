@@ -1,0 +1,26 @@
+# Platform coordinates for MCAgentsClient.
+#
+# gradle.properties carries the project's identity only (organization, repository,
+# version). Everything that pins a dependency lives here.
+#
+# Check https://meta.fabricmc.net/v2/versions/ before changing a Minecraft, loader, or
+# Fabric API version. Minecraft 26.x publishes no Yarn mappings and no intermediary —
+# Fabric Loom resolves Mojang's official mappings on its own, so there is no mappings
+# coordinate to declare.
+
+[versions]
+java = "25"
+minecraft = "26.2"
+fabric-loader = "0.19.3"
+fabric-api = "0.157.0+26.2"
+fabric-loom = "1.17.19"
+sqlite-jdbc = "3.53.2.1"
+
+[libraries]
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+
+[plugins]
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }

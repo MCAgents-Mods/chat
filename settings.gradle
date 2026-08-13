@@ -1,0 +1,26 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    // Downloads a matching JDK when the toolchain the build asks for is not installed.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'client-fabric'
+
+include 'mcagents-fabric-api'
+project(':mcagents-fabric-api').projectDir = file('api')
+
+include 'mcagents-fabric-common'
+project(':mcagents-fabric-common').projectDir = file('common')
+
+include 'mcagents-fabric'
+project(':mcagents-fabric').projectDir = file('platforms/fabric')
