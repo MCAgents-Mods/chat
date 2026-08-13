@@ -29,6 +29,15 @@ final class ConversationPanel extends ScrollablePanel {
     private boolean loading;
     private int wrappedWidth = -1;
 
+    /**
+     * A failure to show at the end of the conversation, or null.
+     *
+     * <p>It lives here rather than in the log because the log is not where the player is
+     * looking. An agent that cannot answer must say why in the place the answer would have
+     * appeared.
+     */
+    private String errorText;
+
     /** One rendered line: the text, and the colour its speaker is drawn in. */
     private record Line(FormattedCharSequence text, int colour) {
     }
@@ -39,6 +48,15 @@ final class ConversationPanel extends ScrollablePanel {
 
     void setMessages(List<ChatMessage> messages) {
         this.messages = List.copyOf(messages);
+        this.loading = false;
+        this.errorText = null;
+        rewrap();
+        scrollToBottom();
+    }
+
+    /** Shows a failure after the last message, in red, without storing it. */
+    void showError(String text) {
+        this.errorText = text;
         this.loading = false;
         rewrap();
         scrollToBottom();
@@ -53,6 +71,7 @@ final class ConversationPanel extends ScrollablePanel {
     /** Shows the panel with nothing in it — a new conversation with no messages yet. */
     void clear() {
         this.loading = false;
+        this.errorText = null;
         this.messages = List.of();
         this.lines.clear();
     }
@@ -75,7 +94,7 @@ final class ConversationPanel extends ScrollablePanel {
 
     @Override
     protected void renderContent(GuiGraphicsExtractor graphics, int contentTop, int mouseX, int mouseY) {
-        if (lines.isEmpty()) {
+        if (lines.isEmpty() && errorText == null) {
             Component message = loading
                     ? Component.translatable("gui.mcagents.conversation.loading")
                     : Component.translatable("gui.mcagents.conversation.empty");
@@ -119,7 +138,16 @@ final class ConversationPanel extends ScrollablePanel {
             // A blank line between messages, so a wall of text reads as a conversation.
             lines.add(new Line(FormattedCharSequence.EMPTY, colour));
         }
+
+        if (errorText != null) {
+            Component body = Component.literal("! " + errorText);
+            for (FormattedCharSequence wrapped : font.split(body, available)) {
+                lines.add(new Line(wrapped, ERROR));
+            }
+        }
     }
+
+    private static final int ERROR = 0xFFFF8080;
 
     private static int colourFor(ChatRole role) {
         return switch (role) {

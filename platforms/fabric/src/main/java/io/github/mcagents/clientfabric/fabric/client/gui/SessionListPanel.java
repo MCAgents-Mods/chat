@@ -20,8 +20,8 @@ final class SessionListPanel extends ScrollablePanel {
 
     private static final int ROW_HEIGHT = 12;
 
-    /** Width of the delete hit zone at the right of a row. */
-    private static final int DELETE_WIDTH = 10;
+    /** Width of each control at the right of a row: rename, then delete. */
+    private static final int CONTROL_WIDTH = 10;
 
     private final Font font;
     private final Consumer<ChatSession> onSelect;
@@ -96,12 +96,15 @@ final class SessionListPanel extends ScrollablePanel {
 
             // The delete control only appears under the cursor: a permanent row of crosses
             // beside every conversation invites the one click that cannot be undone.
-            int available = isHovered ? textWidth - DELETE_WIDTH : textWidth;
+            int available = isHovered ? textWidth - CONTROL_WIDTH * 2 : textWidth;
             String title = font.plainSubstrByWidth(session.title(), available);
             graphics.text(font, title, x + PADDING, rowTop, isSelected ? 0xFFFFFFFF : TEXT);
 
             if (isHovered) {
+                boolean overRename = mouseX >= renameLeft() && mouseX < deleteLeft();
                 boolean overDelete = mouseX >= deleteLeft() && mouseX < x + width - 2;
+                graphics.text(font, Component.literal("\u270e"),
+                        renameLeft(), rowTop, overRename ? 0xFF9CC4FF : TEXT_DIM);
                 graphics.text(font, Component.literal("\u00d7"),
                         deleteLeft(), rowTop, overDelete ? 0xFFFF6060 : TEXT_DIM);
             }
@@ -109,7 +112,11 @@ final class SessionListPanel extends ScrollablePanel {
     }
 
     private int deleteLeft() {
-        return x + width - DELETE_WIDTH - 4;
+        return x + width - CONTROL_WIDTH - 4;
+    }
+
+    private int renameLeft() {
+        return deleteLeft() - CONTROL_WIDTH;
     }
 
     /**
@@ -131,6 +138,10 @@ final class SessionListPanel extends ScrollablePanel {
 
         if (mouseX >= deleteLeft() && mouseX < x + width - 2) {
             onDelete.accept(session);
+            return true;
+        }
+        if (mouseX >= renameLeft() && mouseX < deleteLeft()) {
+            onRename.accept(session);
             return true;
         }
 

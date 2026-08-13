@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
 import io.github.mcagents.clientfabric.api.agent.Agent;
+import io.github.mcagents.clientfabric.api.agent.ModelException;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
@@ -71,11 +72,6 @@ public final class AgentChatScreen extends Screen {
     /** Text kept across a resize, which rebuilds every widget from scratch. */
     private String pendingSearch = "";
     private String pendingPrompt = "";
-
-    /** The conversation being renamed in place, or null when nothing is. */
-    private String renamingId;
-    private String renameDraft = "";
-    private EditBox renameBox;
 
     public AgentChatScreen() {
         super(Component.translatable("gui.mcagents.title"));
@@ -171,23 +167,6 @@ public final class AgentChatScreen extends Screen {
                         height - MARGIN - FOOTER_HEIGHT, sendWidth, LINE)
                 .build());
 
-        renameBox = null;
-        if (renamingId != null) {
-            sessionList.rowTop(renamingId).ifPresent(rowTop -> {
-                renameBox = new EditBox(font, MARGIN + 1, rowTop - 2, sidebarWidth - 2,
-                        sessionList.rowHeight() + 2, Component.translatable("gui.mcagents.session.rename"));
-                renameBox.setMaxLength(255);
-                renameBox.setValue(renameDraft);
-                renameBox.setResponder(text -> renameDraft = text);
-                addRenderableWidget(renameBox);
-                setInitialFocus(renameBox);
-            });
-            if (renameBox == null) {
-                // The row scrolled out of view; there is nothing to edit over.
-                renamingId = null;
-            }
-        }
-
         if (!hasStorage()) {
             // The one control that matters when storage is down. Placed where the send
             // button would be, because that is where the player is already looking.
@@ -275,30 +254,16 @@ public final class AgentChatScreen extends Screen {
      * bouncing the player to a separate screen to change it costs more than it explains.
      */
     private void beginRename(ChatSession session) {
-        if (!hasStorage()) {
+        if (!hasStorage() || minecraft == null) {
             return;
         }
-        renamingId = session.id();
-        renameDraft = session.title();
-        rebuildWidgets();
+        minecraft.setScreenAndShow(new RenameSessionScreen(session, this,
+                title -> renameSession(session.id(), title)));
     }
 
-    private void commitRename() {
-        String id = renamingId;
-        String title = renameBox == null ? renameDraft : renameBox.getValue().trim();
-        cancelRename();
-
-        if (id == null || title.isEmpty()) {
-            return;
-        }
-        onClientThread(waiting.track(database.chat().renameSession(id, title)),
+    private void renameSession(String sessionId, String title) {
+        onClientThread(waiting.track(database.chat().renameSession(sessionId, title)),
                 renamed -> loadSessions(pendingSearch), "Could not rename the conversation");
-    }
-
-    private void cancelRename() {
-        renamingId = null;
-        renameDraft = "";
-        rebuildWidgets();
     }
 
     /**
@@ -388,6 +353,11 @@ public final class AgentChatScreen extends Screen {
                     onClientThread(sessionId, id -> {
                         activeSessionId = id;
                         loadMessages(id);
+                        // Refresh the sidebar here, not after the answer arrives. The
+                        // conversation exists the moment the message is stored, and tying
+                        // its appearance to a successful answer meant a failed request left
+                        // the list showing "No chats yet" for a chat that was already saved.
+                        loadSessions(pendingSearch);
                     });
                     return agent.respond(sessionId, prompt)
                             .thenCompose(answer -> database.chat()
@@ -395,10 +365,53 @@ public final class AgentChatScreen extends Screen {
                                     .thenApply(ChatMessage::sessionId));
                 });
 
-        onClientThread(waiting.track(exchange), sessionId -> {
-            loadMessages(sessionId);
-            loadSessions(pendingSearch);
-        }, "Could not complete the exchange");
+        waiting.track(exchange).whenComplete((sessionId, failure) -> {
+            if (minecraft == null) {
+                return;
+            }
+            minecraft.execute(() -> {
+                if (minecraft == null || minecraft.gui.screen() != this) {
+                    return;
+                }
+                if (failure != null) {
+                    // The provider's own wording, shown where the answer would have been.
+                    // Logging alone left the player watching a conversation that simply
+                    // stopped, with no way to tell a bad key from a bad model id.
+                    LOGGER.error("The exchange failed", failure);
+                    conversation.showError(describe(failure));
+                    loadSessions(pendingSearch);
+                    return;
+                }
+                loadMessages(sessionId);
+                loadSessions(pendingSearch);
+            });
+        });
+    }
+
+    /**
+     * Turns a failure into something worth reading.
+     *
+     * <p>A {@link ModelException} already carries the provider's own message, which is more
+     * useful than anything this mod could invent — an unserved model id, a rejected key, a
+     * rate limit. Anything else falls back to the exception's own text.
+     */
+    private static String describe(Throwable failure) {
+        Throwable cause = failure instanceof java.util.concurrent.CompletionException
+                ? failure.getCause()
+                : failure;
+        if (cause instanceof ModelException modelFailure) {
+            return switch (modelFailure.kind()) {
+                case NO_KEY -> "No usable OpenRouter API key. Add one with the key button.";
+                case AUTHENTICATION -> "The provider rejected every stored key: "
+                        + modelFailure.getMessage();
+                case RATE_LIMIT -> "Rate limited by the provider: " + modelFailure.getMessage();
+                default -> modelFailure.getMessage();
+            };
+        }
+        String message = cause == null ? null : cause.getMessage();
+        return message == null || message.isBlank()
+                ? cause == null ? "Unknown failure" : cause.getClass().getSimpleName()
+                : message;
     }
 
     /**
@@ -492,11 +505,6 @@ public final class AgentChatScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (renameBox != null && !renameBox.isMouseOver(event.x(), event.y())) {
-            // Clicking away commits, which is what a player expects from an inline edit.
-            commitRename();
-            return true;
-        }
         if (sessionList.click(event.x(), event.y(), doubleClick)) {
             return true;
         }
@@ -516,16 +524,6 @@ public final class AgentChatScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (renamingId != null) {
-            if (isEnter(event.key())) {
-                commitRename();
-                return true;
-            }
-            if (event.key() == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
-                cancelRename();
-                return true;
-            }
-        }
         // Enter sends from the prompt box; every other key belongs to the focused widget.
         if (promptBox.isFocused() && isEnter(event.key())) {
             send();
