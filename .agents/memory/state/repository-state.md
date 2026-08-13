@@ -22,15 +22,18 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 * **The complete local storage layer.** `api.model` records, `api.storage` contracts
   (`LocalDatabase`, `ApiKeyRepository`, `ChatRepository`, `ContentRepository` — all
   `CompletableFuture`), and `common.storage.sqlite` implementing them against the schema
-  the user specified. Tests live in `common/`; 63 pass.
+  the user specified. Tests live in `common/`; 77 pass.
 * `MCAgentsClientMod` opens the database asynchronously at startup and exposes it as
   `Optional<LocalDatabase>`; a failure to open leaves the game running.
 * **The chat screen.** `AgentChatScreen` with a session list on the left, the conversation
   on the right, a prompt box and Send along the bottom, a search box over the session list,
   and the animated `WaitingIndicator` driven by whichever futures are actually in flight.
   Opened with `G`, registered through `KeyMappingHelper`.
-* `AgentReply` — the seam the OpenRouter client will implement. `AgentReply.notConfigured()`
-  is wired in and tells the player the agent is not connected yet.
+* **The OpenRouter client.** `api.agent` contracts (`Agent`, `ModelClient`, `ChatRequest`,
+  `ChatCompletion`, `TokenUsage`, `ModelException`, `ApiKeySource`) and `common.agent` with
+  a swappable `HttpTransport`, key rotation on 401/402/403, retry with jittered backoff on
+  429/5xx/transport, and timeouts. Wired into the chat screen through `AgentFactory`.
+  `AgentReply` is gone — the contract moved to `api/` as `Agent`, as planned.
 * **Model selection.** A `settings` table, `SettingsRepository`, `ModelPreferences`, and
   `ModelCatalog` with the suggested chat and embedding models. `ModelSettingsScreen` is
   reached from the gear button on the chat screen; `EditableDropdown` lets the player pick
@@ -42,12 +45,9 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 ## What does not exist yet
 
-* The OpenRouter client, so no real answers — `AgentReply.notConfigured()` is what runs.
-  The stored model selection is therefore not used by anything yet.
+* Streaming responses. An answer arrives whole, after the whole generation.
 * The embedding and retrieval layer.
 * The content browser and the key-management screen. Only the chat screen exists.
-* An `api/` contract for the agent: `AgentReply` currently lives in the platform module
-  because it has no implementation yet. It moves to `api/` when one exists.
 * Any download path from the central service — `ContentRepository` can store a pack, but
   nothing fetches one yet.
 * Any CI workflow.
