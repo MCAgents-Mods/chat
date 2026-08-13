@@ -35,6 +35,12 @@ dependencies {
     // jar with Loom's `include`.
     implementation libs.sqlite.jdbc
 
+    // Minecraft ships Gson, so it is present at runtime in the game and must NOT be
+    // bundled. compileOnly here says exactly that: compile against it, ship nothing.
+    // Tests run outside the game, so they need it on their own runtime classpath.
+    compileOnly libs.gson
+    testImplementation libs.gson
+
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher
 }
