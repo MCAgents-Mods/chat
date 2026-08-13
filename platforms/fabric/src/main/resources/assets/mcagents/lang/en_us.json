@@ -17,5 +17,11 @@
 
   "gui.mcagents.role.user": "You",
   "gui.mcagents.role.assistant": "Agent",
-  "gui.mcagents.role.system": "Context"
+  "gui.mcagents.role.system": "Context",
+
+  "gui.mcagents.models.title": "Models",
+  "gui.mcagents.models.chat": "Chat model",
+  "gui.mcagents.models.embedding": "Embedding model",
+  "gui.mcagents.models.save": "Save",
+  "gui.mcagents.models.reset": "Use defaults"
 }

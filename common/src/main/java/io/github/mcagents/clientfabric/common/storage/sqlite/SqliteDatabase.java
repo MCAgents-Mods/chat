@@ -5,6 +5,7 @@ import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.api.storage.SettingsRepository;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
@@ -46,6 +47,7 @@ public final class SqliteDatabase implements LocalDatabase {
     private final ApiKeyRepository apiKeys;
     private final ContentRepository contents;
     private final ChatRepository chat;
+    private final SettingsRepository settings;
 
     private SqliteDatabase(Path file, Connection connection, ExecutorService executor) {
         this.file = file;
@@ -56,6 +58,7 @@ public final class SqliteDatabase implements LocalDatabase {
         this.apiKeys = new SqliteApiKeyRepository(worker);
         this.contents = new SqliteContentRepository(worker);
         this.chat = new SqliteChatRepository(worker);
+        this.settings = new SqliteSettingsRepository(worker);
     }
 
     /**
@@ -135,6 +138,11 @@ public final class SqliteDatabase implements LocalDatabase {
     @Override
     public ChatRepository chat() {
         return chat;
+    }
+
+    @Override
+    public SettingsRepository settings() {
+        return settings;
     }
 
     @Override
