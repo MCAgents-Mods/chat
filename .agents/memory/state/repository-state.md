@@ -25,10 +25,20 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   the user specified. 33 tests in `common/`, all passing.
 * `MCAgentsClientMod` opens the database asynchronously at startup and exposes it as
   `Optional<LocalDatabase>`; a failure to open leaves the game running.
+* **The chat screen.** `AgentChatScreen` with a session list on the left, the conversation
+  on the right, a prompt box and Send along the bottom, a search box over the session list,
+  and the animated `WaitingIndicator` driven by whichever futures are actually in flight.
+  Opened with `G`, registered through `KeyMappingHelper`.
+* `AgentReply` — the seam the OpenRouter client will implement. `AgentReply.notConfigured()`
+  is wired in and tells the player the agent is not connected yet.
 
 ## What does not exist yet
 
-* The OpenRouter client, the embedding and retrieval layer, the GUI.
+* The OpenRouter client, so no real answers — `AgentReply.notConfigured()` is what runs.
+* The embedding and retrieval layer.
+* The content browser and the key-management screen. Only the chat screen exists.
+* An `api/` contract for the agent: `AgentReply` currently lives in the platform module
+  because it has no implementation yet. It moves to `api/` when one exists.
 * Any download path from the central service — `ContentRepository` can store a pack, but
   nothing fetches one yet.
 * Any CI workflow.
@@ -51,6 +61,16 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   lookup is unreliable under a mod loader's classloader.
 * Tests use JUnit 6.1.3 and live in `common/` only — `api/` is contracts and
   `platforms/fabric/` needs a running game.
+* Minecraft 26.x reworked the client GUI API: `GuiGraphicsExtractor` replaces
+  `GuiGraphics`, `extractRenderState` replaces `render`, the current screen lives on
+  `Minecraft#gui`, and input arrives as `KeyEvent`/`MouseButtonEvent` records. The
+  differences are tabulated in `.agents/wiki/context/repository-map.md`.
+
+## Verification status
+
+The chat screen is **compile-verified only**. This environment is headless, so
+`runClient` has never been executed against it; layout, scrolling, and the waiting
+animation have not been seen on screen. Run it before trusting the visuals.
 * Companion repository for the central Knowledge Pack service:
   `MCAgents/server-fabric-expressjs`.
 
@@ -61,4 +81,5 @@ this repository; the override table in `.agents/index/root-index.md` is empty.
 
 ## Next step
 
-The chat GUI on `feat/chat-gui`, then the OpenRouter client and retrieval.
+The OpenRouter client behind `AgentReply`, then embedding and retrieval, then the content
+browser that downloads packs from `MCAgents/server-fabric-expressjs`.

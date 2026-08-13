@@ -32,6 +32,18 @@ project is developed under.
   * 33 tests in `common/`, run with `./gradlew :mcagents-fabric-common:test`.
 * **`org.xerial:sqlite-jdbc` 3.53.2.1**, bundled into the mod jar with Loom's `include` so
   the mod stores data on a machine that has never been online.
+* **The chat screen**, opened with `G`:
+  * a session list on the left with a search box and a "new chat" button, a conversation
+    on the right, and a prompt box with Send along the bottom;
+  * an animated `Waiting.` / `Waiting..` / `Waiting...` state that runs while a
+    `CompletableFuture` is pending and stops when it settles, whether it succeeded or
+    failed;
+  * results applied on the client thread through `Minecraft#execute`, and discarded if the
+    player has closed the screen in the meantime;
+  * `AgentReply`, the seam the OpenRouter client will implement. Until it exists the screen
+    stores the player's message and answers that the agent is not connected yet, rather
+    than failing.
+* **`en_us` translations** for every string the screen shows.
 
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
@@ -60,3 +72,8 @@ project is developed under.
   Fabric API and the loader are declared with plain `implementation` for the same reason.
 * `api/` and `common/` are plain `java-library` modules merged into the mod jar rather than
   nested as Jar-in-Jar mods; they are not Fabric mods and carry no `fabric.mod.json`.
+* Minecraft 26.x reworked the client GUI API — `GuiGraphicsExtractor` for `GuiGraphics`,
+  `extractRenderState` for `render`, the current screen on `Minecraft#gui`, and input as
+  `KeyEvent`/`MouseButtonEvent` records. The full list is in the repository map.
+* The chat screen is compile-verified. It has not been run in a real client, because the
+  environment it was built in has no display.
