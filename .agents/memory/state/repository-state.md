@@ -115,13 +115,30 @@ caught:
   second, so nothing could hold focus and the entry box could not be clicked into — and the
   database was queried in a loop. Guarded by a `loaded` flag, and a rebuild now happens only
   when the list actually changed.
-* **No way to rename a conversation.** Double-click a row to edit in place.
+* **No way to rename a conversation.** First done as a double-click editing in place, then
+  replaced by a pencil control — see the second round below.
 * **No way to delete one.** Hover a row for a `×`, behind a confirmation, because it
   cascades to every message and cannot be undone.
 
-The pattern worth remembering: every one of these is a layout or lifecycle problem, and the
-whole test suite lives in `common/`, where there is no layout and no lifecycle. **Screens
-are only verified by running them.**
+A second round, same source:
+
+* **A new conversation did not appear in the sidebar.** `loadSessions()` ran only on the
+  success path of an exchange, so when the agent failed the conversation was saved but the
+  list still read "No chats yet" until something else refreshed it. The list now refreshes
+  as soon as the message is stored.
+* **A failed answer showed nothing at all.** The failure was logged and dropped. The
+  player watched a conversation that simply stopped, unable to tell a missing key from an
+  unserved model id. `ConversationPanel.showError` now puts the provider's own message where
+  the answer would have been.
+* Rename moved from a double-click to a pencil beside the delete cross, opening
+  `RenameSessionScreen`. A control that says what it does beats a gesture that has to be
+  discovered.
+
+The pattern worth remembering: every one of these is a layout, lifecycle, or
+error-presentation problem, and the whole test suite lives in `common/`, where there is no
+layout, no lifecycle, and no player to show an error to. **Screens are only verified by
+running them.** Also: an error that only reaches the log is, from the player's side,
+identical to no error at all — that mistake has now been made twice.
 
 ## Known gap: nothing tells a new player the key is G
 
