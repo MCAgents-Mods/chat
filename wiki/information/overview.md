@@ -72,6 +72,10 @@ a "new chat" button, the selected conversation on the right, and a prompt box al
 bottom. Every conversation is kept, titled, and searchable — including by what was said in
 it, not only by its title.
 
+The gear button opens the model settings. Pick a chat model and an embedding model from the
+suggested lists, or type any OpenRouter model id you like — the lists are a convenience, not
+a limit, because OpenRouter adds models faster than this mod ships.
+
 ## What is planned but not built
 
 The mod does not yet call OpenRouter, so the agent stores what you ask and replies that it

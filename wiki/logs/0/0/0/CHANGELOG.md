@@ -43,8 +43,14 @@ project is developed under.
   * `AgentReply`, the seam the OpenRouter client will implement. Until it exists the screen
     stores the player's message and answers that the agent is not connected yet, rather
     than failing.
-* **`en_us` translations** for every string the screen shows.
-
+* **Model selection.** A `settings` table appended to the schema, `SettingsRepository`,
+  `ModelPreferences`, and `ModelCatalog`. The settings screen is reached from the chat
+  screen and offers both a chat model and an embedding model through `EditableDropdown` — a
+  text field with a suggestion list attached, so the player can pick a known model **or type
+  any id at all**. The lists are suggestions, never a whitelist: a model the mod has not
+  heard of is stored as typed, and a blank field resolves to the catalog default rather than
+  to no model.
+* **`en_us` translations** for every string the screens show.
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
   table. The shared instruction set is resolved over the connector and never copied here.
@@ -75,5 +81,5 @@ project is developed under.
 * Minecraft 26.x reworked the client GUI API — `GuiGraphicsExtractor` for `GuiGraphics`,
   `extractRenderState` for `render`, the current screen on `Minecraft#gui`, and input as
   `KeyEvent`/`MouseButtonEvent` records. The full list is in the repository map.
-* The chat screen is compile-verified. It has not been run in a real client, because the
-  environment it was built in has no display.
+* The chat screen and the model settings screen are compile-verified. Neither has been run
+  in a real client, because the environment they were built in has no display.

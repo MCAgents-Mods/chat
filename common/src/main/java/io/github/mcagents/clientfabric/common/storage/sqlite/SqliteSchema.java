@@ -65,7 +65,15 @@ final class SqliteSchema {
             )
             """,
             "CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages(session_id)",
-            "CREATE INDEX IF NOT EXISTS idx_content_category ON contents(category_id)");
+            "CREATE INDEX IF NOT EXISTS idx_content_category ON contents(category_id)",
+            // Appended, never reordered: the order of this list is the migration history.
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key VARCHAR(64) PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """);
 
     private SqliteSchema() {
         throw new AssertionError("No instances.");

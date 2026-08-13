@@ -99,6 +99,14 @@ public final class AgentChatScreen extends Screen {
                         Component.translatable("gui.mcagents.session.new")))
                 .build());
 
+        addRenderableWidget(Button.builder(
+                        Component.literal("⚙"),
+                        button -> openModelSettings())
+                .bounds(width - MARGIN - LINE, MARGIN, LINE, LINE)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
+                        Component.translatable("gui.mcagents.models.title")))
+                .build());
+
         sessionList = new SessionListPanel(font, this::openSession);
         sessionList.setBounds(MARGIN, contentTop, sidebarWidth, contentHeight);
 
@@ -166,6 +174,14 @@ public final class AgentChatScreen extends Screen {
         activeSessionId = session.id();
         loadMessages(session.id());
         updateSendState();
+    }
+
+    private void openModelSettings() {
+        if (minecraft != null) {
+            // Passing this screen as the parent means closing the settings returns here
+            // with the conversation still open.
+            minecraft.setScreenAndShow(new ModelSettingsScreen(database, this));
+        }
     }
 
     private void createSession() {

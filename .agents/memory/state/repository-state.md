@@ -31,10 +31,16 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   Opened with `G`, registered through `KeyMappingHelper`.
 * `AgentReply` — the seam the OpenRouter client will implement. `AgentReply.notConfigured()`
   is wired in and tells the player the agent is not connected yet.
+* **Model selection.** A `settings` table, `SettingsRepository`, `ModelPreferences`, and
+  `ModelCatalog` with the suggested chat and embedding models. `ModelSettingsScreen` is
+  reached from the gear button on the chat screen; `EditableDropdown` lets the player pick
+  from the list **or type any model id**, because the lists are suggestions, not a
+  whitelist.
 
 ## What does not exist yet
 
 * The OpenRouter client, so no real answers — `AgentReply.notConfigured()` is what runs.
+  The stored model selection is therefore not used by anything yet.
 * The embedding and retrieval layer.
 * The content browser and the key-management screen. Only the chat screen exists.
 * An `api/` contract for the agent: `AgentReply` currently lives in the platform module
@@ -61,6 +67,11 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   lookup is unreliable under a mod loader's classloader.
 * Tests use JUnit 6.1.3 and live in `common/` only — `api/` is contracts and
   `platforms/fabric/` needs a running game.
+* Companion repository for the central Knowledge Pack service:
+  `MCAgents/server-fabric-expressjs`.
+* The suggested model lists are **not a whitelist**. `EditableDropdown` offers them and
+  also accepts anything typed, and nothing validates a model id locally — OpenRouter's own
+  rejection is the error the player sees.
 * Minecraft 26.x reworked the client GUI API: `GuiGraphicsExtractor` replaces
   `GuiGraphics`, `extractRenderState` replaces `render`, the current screen lives on
   `Minecraft#gui`, and input arrives as `KeyEvent`/`MouseButtonEvent` records. The
@@ -68,11 +79,10 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 ## Verification status
 
-The chat screen is **compile-verified only**. This environment is headless, so
-`runClient` has never been executed against it; layout, scrolling, and the waiting
-animation have not been seen on screen. Run it before trusting the visuals.
-* Companion repository for the central Knowledge Pack service:
-  `MCAgents/server-fabric-expressjs`.
+The chat screen and the model settings screen are **compile-verified only**. This
+environment is headless, so `runClient` has never been executed against them; layout,
+scrolling, the dropdown overlay, and the waiting animation have not been seen on screen.
+Run it before trusting the visuals. Everything under `common/` is covered by tests.
 
 ## Shared instruction set
 

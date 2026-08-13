@@ -35,9 +35,9 @@ exists because the architecture mentions it — check.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`), `api.storage` (`LocalDatabase` and the three repository interfaces). | The OpenRouter and retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.storage` (`LocalDatabase` and the four repository interfaces). | The OpenRouter and retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
 | `common/` | `mcagents-fabric-common` | `ClientPaths`, and `common.storage.sqlite` — the SQLite implementation of every storage contract. | The OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, and `client.gui` — the chat screen and its panels. | Mixins, context injection, the content browser. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, and `client.gui` — the chat screen, its panels, and the model settings screen. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -66,6 +66,9 @@ entry point. What is worth knowing before changing it:
   database", because that file is the player's whole history.
 * **Search text is escaped** before it reaches a `LIKE` clause, so typing `100%` searches
   for that rather than matching everything.
+* **The `settings` table was appended to `SqliteSchema`, not inserted.** That list's order
+  is the migration history — see [`../../database/schema.md`](../../database/schema.md),
+  which is the authority on every rule in this section.
 
 ## Where versions live
 

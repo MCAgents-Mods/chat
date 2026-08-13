@@ -32,6 +32,9 @@ public interface LocalDatabase extends AutoCloseable {
     /** Conversations and their messages. */
     ChatRepository chat();
 
+    /** Player preferences, including the selected chat and embedding models. */
+    SettingsRepository settings();
+
     /**
      * Closes the store and stops the thread it runs its work on. Pending work is allowed
      * to finish first. Calling this twice is harmless.
