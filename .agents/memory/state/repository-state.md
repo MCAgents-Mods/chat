@@ -17,14 +17,20 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 * **A working multi-module Gradle build.** `./gradlew build` is green and produces a
   loadable mod jar at `platforms/fabric/build/libs/mcagents-client-fabric-0.0.0.jar`,
   carrying all three modules' classes, `fabric.mod.json`, and the license.
-* One class per module: `MCAgents` (identity and on-disk layout), `ClientPaths` (resolves
-  that layout from a game directory it is handed), `MCAgentsClientMod` (the
-  `ClientModInitializer`).
+* `MCAgents` (identity and on-disk layout) and `ClientPaths` (resolves that layout from a
+  game directory it is handed).
+* **The complete local storage layer.** `api.model` records, `api.storage` contracts
+  (`LocalDatabase`, `ApiKeyRepository`, `ChatRepository`, `ContentRepository` — all
+  `CompletableFuture`), and `common.storage.sqlite` implementing them against the schema
+  the user specified. 33 tests in `common/`, all passing.
+* `MCAgentsClientMod` opens the database asynchronously at startup and exposes it as
+  `Optional<LocalDatabase>`; a failure to open leaves the game running.
 
 ## What does not exist yet
 
-* The SQLite layer, the OpenRouter client, the embedding and retrieval layer, the GUI.
-* Any test. No test source set exists in any module.
+* The OpenRouter client, the embedding and retrieval layer, the GUI.
+* Any download path from the central service — `ContentRepository` can store a pack, but
+  nothing fetches one yet.
 * Any CI workflow.
 
 ## Stack decisions already made
@@ -40,7 +46,11 @@ description: Current state of MCAgentsClient — what is built, what is not, and
   mod jar by the `jar` task, not nested as Jar-in-Jar mods.
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`, version `0.0.0`.
 * Local storage: SQLite at `{minecraft_dir}/MCAgents/data.db` via `org.xerial:sqlite-jdbc`
-  `3.53.2.1` — pinned in the catalog, not yet wired in.
+  `3.53.2.1`, bundled into the mod jar with Loom's `include`. One connection on one daemon
+  thread; `SQLiteDataSource` rather than `DriverManager`, because JDBC's `ServiceLoader`
+  lookup is unreliable under a mod loader's classloader.
+* Tests use JUnit 6.1.3 and live in `common/` only — `api/` is contracts and
+  `platforms/fabric/` needs a running game.
 * Companion repository for the central Knowledge Pack service:
   `MCAgents/server-fabric-expressjs`.
 
@@ -51,4 +61,4 @@ this repository; the override table in `.agents/index/root-index.md` is empty.
 
 ## Next step
 
-The SQLite layer on `feat/sqlite-database`, then the chat GUI on `feat/chat-gui`.
+The chat GUI on `feat/chat-gui`, then the OpenRouter client and retrieval.
