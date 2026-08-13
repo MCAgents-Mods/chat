@@ -5,7 +5,6 @@ import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
-import io.github.mcagents.clientfabric.fabric.client.MCAgentsCommands;
 import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
@@ -57,11 +56,11 @@ public final class MCAgentsClientMod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Registered first, and unconditionally. A failure to create a directory must not
-        // cost the player their key binding and their command — those are how they would
-        // find out what went wrong.
+        // Registered first, and before anything that can fail. Fabric throws if a key
+        // mapping is registered after Options exists, so this must happen here and only
+        // here — and because that throw would crash startup outright, a game that reaches
+        // the main menu has proven its key mappings registered.
         MCAgentsKeyMappings.register();
-        MCAgentsCommands.register();
         registerShutdownHook();
 
         paths = ClientPaths.under(FabricLoader.getInstance().getGameDir());

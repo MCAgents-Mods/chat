@@ -19,9 +19,11 @@ import org.slf4j.LoggerFactory;
  * a key binding is how a player reaches the mod, and losing it because a directory could not
  * be created leaves them with no way in and no way to find out why.
  *
- * <p>The binding is not the only way in. {@code /mcagents} does the same thing through an
- * entirely different registration path, so a keybind that is rebound, colliding, or broken
- * is an inconvenience rather than a dead end — see {@link MCAgentsCommands}.
+ * <p>Fabric refuses to register a key mapping once {@code Minecraft.options} exists, and
+ * throws when that happens — which crashes startup. So a game that reaches the main menu
+ * has already proven its key mappings registered, and a key that appears to do nothing is
+ * never a registration problem. It is something downstream, and
+ * {@link ChatScreenLauncher} makes sure that something is always visible.
  */
 public final class MCAgentsKeyMappings {
 
@@ -75,7 +77,7 @@ public final class MCAgentsKeyMappings {
                     .withStyle(ChatFormatting.RED);
         }
         InputConstants.Key bound = KeyMappingHelper.getBoundKeyOf(openChat);
-        if (MCAgentsCommands.isKeyUnbound(bound)) {
+        if (bound == null || bound.equals(InputConstants.UNKNOWN)) {
             return Component.literal("unbound — set it in Options, Controls, MCAgents")
                     .withStyle(ChatFormatting.YELLOW);
         }

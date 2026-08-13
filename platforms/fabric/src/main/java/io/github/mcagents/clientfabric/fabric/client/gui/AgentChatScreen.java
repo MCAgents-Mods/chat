@@ -6,6 +6,9 @@ import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
 import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.fabric.MCAgentsClientMod;
+import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -51,8 +54,9 @@ public final class AgentChatScreen extends Screen {
     private static final int LINE = 20;
     private static final int PROMPT_LIMIT = 4000;
 
-    private final LocalDatabase database;
-    private final Agent agent;
+    /** Null while storage is opening, or if it failed. The screen still opens either way. */
+    private LocalDatabase database;
+    private Agent agent;
     private final WaitingIndicator waiting = new WaitingIndicator();
 
     private SessionListPanel sessionList;
@@ -67,10 +71,28 @@ public final class AgentChatScreen extends Screen {
     private String pendingSearch = "";
     private String pendingPrompt = "";
 
-    public AgentChatScreen(LocalDatabase database, Agent agent) {
+    public AgentChatScreen() {
         super(Component.translatable("gui.mcagents.title"));
-        this.database = database;
-        this.agent = agent;
+        bindStorage();
+    }
+
+    /**
+     * Picks up storage if it is available.
+     *
+     * <p>Called on construction and again after a retry, so a player whose database opened
+     * late — or opened only after they pressed Retry — gets a working screen without
+     * reopening it.
+     */
+    private void bindStorage() {
+        LocalDatabase opened = MCAgentsClientMod.database().orElse(null);
+        this.database = opened;
+        this.agent = opened == null
+                ? null
+                : AgentFactory.create(opened, MCAgentsClientMod.paths());
+    }
+
+    private boolean hasStorage() {
+        return database != null;
     }
 
     @Override
@@ -98,6 +120,14 @@ public final class AgentChatScreen extends Screen {
                 .bounds(MARGIN + sidebarWidth - LINE, MARGIN, LINE, LINE)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
                         Component.translatable("gui.mcagents.session.new")))
+                .build());
+
+        addRenderableWidget(Button.builder(
+                        Component.literal("🔑"),
+                        button -> openKeySettings())
+                .bounds(width - MARGIN - LINE * 2 - 4, MARGIN, LINE, LINE)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
+                        Component.translatable("gui.mcagents.keys.title")))
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -134,6 +164,16 @@ public final class AgentChatScreen extends Screen {
                         height - MARGIN - FOOTER_HEIGHT, sendWidth, LINE)
                 .build());
 
+        if (!hasStorage()) {
+            // The one control that matters when storage is down. Placed where the send
+            // button would be, because that is where the player is already looking.
+            addRenderableWidget(Button.builder(
+                            Component.translatable("gui.mcagents.storage.retry"),
+                            button -> retryStorage())
+                    .bounds(conversationLeft, height - MARGIN - FOOTER_HEIGHT, 90, LINE)
+                    .build());
+        }
+
         setInitialFocus(promptBox);
         updateSendState();
 
@@ -146,6 +186,10 @@ public final class AgentChatScreen extends Screen {
     // ---------------------------------------------------------------- data
 
     private void loadSessions(String search) {
+        if (!hasStorage()) {
+            sessionList.setSessions(List.of());
+            return;
+        }
         sessionList.setLoading();
         ChatRepository chat = database.chat();
         CompletableFuture<List<ChatSession>> request = search == null || search.isBlank()
@@ -161,6 +205,10 @@ public final class AgentChatScreen extends Screen {
     }
 
     private void loadMessages(String sessionId) {
+        if (!hasStorage()) {
+            conversation.clear();
+            return;
+        }
         conversation.setLoading();
         onClientThread(waiting.track(database.chat().findMessages(sessionId)), messages -> {
             // A slower earlier request must not overwrite the conversation the player has
@@ -177,8 +225,31 @@ public final class AgentChatScreen extends Screen {
         updateSendState();
     }
 
+    /**
+     * Tries to open the database again, then rebuilds the screen around the result.
+     *
+     * <p>A player whose storage failed at startup can recover without restarting the game,
+     * which matters because the usual causes — a locked file, a directory that did not
+     * exist yet — clear themselves.
+     */
+    private void retryStorage() {
+        onClientThread(waiting.track(MCAgentsClientMod.reopenDatabase()), opened -> {
+            bindStorage();
+            rebuildWidgets();
+            if (hasStorage()) {
+                loadSessions(pendingSearch);
+            }
+        }, "Could not reopen the local database");
+    }
+
+    private void openKeySettings() {
+        if (minecraft != null && hasStorage()) {
+            minecraft.setScreenAndShow(new ApiKeyScreen(database, this));
+        }
+    }
+
     private void openModelSettings() {
-        if (minecraft != null) {
+        if (minecraft != null && hasStorage()) {
             // Passing this screen as the parent means closing the settings returns here
             // with the conversation still open.
             minecraft.setScreenAndShow(new ModelSettingsScreen(database, this));
@@ -186,6 +257,9 @@ public final class AgentChatScreen extends Screen {
     }
 
     private void createSession() {
+        if (!hasStorage()) {
+            return;
+        }
         onClientThread(waiting.track(database.chat().createSession(null)), session -> {
             activeSessionId = session.id();
             conversation.clear();
@@ -198,7 +272,7 @@ public final class AgentChatScreen extends Screen {
 
     private void send() {
         String prompt = promptBox.getValue().trim();
-        if (prompt.isEmpty() || waiting.isWaiting()) {
+        if (prompt.isEmpty() || waiting.isWaiting() || !hasStorage()) {
             return;
         }
 
@@ -265,7 +339,11 @@ public final class AgentChatScreen extends Screen {
 
     private void updateSendState() {
         if (sendButton != null && promptBox != null) {
-            sendButton.active = !promptBox.getValue().isBlank() && !waiting.isWaiting();
+            sendButton.active =
+                    hasStorage() && !promptBox.getValue().isBlank() && !waiting.isWaiting();
+        }
+        if (promptBox != null) {
+            promptBox.active = hasStorage();
         }
     }
 
@@ -285,11 +363,35 @@ public final class AgentChatScreen extends Screen {
         conversation.render(graphics, mouseX, mouseY);
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
-        Component status = waiting.isWaiting()
-                ? waiting.label(Component.translatable("gui.mcagents.waiting"))
-                : title;
         int statusX = MARGIN + Math.min(SIDEBAR_WIDTH, width / 3) + GAP;
-        graphics.text(font, status, statusX, MARGIN + 6, 0xFFFFFFFF);
+        graphics.text(font, headerText(), statusX, MARGIN + 6, headerColour());
+
+        if (!hasStorage()) {
+            // Say what is wrong where the conversation would be, so the screen explains
+            // itself instead of just looking empty.
+            MCAgentsClientMod.storageFailure().ifPresent(failure -> graphics.text(font,
+                    font.plainSubstrByWidth(failure, width - statusX - MARGIN),
+                    statusX, MARGIN + HEADER_HEIGHT + 8, 0xFFFF8080));
+        }
+    }
+
+    private Component headerText() {
+        if (waiting.isWaiting()) {
+            return waiting.label(Component.translatable("gui.mcagents.waiting"));
+        }
+        if (hasStorage()) {
+            return title;
+        }
+        return switch (MCAgentsClientMod.storageState()) {
+            case OPENING -> Component.translatable("gui.mcagents.storage.opening")
+                    .withStyle(ChatFormatting.YELLOW);
+            default -> Component.translatable("gui.mcagents.storage.failed")
+                    .withStyle(ChatFormatting.RED);
+        };
+    }
+
+    private int headerColour() {
+        return hasStorage() ? 0xFFFFFFFF : 0xFFFFD080;
     }
 
     // ------------------------------------------------------------- input

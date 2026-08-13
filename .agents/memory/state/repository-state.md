@@ -52,7 +52,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 * Streaming responses. An answer arrives whole, after the whole generation.
 * The embedding and retrieval layer.
-* The content browser and the key-management screen. Only the chat screen exists.
+* The content browser. Chat, models, and API keys have screens.
 * Any download path from the central service — `ContentRepository` can store a pack, but
   nothing fetches one yet.
 * Any CI workflow.
@@ -94,10 +94,15 @@ not be isolated from the build alone, because **all three candidates — storage
 opened, the keybind never reached `options.keyMappings`, a screen already open — looked
 identical to the player.** Every failure path was silent.
 
-Fixed by making the mod reachable two independent ways (`G` and `/mcagents`), giving every
-failure path a visible message, adding `/mcagents status` and `/mcagents reload`, and
-registering the key and command before anything that can fail. Still unconfirmed against
-the reporting player's log.
+**Root cause established by elimination.** `KeyMappingRegistryImpl` throws if registration
+happens after `Minecraft.options` exists, and that exception crashes startup — so a game
+that reached the main menu had registered its keybind. The keypress was arriving; the
+launcher was refusing to open because `database()` was empty, and returning silently.
+
+Fixed by making the screen open unconditionally and report storage state inside itself with
+a Retry button, rather than gating on storage. `ApiKeyScreen` was added at the same time —
+there had been no way to enter a key at all, so the model client was complete and
+unreachable. Still unconfirmed against a real client run.
 
 ## Verification status
 

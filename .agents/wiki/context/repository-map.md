@@ -194,22 +194,21 @@ The decompiled jar to inspect is
 
 ## Reaching the mod in game
 
-Two independent entry points, on purpose:
+The `G` key, and nothing else. That is enough, and it is provably enough:
 
-| Way in | Registered through |
-|---|---|
-| The `G` key | `KeyMappingHelper`, dispatched on the client tick |
-| `/mcagents` | `ClientCommandRegistrationCallback` |
+> `KeyMappingRegistryImpl.registerKeyMapping` throws `IllegalStateException` if
+> `Minecraft.options` already exists. An exception out of `onInitializeClient` crashes
+> startup with a Fabric error screen. **So a game that reaches the main menu has already
+> proven its key mappings registered** — a key that appears to do nothing is never a
+> registration problem.
 
-They share no failure mode. A key binding can be rebound, collide with another mod, or fail
-to reach the game's key map at all; a command does none of those. **`/mcagents status` is
-the diagnostic**: it reports whether storage is opening, ready, or failed, what the key is
-currently bound to, and the exact failure if there was one.
+**The screen therefore opens unconditionally.** It does not require the database, because
+requiring it is what made this ship broken: `open()` returned silently when storage was not
+ready, and a dead key is indistinguishable from a mod that never loaded. Storage state is
+reported *inside* the screen, with a Retry button, where the player is already looking.
 
-**No path may fail silently.** A keypress that does nothing is indistinguishable from a mod
-that never loaded, and that is what made the first version undiagnosable in a real game.
-Every failure either opens the screen or writes a line in the player's chat, and startup
-logs at INFO so `logs/latest.log` answers the question without a debug build.
+Everything the player configures lives in the interface — sessions, models (gear), and API
+keys (key icon). There is no command, and adding one would be treating a symptom.
 
 ## Gotchas
 
