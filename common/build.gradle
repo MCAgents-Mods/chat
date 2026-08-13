@@ -30,4 +30,20 @@ repositories {
 
 dependencies {
     api project(':mcagents-fabric-api')
+
+    // The only third-party runtime dependency. platforms/fabric bundles it into the mod
+    // jar with Loom's `include`.
+    implementation libs.sqlite.jdbc
+
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+// This module carries the logic worth testing, and it is testable precisely because
+// Minecraft is not on its classpath.
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }

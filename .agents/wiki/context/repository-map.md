@@ -26,17 +26,18 @@ common/              mcagents-fabric-common
 platforms/fabric/    mcagents-fabric
 ```
 
-The build works end to end: `./gradlew build` produces a loadable mod jar. Each module
-currently holds one class, so most of the feature surface described below does not exist
-yet. Do not assume a source file exists because the architecture mentions it — check.
+The build works end to end: `./gradlew build` produces a loadable mod jar and
+`./gradlew :mcagents-fabric-common:test` runs the storage tests. Storage is implemented;
+the OpenRouter client, retrieval, and the interface are not. Do not assume a source file
+exists because the architecture mentions it — check.
 
 ## The three modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` — mod identity and on-disk layout constants. | Contracts only: records, interfaces, enums. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths` — resolves the mod's layout from a game directory it is handed. | SQLite via `org.xerial:sqlite-jdbc`, the OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` — the `ClientModInitializer`. | Screens, key bindings, mixins, event listeners. |
+| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`), `api.storage` (`LocalDatabase` and the three repository interfaces). | The OpenRouter and retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, and `common.storage.sqlite` — the SQLite implementation of every storage contract. | The OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` — the `ClientModInitializer`, which resolves the game directory and opens the database. | Screens, key bindings, mixins, event listeners. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -44,7 +45,27 @@ module names deliberately differ.
 `api/` and `common/` are plain `java-library` modules. Their classes are **merged into the
 mod jar** by the `jar` task in `platforms/fabric/build.gradle` rather than nested as
 Jar-in-Jar mods — they are not Fabric mods and have no `fabric.mod.json`. Third-party
-runtime libraries are bundled with Loom's `include` instead.
+runtime libraries go the other way: `sqlite-jdbc` is bundled with Loom's `include` and
+lands at `META-INF/jars/` in the mod jar. It carries native binaries for every platform, so
+it alone is about 12 MB of the built jar.
+
+## Storage
+
+`SqliteDatabase.open(Path)` returns a `CompletableFuture<LocalDatabase>` and is the only
+entry point. What is worth knowing before changing it:
+
+* **One connection, one thread.** `SqlWorker` runs every call on a single daemon thread
+  named `MCAgents-database`. That is what makes SQLite access correct without a pool or a
+  lock, and it is never the client thread.
+* **A `DataSource`, not `DriverManager`.** JDBC's `ServiceLoader` driver lookup is not
+  reliable under a mod loader's classloader; `SQLiteDataSource` does not depend on it.
+* **Foreign keys are enforced explicitly.** SQLite defaults them off, and
+  `chat_messages`'s `ON DELETE CASCADE` does nothing without them.
+* **The schema is applied on every start** and every statement is `IF NOT EXISTS`. A schema
+  change ships as a migration appended to `SqliteSchema`; the answer is never "delete the
+  database", because that file is the player's whole history.
+* **Search text is escaped** before it reaches a `LIKE` clause, so typing `100%` searches
+  for that rather than matching everything.
 
 ## Where versions live
 
@@ -92,9 +113,14 @@ these.
 | Goal | Command |
 |---|---|
 | Build everything | `./gradlew build` |
+| Run the tests | `./gradlew :mcagents-fabric-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-fabric-common:build` |
 | Run the client | `./gradlew :mcagents-fabric:runClient` |
 | Produce the mod jar | `./gradlew :mcagents-fabric:build` — output in `platforms/fabric/build/libs/` |
+
+Tests live in `common/` because that is where the logic is and because Minecraft is not on
+its classpath. Put a test there whenever you can; a behaviour that can only be checked by
+launching the game will not get checked.
 
 Always use `./gradlew`, never a system `gradle` — the wrapper pins 9.7.0 and a Gradle 8
 launcher cannot evaluate `settings.gradle`. Gradle itself runs on JDK 21 and compiles

@@ -41,9 +41,13 @@ Minecraft version.
 | Goal | Command |
 |---|---|
 | Build everything | `./gradlew build` |
+| Run the tests | `./gradlew :mcagents-fabric-common:test` |
 | Build one module | `./gradlew :mcagents-fabric-common:build` |
 | Run the client | `./gradlew :mcagents-fabric:runClient` |
 | Produce the mod jar | `./gradlew :mcagents-fabric:build` |
+
+Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
+keeping the logic out of the platform module. Run them before you launch the game.
 
 The mod jar lands in `platforms/fabric/build/libs/`. It carries the classes of all three
 modules — `api/` and `common/` are merged into it rather than nested as separate mods.

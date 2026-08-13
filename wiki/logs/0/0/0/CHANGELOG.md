@@ -17,6 +17,21 @@ project is developed under.
   `ClientPaths` — resolves that layout from a game directory it is handed, with no
   knowledge of Minecraft; `MCAgentsClientMod` — the `ClientModInitializer`, which resolves
   the game directory once at startup and contacts nothing over the network.
+* **Local storage.** The whole SQLite layer at `{minecraft_dir}/MCAgents/data.db`:
+  * `api/` — the `ApiKey`, `ChatSession`, `ChatMessage`, `ContentCategory`,
+    `KnowledgeContent`, and `ContentQuery` records, and the `LocalDatabase`,
+    `ApiKeyRepository`, `ChatRepository`, and `ContentRepository` contracts. Every method
+    that touches storage returns a `CompletableFuture`, with no synchronous variant.
+  * `common/` — the SQLite implementation, on one connection driven by one daemon thread,
+    with the schema applied idempotently at startup, foreign keys enforced so a deleted
+    conversation takes its messages with it, and search text escaped before it reaches a
+    `LIKE` clause.
+  * `platforms/fabric/` — the mod opens the database asynchronously and carries on if it
+    cannot; a player whose storage is unavailable keeps a working game and gets a logged
+    explanation.
+  * 33 tests in `common/`, run with `./gradlew :mcagents-fabric-common:test`.
+* **`org.xerial:sqlite-jdbc` 3.53.2.1**, bundled into the mod jar with Loom's `include` so
+  the mod stores data on a machine that has never been online.
 
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
