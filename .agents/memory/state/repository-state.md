@@ -14,21 +14,33 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 * The human wiki: overview, architecture, environment setup, and the `0.0.0` change log.
 * `LICENSE` — MCAgents commercial license, 2026.
 * `README.md` — overview only.
+* **A working multi-module Gradle build.** `./gradlew build` is green and produces a
+  loadable mod jar at `platforms/fabric/build/libs/mcagents-client-fabric-0.0.0.jar`,
+  carrying all three modules' classes, `fabric.mod.json`, and the license.
+* One class per module: `MCAgents` (identity and on-disk layout), `ClientPaths` (resolves
+  that layout from a game directory it is handed), `MCAgentsClientMod` (the
+  `ClientModInitializer`).
 
 ## What does not exist yet
 
-* Any build file. No `settings.gradle`, no `build.gradle`, no Gradle wrapper.
-* Any source code. `api/`, `common/`, and `platforms/fabric/` are not created.
 * The SQLite layer, the OpenRouter client, the embedding and retrieval layer, the GUI.
+* Any test. No test source set exists in any module.
 * Any CI workflow.
 
 ## Stack decisions already made
 
-* Minecraft 26.2, Fabric Loader 0.19.3, Fabric API 0.157.0+26.2, Java 25, Fabric Loom.
+* Minecraft 26.2, Fabric Loader 0.19.3, Fabric API 0.157.0+26.2, Fabric Loom 1.17.19,
+  Java 25, Gradle 9.7.0 via the committed wrapper.
 * Minecraft 26.x ships **no Yarn mappings and no intermediary** — Loom uses Mojang's
-  official mappings implicitly. Verified against `meta.fabricmc.net` on 2026-08-13.
+  official mappings implicitly, and **no `remapJar` task runs**: `jar` produces the final
+  artifact. Verified by building on 2026-08-13.
+* `gradle.properties` holds project identity only, exactly as the user specified. Every
+  dependency coordinate lives in `gradle/libs.versions.toml`.
+* `api/` and `common/` are plain `java-library` modules whose classes are merged into the
+  mod jar by the `jar` task, not nested as Jar-in-Jar mods.
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`, version `0.0.0`.
-* Local storage: SQLite at `{minecraft_dir}/MCAgents/data.db` via `org.xerial:sqlite-jdbc`.
+* Local storage: SQLite at `{minecraft_dir}/MCAgents/data.db` via `org.xerial:sqlite-jdbc`
+  `3.53.2.1` — pinned in the catalog, not yet wired in.
 * Companion repository for the central Knowledge Pack service:
   `MCAgents/server-fabric-expressjs`.
 
@@ -39,5 +51,4 @@ this repository; the override table in `.agents/index/root-index.md` is empty.
 
 ## Next step
 
-Scaffold the multi-module Gradle project on `build/gradle`, then the SQLite layer on
-`feat/sqlite-database`, then the chat GUI on `feat/chat-gui`.
+The SQLite layer on `feat/sqlite-database`, then the chat GUI on `feat/chat-gui`.

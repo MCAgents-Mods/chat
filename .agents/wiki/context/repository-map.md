@@ -17,23 +17,49 @@ README.md            human overview
 LICENSE              MCAgents commercial license, 2026
 .agents/             this repository's local instruction set, indexes, agent wiki, memory
 wiki/                human documentation and versioned change logs
+settings.gradle      module map and plugin repositories
+build.gradle         group and version for every module
+gradle.properties    project identity only — organization, repository, version
+gradle/              the wrapper and libs.versions.toml
+api/                 mcagents-fabric-api
+common/              mcagents-fabric-common
+platforms/fabric/    mcagents-fabric
 ```
 
-**There is no build yet.** No `build.gradle`, no `settings.gradle`, no source tree, no
-dependency on Minecraft or Fabric. The Gradle scaffold is the next task on the
-`build/gradle` branch. Do not assume a source file exists because the architecture
-mentions it — check.
+The build works end to end: `./gradlew build` produces a loadable mod jar. Each module
+currently holds one class, so most of the feature surface described below does not exist
+yet. Do not assume a source file exists because the architecture mentions it — check.
 
-## What is planned, and where it will go
+## The three modules
 
-| Path | Gradle module | Holds |
-|---|---|---|
-| `api/` | `mcagents-fabric-api` | Contracts only: records, interfaces, enums. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | Implementations: SQLite via `org.xerial:sqlite-jdbc`, the OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | The mod itself: initializer, screens, key bindings, mixins, and the resolution of the game directory. |
+| Path | Gradle module | Holds today | Will hold |
+|---|---|---|---|
+| `api/` | `mcagents-fabric-api` | `MCAgents` — mod identity and on-disk layout constants. | Contracts only: records, interfaces, enums. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths` — resolves the mod's layout from a game directory it is handed. | SQLite via `org.xerial:sqlite-jdbc`, the OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` — the `ClientModInitializer`. | Screens, key bindings, mixins, event listeners. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
+
+`api/` and `common/` are plain `java-library` modules. Their classes are **merged into the
+mod jar** by the `jar` task in `platforms/fabric/build.gradle` rather than nested as
+Jar-in-Jar mods — they are not Fabric mods and have no `fabric.mod.json`. Third-party
+runtime libraries are bundled with Loom's `include` instead.
+
+## Where versions live
+
+`gradle.properties` carries the project's identity and nothing else:
+
+```
+git-org=MCAgents
+git-repo=client-fabric
+project-version=0.0.0
+```
+
+**Every dependency coordinate is in `gradle/libs.versions.toml`**, the Gradle version
+catalog. Change a platform version there, not in `gradle.properties`. Build scripts read
+the project version through `providers.gradleProperty('project-version')`; the hyphenated
+names cannot be dereferenced as `project.gitOrg`.
 
 ## Target platform
 
@@ -42,19 +68,26 @@ module names deliberately differ.
 | Minecraft | 26.2 |
 | Fabric Loader | 0.19.3 |
 | Fabric API | 0.157.0+26.2 |
+| Fabric Loom | 1.17.19 |
 | Java | 25 (Minecraft 26.2 requires it) |
-| Gradle | 8.14.3 or newer, with Fabric Loom |
+| Gradle | 9.7.0, via the committed wrapper |
 | Group | `io.github.mcagents` |
 | Base package | `io.github.mcagents.clientfabric` |
 | Version | `0.0.0` |
 
-Minecraft 26.x has **no Yarn mappings and no intermediary** — Fabric Loom resolves Mojang's
-official mappings automatically, and a `mappings` line in `dependencies` is neither needed
-nor correct. Check `https://meta.fabricmc.net/v2/versions/` before changing any of these.
+Two things about Minecraft 26.x that will waste your time if you assume otherwise:
+
+* **There are no Yarn mappings and no intermediary.** Loom resolves Mojang's official
+  mappings on its own. A `mappings` line in `dependencies` is neither needed nor correct,
+  and Yarn's published versions stop at 1.21.11.
+* **Nothing is remapped, so there is no `remapJar`.** The `jar` task produces the final
+  artifact directly. Do not wire a task to `remapJar` — it does not run.
+
+Fabric API and the loader are declared with plain `implementation`, not `modImplementation`,
+for the same reason. Check `https://meta.fabricmc.net/v2/versions/` before changing any of
+these.
 
 ## Commands
-
-Once the Gradle scaffold lands:
 
 | Goal | Command |
 |---|---|
@@ -63,13 +96,23 @@ Once the Gradle scaffold lands:
 | Run the client | `./gradlew :mcagents-fabric:runClient` |
 | Produce the mod jar | `./gradlew :mcagents-fabric:build` — output in `platforms/fabric/build/libs/` |
 
-The environment used for development here carries JDK 21 and JDK 25; Gradle's toolchain
-resolver selects 25. `runClient` needs a display and will not work headless.
+Always use `./gradlew`, never a system `gradle` — the wrapper pins 9.7.0 and a Gradle 8
+launcher cannot evaluate `settings.gradle`. Gradle itself runs on JDK 21 and compiles
+through a Java 25 toolchain; the `foojay-resolver-convention` plugin in `settings.gradle`
+downloads JDK 25 when it is not installed. `runClient` needs a display and will not work
+headless.
+
+The first build downloads and processes Minecraft — several minutes and a few gigabytes.
+If it fails with an out-of-memory error, raise the Gradle daemon heap in your **user**
+`~/.gradle/gradle.properties` (`org.gradle.jvmargs=-Xmx2G`); the committed
+`gradle.properties` is reserved for project identity.
 
 ## Generated paths — leave them alone
 
 `build/`, `.gradle/`, `run/`, `platforms/fabric/build/`, and `platforms/fabric/run/` are
-generated. Never commit them, never hand-edit them.
+generated. Never commit them, never hand-edit them. `gradle/wrapper/gradle-wrapper.jar` is
+the one binary that **is** committed, on purpose — `.gitignore` carries an explicit
+exception for it.
 
 ## Player data — never in the repository
 

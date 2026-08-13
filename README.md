@@ -24,10 +24,10 @@ knowledge is relevant. Nothing is installed on the Minecraft server.
 ./gradlew :mcagents-fabric:runClient # launch Minecraft with the mod
 ```
 
-Requires JDK 25. The mod jar is written to `platforms/fabric/build/libs/`.
+Builds Minecraft 26.2 with Fabric Loader 0.19.3 on a Java 25 toolchain. The mod jar is
+written to `platforms/fabric/build/libs/`.
 
-> The build files land with the Gradle scaffold. Until then this repository contains
-> documentation and licensing only.
+> The build is in place; the features above are being implemented on top of it.
 
 ## Documentation
 
