@@ -20,6 +20,7 @@ opened, on the user's instruction.
 | `feat/wallet-bridge` | The loopback bridge, Keccak-256, secp256k1 recovery, address checks, 39 tests |
 | `feat/wallet-screen` | The wallet screens and the bottom-left button |
 | `docs/wallet-binding` | This record, the wiki page, the schema and map updates |
+| `fix/wallet-bridge-shutdown` | Close the listener **before** completing the binding future |
 
 ## Goal
 
@@ -53,6 +54,20 @@ several chains per wallet — the shape MetaMask's own multichain address list h
 * Storage: cascade, one-address-per-chain replacement, account lifecycle, reopening.
 * 146 tests in `common/`, all green. `./gradlew build` produces the mod jar with
   `mcagents/wallet-bridge.html` inside it.
+
+## The mistake worth not repeating
+
+The bridge originally did `binding.complete(verified)` and *then* started a thread to close
+the listener. Both things happened, so every reading of the code said "it stops on success"
+— but a caller waiting on the future could observe the handshake as finished while the
+socket was still accepting connections. The test that connects to the port the instant the
+future resolves passed on one machine and failed on another, which is exactly how this class
+of bug presents.
+
+The fix is ordering, not a delay: `stop()` shuts the listener first and settles the future
+second, and it runs off the request thread because it also shuts down the executor that
+serves requests. **Do not "simplify" that back into completing the future first.** A
+`Thread.sleep` in the test would have hidden the defect instead of fixing it.
 
 ## Not proven, and worth knowing
 
