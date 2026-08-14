@@ -72,6 +72,12 @@ public interface WalletRepository {
      */
     CompletableFuture<Boolean> deleteWallet(String walletId);
 
-    /** Marks a wallet as the one in use, or sets it aside without deleting it. */
+    /**
+     * Marks a wallet as in use, or sets it aside without deleting it.
+     *
+     * <p>A flag on the wallet, not a single selection — a player may well be using two at
+     * once, and a store that silently deactivated the others would be deciding that for
+     * them.
+     */
     CompletableFuture<Boolean> setWalletActive(String walletId, boolean active);
 }

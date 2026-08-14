@@ -73,7 +73,36 @@ final class SqliteSchema {
                 value TEXT NOT NULL,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-            """);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS player_wallets (
+                id VARCHAR(36) PRIMARY KEY,
+                account_id VARCHAR(255) NOT NULL,
+                wallet_label VARCHAR(255) NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_player_wallets_account ON player_wallets(account_id)",
+            // One row per chain per wallet. UNIQUE is what makes re-binding an address a
+            // correction rather than a second, contradictory row for the same chain, and
+            // ON DELETE CASCADE is what stops a deleted wallet leaving addresses behind —
+            // both only hold because the connection enforces foreign keys.
+            """
+            CREATE TABLE IF NOT EXISTS wallet_platform_addresses (
+                id VARCHAR(36) PRIMARY KEY,
+                wallet_id VARCHAR(36) NOT NULL,
+                platform VARCHAR(32) NOT NULL,
+                address VARCHAR(255) NOT NULL,
+                is_verified BOOLEAN NOT NULL DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES player_wallets(id) ON DELETE CASCADE,
+                UNIQUE (wallet_id, platform)
+            )
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_wallet_addresses_wallet "
+                    + "ON wallet_platform_addresses(wallet_id)");
 
     private SqliteSchema() {
         throw new AssertionError("No instances.");
