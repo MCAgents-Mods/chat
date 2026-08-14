@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
 import io.github.mcagents.clientfabric.api.model.ChatSession;
+import io.github.mcagents.clientfabric.api.wallet.Wallet;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -10,30 +11,55 @@ import net.minecraft.network.chat.Component;
 import java.util.function.Consumer;
 
 /**
- * Renames one conversation.
+ * Renames one thing: a conversation, or a wallet.
  *
  * <p>A whole screen for one text field, because the field is easier to find here than as an
- * edit box that appears in place: the pencil beside a conversation says what it does before
- * it is clicked, and a row that quietly turns editable does not.
+ * edit box that appears in place: the pencil beside a row says what it does before it is
+ * clicked, and a row that quietly turns editable does not.
+ *
+ * <p>Nothing here knows what it is renaming — it is handed a title, the current name, and
+ * somewhere to send the new one. That is why one screen serves both lists rather than each
+ * growing its own copy.
  */
-public final class RenameSessionScreen extends Screen {
+public final class RenameScreen extends Screen {
 
     private static final int FIELD_WIDTH = 240;
     private static final int LINE = 20;
 
-    private final ChatSession session;
+    private final String subject;
+    private final Component saveLabel;
     private final Screen parent;
     private final Consumer<String> onRename;
 
     private EditBox nameBox;
     private String draft;
 
-    public RenameSessionScreen(ChatSession session, Screen parent, Consumer<String> onRename) {
-        super(Component.translatable("gui.mcagents.session.rename"));
-        this.session = session;
+    private RenameScreen(Component title, Component saveLabel, String subject,
+                         Screen parent, Consumer<String> onRename) {
+        super(title);
+        this.saveLabel = saveLabel;
+        this.subject = subject;
         this.parent = parent;
         this.onRename = onRename;
-        this.draft = session.title();
+        this.draft = subject;
+    }
+
+    /** Renames a conversation. */
+    public static RenameScreen forSession(ChatSession session, Screen parent,
+                                          Consumer<String> onRename) {
+        return new RenameScreen(
+                Component.translatable("gui.mcagents.session.rename"),
+                Component.translatable("gui.mcagents.session.rename.save"),
+                session.title(), parent, onRename);
+    }
+
+    /** Renames a wallet. */
+    public static RenameScreen forWallet(Wallet wallet, Screen parent,
+                                         Consumer<String> onRename) {
+        return new RenameScreen(
+                Component.translatable("gui.mcagents.wallets.rename"),
+                Component.translatable("gui.mcagents.wallets.rename.save"),
+                wallet.label(), parent, onRename);
     }
 
     @Override
@@ -46,15 +72,12 @@ public final class RenameSessionScreen extends Screen {
         nameBox.setValue(draft);
         nameBox.setResponder(text -> draft = text);
         addRenderableWidget(nameBox);
-        // The player came here to type; the cursor belongs in the field, and the existing
-        // title is selected so it can be replaced without clearing it first.
+        // The player came here to type; the cursor belongs in the field.
         setInitialFocus(nameBox);
         nameBox.moveCursorToEnd(false);
 
         int buttonWidth = 100;
-        addRenderableWidget(Button.builder(
-                        Component.translatable("gui.mcagents.session.rename.save"),
-                        button -> commit())
+        addRenderableWidget(Button.builder(saveLabel, button -> commit())
                 .bounds(left, top + LINE + 12, buttonWidth, LINE)
                 .build());
 
@@ -65,10 +88,9 @@ public final class RenameSessionScreen extends Screen {
     }
 
     private void commit() {
-        String title = draft.trim();
-        // A blank title is not an error; the repository substitutes the default, which is
+        // A blank name is not an error; the repository substitutes the default, which is
         // how a player clears a name they no longer want.
-        onRename.accept(title);
+        onRename.accept(draft.trim());
         onClose();
     }
 
@@ -87,7 +109,7 @@ public final class RenameSessionScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         graphics.centeredText(font, title, width / 2, height / 2 - 46, 0xFFFFFFFF);
         graphics.centeredText(font,
-                Component.literal(font.plainSubstrByWidth(session.title(), FIELD_WIDTH)),
+                Component.literal(font.plainSubstrByWidth(subject, FIELD_WIDTH)),
                 width / 2, height / 2 - 34, 0xFF9A9AA4);
     }
 
