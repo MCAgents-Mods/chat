@@ -69,6 +69,41 @@ project is developed under.
   invalidate in the same call, so a downloaded pack is visible immediately rather than when
   a timer expires. The database stays the record: everything cached can be dropped at any
   moment without changing what the mod knows.
+* **Wallet binding.** MetaMask wallets, client-side, with the shape MetaMask's own
+  multichain address list has — several accounts, several wallets per account, one address
+  per chain in each:
+  * `api/` — `ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, the `WalletBridge`
+    contract, and `WalletRepository`. An address records whether it was **proved** by a
+    signature or **recorded** by hand, and the two never look alike afterwards.
+  * `common/` — `player_wallets` and `wallet_platform_addresses` appended to the schema,
+    with `UNIQUE(wallet_id, platform)` so re-binding corrects an address rather than adding
+    a second one for the same chain, and `ON DELETE CASCADE` so a deleted wallet leaves
+    nothing behind. Accounts have no table: one exists as long as a wallet names it.
+  * `common/` — `LocalWalletBridge`, which serves one page on `127.0.0.1` for one handshake.
+    MetaMask is a browser extension, so `window.ethereum` exists on a web page and nowhere
+    else; the mod becomes a web server for as long as that takes and **stops the moment the
+    signature verifies**, and on cancel, on timeout, and on screen close. Loopback only, on
+    an operating-system-assigned port, behind a 256-bit one-time token and a loopback `Host`
+    check that closes DNS rebinding.
+  * `common/` — Keccak-256 and secp256k1 public key recovery, written out rather than taken
+    from a library. The JDK's SHA3-256 is **a different function** — Ethereum standardised on
+    Keccak before NIST changed the padding byte — and substituting it recovers a wrong
+    address while looking entirely plausible; a general-purpose cryptography jar would be
+    megabytes shipped to every player for one hash and one curve operation. Pinned to
+    published vectors: the address of private key 1, all four EIP-55 cases, and Keccak's own
+    digests.
+  * The claimed address is never trusted. The signer is recovered from the signature, and a
+    mismatch fails the binding.
+  * `platforms/fabric/` — the wallet screen in the previously empty bottom-left corner of
+    the chat screen, with the account dropdown, the wallet list, the chain address list,
+    copy-to-clipboard, add and delete for both, an add-address screen that checks the shape
+    of what is typed as it is typed, and the connect screen.
+  * **Public addresses only.** No screen has a field for a private key or a recovery phrase,
+    and an input that looks like one is refused with an explanation rather than stored.
+  * 55 tests in `common/`, taking the suite to 146.
+* **`RenameSessionScreen` became `RenameScreen`**, parameterised by title and subject, so
+  wallets reuse it rather than growing a near-identical copy.
+
 * **Agent instruction system.** Root `AGENTS.md` as the entry point, with the
   `lxagents-agents-base` connector bootstrap, the auto-activation contract, and the trigger
   table. The shared instruction set is resolved over the connector and never copied here.
@@ -106,3 +141,8 @@ project is developed under.
   `KeyEvent`/`MouseButtonEvent` records. The full list is in the repository map.
 * The chat screen and the model settings screen are compile-verified. Neither has been run
   in a real client, because the environment they were built in has no display.
+* The wallet screens are compile-verified against Minecraft 26.2 and nothing more. **No
+  signature from the real MetaMask extension has ever been checked** — the tests sign with
+  their own secp256k1 signer, so the arithmetic is pinned to published vectors but the round
+  trip through the extension has not happened. `SystemBrowser` is untested on Windows and
+  macOS; the connect screen shows a copyable link for exactly that case.

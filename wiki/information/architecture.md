@@ -68,13 +68,34 @@ central service.
 
 ## Local database
 
-SQLite at `{minecraft_dir}/MCAgents/data.db`, via `org.xerial:sqlite-jdbc`. Five tables:
-`api_keys`, `content_categories`, `contents`, `chat_sessions`, `chat_messages`. Chat
+SQLite at `{minecraft_dir}/MCAgents/data.db`, via `org.xerial:sqlite-jdbc`. Eight tables:
+`api_keys`, `content_categories`, `contents`, `chat_sessions`, `chat_messages`, `settings`,
+`player_wallets`, and `wallet_platform_addresses`. Chat
 messages are stored one row per turn with a `role` of `user` or `assistant`, which is the
 shape the OpenRouter API expects, so the history needs no reshaping before it is sent.
 
 The schema is created idempotently at startup. The game directory is resolved in
 `platforms/fabric/`; `common/` is handed a path and knows nothing about Minecraft.
+
+## The wallet bridge
+
+Binding a MetaMask wallet is the one place the mod listens rather than asks. MetaMask is a
+browser extension, so `window.ethereum` exists on a web page and nowhere else — there is no
+Java API to call. For the length of one handshake the mod serves a page on `127.0.0.1`, the
+page has MetaMask sign a one-off message, and the mod recovers the signing address from the
+signature rather than trusting the address the page claims.
+
+**The listener stops the moment the signature verifies**, and on cancel, on timeout, and
+whenever the screen closes. It binds to loopback on an operating-system-assigned port and
+answers only requests carrying a one-time token, so nothing off the machine can reach it and
+nothing on it can guess its way in. It never touches the network, so offline-first is
+untouched: wallets already bound stay readable with no internet at all.
+
+The cryptography — Keccak-256 and secp256k1 public key recovery — is written out in
+`common/` rather than pulled from a library, because a general-purpose cryptography jar
+would be megabytes shipped to every player for one hash and one curve operation, and the
+JDK's SHA3-256 is a *different function* that would recover the wrong address without
+failing. See [`wallet-binding.md`](wallet-binding.md).
 
 ## The central service
 

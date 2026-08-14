@@ -25,6 +25,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## What is built but unproven in a real client
 
 * Renaming a conversation, and deleting one behind its confirmation.
+* **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by 55
+  tests in `common/`, but no screen has been opened in a real client and no signature from
+  the real MetaMask extension has ever been checked — the tests sign with their own
+  secp256k1 signer. See `.agents/memory/tasks/wallet-binding.md`.
 * Key rotation, retry with backoff, and the failure messages for each `ModelException` kind
   — all covered by tests against a stub transport, none seen against real OpenRouter.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
@@ -45,11 +49,15 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 91 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 146 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
   `CachingModelClient` (embeddings cached, completions deliberately not).
+* Wallets: `player_wallets` and `wallet_platform_addresses` in the same store;
+  `LocalWalletBridge` serves one page on `127.0.0.1` and stops the moment a signature
+  verifies. Keccak-256 and secp256k1 recovery are written out in `common.wallet` — the
+  JDK's SHA3-256 is a different function and would recover the wrong address.
 
 ## Stack
 
@@ -75,5 +83,7 @@ the override table in `.agents/index/root-index.md` is empty.
 
 ## Next step
 
-Wire retrieval, so downloaded Knowledge Packs actually reach the prompt. Then the content
-browser and its download path against `MCAgents/server-fabric-expressjs`.
+Open the wallet screens in a real client and run one binding through the real MetaMask
+extension — the one thing about that feature nothing here can prove. Then wire retrieval, so
+downloaded Knowledge Packs actually reach the prompt, and after that the content browser and
+its download path against `MCAgents/server-fabric-expressjs`.
