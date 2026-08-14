@@ -33,6 +33,8 @@ begins "delete your data.db".
 | `chat_sessions` | One row per conversation | a UUID string |
 | `chat_messages` | One row per turn | autoincrement |
 | `settings` | Player preferences, including the selected models | the setting key |
+| `player_wallets` | The wallets a player has bound, under an account | a UUID string |
+| `wallet_platform_addresses` | One public address per chain per wallet | a UUID string |
 
 ## Invariants
 
@@ -58,6 +60,24 @@ These are not incidental; code depends on each one.
 * **Timestamps are text in UTC**, written by `CURRENT_TIMESTAMP`. SQLite has no date type.
   An unparseable value is read as the epoch rather than failing the query — a corrupt
   timestamp must not make a player's history unreadable.
+* **`CURRENT_TIMESTAMP` resolves to the second**, so two rows written in the same breath
+  carry identical timestamps. Any ordering that must be stable breaks the tie on `rowid`;
+  `player_wallets` does. A sort on timestamps alone returns rows in whatever order SQLite
+  felt like, and it will differ between runs.
+* **A wallet holds one address per chain**, enforced by `UNIQUE(wallet_id, platform)`.
+  Binding an address for a chain that already has one is an `ON CONFLICT … DO UPDATE`, so
+  correcting a typo replaces the row rather than adding a second one that contradicts it.
+* **`wallet_platform_addresses` cascades from `player_wallets`**, and like `chat_messages`
+  that only works because the connection enables foreign key enforcement.
+* **An account is not a table.** `player_wallets.account_id` is the only place an account
+  exists; it comes into being when a wallet names it and stops existing when the last wallet
+  under it is deleted. There is deliberately nothing to clean up.
+* **A chain is stored by name, not by ordinal**, and a name this release does not recognise
+  reads back as `OTHER`. A row written by a newer version of the mod must never make an
+  older one unable to read the player's wallets.
+* **Wallet tables hold public addresses only.** No private key and no recovery phrase is
+  ever stored, accepted, or logged — the same rule as
+  [`../security/api-keys.md`](../security/api-keys.md), and for a stronger reason.
 
 ## Migrations
 

@@ -41,6 +41,19 @@ Players can author packs, publish them, and sell them. Free and premium packs ar
 side by side in the mod's content browser, with search and a free/premium filter. The
 central service at `mcagents.mcrealms.space` hosts the catalog and handles purchases.
 
+### Wallets
+
+The mod can record the crypto wallets a player owns — several accounts, several wallets per
+account, and one address per chain in each, the way MetaMask's own multichain list is
+arranged. EVM addresses can be *proved*: the mod opens a page on `127.0.0.1`, MetaMask signs
+a one-off message, and the mod recovers the signer from the signature. Signing costs nothing
+and authorises nothing. Bitcoin, Solana, and Tron addresses are typed in and shown as
+recorded rather than proved, because the extension gives a web page no way to sign with
+them.
+
+**Public addresses only.** The mod has no field for a private key or a recovery phrase, and
+refuses anything that looks like one. See [`wallet-binding.md`](wallet-binding.md).
+
 ### Local storage
 
 Everything the mod remembers lives on the player's own machine:
@@ -50,6 +63,7 @@ Everything the mod remembers lives on the player's own machine:
 | Chat sessions and messages | `{minecraft_dir}/MCAgents/data.db` |
 | OpenRouter API keys | `{minecraft_dir}/MCAgents/data.db` |
 | Downloaded Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
+| Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/data.db` |
 | Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
 
 `data.db` is SQLite. `AGENTS.md` is a plain markdown file the player edits to define how
@@ -87,6 +101,10 @@ embedding model from the suggested lists, or type any OpenRouter model id you li
 lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
 ships.
 
+The Wallets button in the bottom-left corner opens wallet management: accounts across the
+top, wallets down the left, and the selected wallet's chain addresses on the right. Click any
+address to copy it in full.
+
 If local storage cannot be opened, the screen still opens and says so, with a Retry button.
 It never simply fails to appear.
 
@@ -100,5 +118,6 @@ context injection — inventory, the block you are looking at, chat logs and sco
 ## Related
 
 * [`architecture.md`](architecture.md) — how the modules are split and why.
+* [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.
 * [`../environments/setup.md`](../environments/setup.md) — building and running it.
 * `MCAgents/server-fabric-expressjs` — the central Knowledge Pack service.

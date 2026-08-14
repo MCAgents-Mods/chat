@@ -35,9 +35,9 @@ exists because the architecture mentions it — check.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.storage` (`LocalDatabase` and the four repository interfaces). | The OpenRouter and retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, and `common.storage.sqlite` — the SQLite implementation of every storage contract. | The OpenRouter client, embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, and `client.gui` — the chat screen, its panels, and the model settings screen. | Mixins, context injection, the content browser. |
+| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — and `common.wallet` — the MetaMask bridge and the cryptography it needs. | Embedding and retrieval. No Minecraft on the classpath. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, and `client.gui` — the chat screen, its panels, the model settings screen, and the wallet screens. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -69,9 +69,12 @@ entry point. What is worth knowing before changing it:
 * **Reads of packs go through a cache.** `SqliteDatabase` wraps `SqliteContentRepository`
   in `CachingContentRepository`, so `contents()` is the caching one. The cache is never the
   source of truth — see the section below.
-* **The `settings` table was appended to `SqliteSchema`, not inserted.** That list's order
-  is the migration history — see [`../../database/schema.md`](../../database/schema.md),
-  which is the authority on every rule in this section.
+* **New tables are appended to `SqliteSchema`, never inserted.** That list's order is the
+  migration history; `settings`, then the two wallet tables, went on the end. See
+  [`../../database/schema.md`](../../database/schema.md), which is the authority on every
+  rule in this section.
+* **`CURRENT_TIMESTAMP` resolves to the second.** Anything sorted by it needs `rowid` as a
+  final tie-break or its order is undefined between runs.
 
 ## Caching
 
@@ -207,8 +210,9 @@ requiring it is what made this ship broken: `open()` returned silently when stor
 ready, and a dead key is indistinguishable from a mod that never loaded. Storage state is
 reported *inside* the screen, with a Retry button, where the player is already looking.
 
-Everything the player configures lives in the interface — sessions, models (gear), and API
-keys (key icon). There is no command, and adding one would be treating a symptom.
+Everything the player configures lives in the interface — sessions, models (gear), API keys
+(key icon), and wallets (bottom-left). There is no command, and adding one would be treating
+a symptom.
 
 ## Gotchas
 
@@ -224,3 +228,13 @@ keys (key icon). There is no command, and adding one would be treating a symptom
   do not confuse them.
 * The shared instruction set resolves through the `lxagents-agents-base` connector. If it
   is unavailable, say so and work from `.agents/` alone; do not reconstruct it.
+* **Keccak-256 is not SHA3-256.** The JDK ships the latter, the difference is one padding
+  byte, and substituting it recovers the wrong Ethereum address while looking entirely
+  plausible. `common.wallet.Keccak256` exists for exactly this reason — do not "simplify" it
+  into `MessageDigest`.
+* **The wallet bridge is a listener, not a server.** It binds to `127.0.0.1` on an ephemeral
+  port for one handshake and stops the moment a signature verifies. Any change that lets it
+  outlive that — a fixed port, a retry loop, a cached instance — is a defect.
+* **The mod never handles a private key or a recovery phrase.** Not in a field, not in a
+  parameter, not in a log. Wallet code deals in public addresses and signatures over
+  messages the mod chose.
