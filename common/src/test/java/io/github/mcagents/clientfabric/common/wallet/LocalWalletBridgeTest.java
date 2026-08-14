@@ -72,14 +72,33 @@ class LocalWalletBridgeTest {
     void stopsListeningOnceTheBindingIsMade() {
         // The whole design rests on this: the mod is a web server for one handshake and not
         // a moment longer.
+        //
+        // Checked the instant the future resolves, with no grace period, because the
+        // ordering is the point. The bridge used to complete the binding and *then* start
+        // closing, which left a window where it reported the handshake finished while the
+        // socket was still accepting connections — a race that passed on one machine and
+        // failed on another.
         bridge = LocalWalletBridge.start("Personal");
-        URI url = bridge.url();
+        int port = bridge.url().getPort();
 
         callback(address(), sign(challenge()), "0x1");
         bridge.binding().orTimeout(10, TimeUnit.SECONDS).join();
 
-        assertThrows(IOException.class, () -> get(url),
-                "the port should be closed once the signature has verified");
+        assertThrows(IOException.class, () -> connectTo(port),
+                "the port must already be closed when the binding resolves");
+    }
+
+    /**
+     * Opens a bare TCP connection and nothing more.
+     *
+     * <p>A plain socket rather than the HTTP client: the client pools connections, so a
+     * request after the server has gone can be answered from a socket it opened earlier,
+     * and the test would be measuring the pool instead of the port.
+     */
+    private static void connectTo(int port) throws IOException {
+        try (java.net.Socket socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress("127.0.0.1", port), 2_000);
+        }
     }
 
     @Test
@@ -200,6 +219,7 @@ class LocalWalletBridgeTest {
     @Test
     void endsTheAttemptWhenTheBrowserCancels() {
         bridge = LocalWalletBridge.start("Personal");
+        int port = bridge.url().getPort();
 
         send(HttpRequest.newBuilder()
                 .uri(URI.create(bridge.url().toString().replace("/?t=", "/cancel?t=")))
@@ -209,17 +229,22 @@ class LocalWalletBridgeTest {
                 () -> bridge.binding().orTimeout(10, TimeUnit.SECONDS).join());
         assertTrue(failure.getCause() instanceof WalletBridgeException,
                 "expected a WalletBridgeException, got " + failure.getCause());
+        // The same ordering as a success: whatever ends the attempt, the port is shut
+        // before anyone waiting on the future is told about it.
+        assertThrows(IOException.class, () -> connectTo(port));
     }
 
     @Test
     void givesUpWhenNobodyEverAnswers() {
         bridge = LocalWalletBridge.start("Personal", Duration.ofMillis(200));
+        int port = bridge.url().getPort();
 
         CompletionException failure = assertThrows(CompletionException.class,
                 () -> bridge.binding().orTimeout(10, TimeUnit.SECONDS).join());
         assertTrue(failure.getCause() instanceof WalletBridgeException,
                 "expected a WalletBridgeException, got " + failure.getCause());
         assertTrue(failure.getCause().getMessage().contains("timed out"));
+        assertThrows(IOException.class, () -> connectTo(port));
     }
 
     @Test
@@ -285,11 +310,6 @@ class LocalWalletBridgeTest {
 
     private int statusOf(String uri) {
         return send(HttpRequest.newBuilder().uri(URI.create(uri)).GET()).statusCode();
-    }
-
-    private void get(URI uri) throws IOException, InterruptedException {
-        client.send(HttpRequest.newBuilder().uri(uri).timeout(Duration.ofSeconds(2)).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
     }
 
     private static String address() {

@@ -56,7 +56,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *       header and is refused, which is what closes DNS rebinding.</li>
  *   <li><strong>Stops on the first success.</strong> The listener is shut the moment a
  *       signature verifies, and also on cancel, on timeout, and on close. There is no state
- *       in which it outlives the screen that opened it.</li>
+ *       in which it outlives the screen that opened it, and the port is closed
+ *       <em>before</em> {@link #binding()} completes rather than shortly after — see
+ *       {@code stop}.</li>
  * </ul>
  *
  * <h2>What is never asked for</h2>
@@ -146,7 +148,9 @@ public final class LocalWalletBridge implements WalletBridge {
         server.createContext("/cancel", bridge::handleCancel);
         server.start();
 
-        scheduler.schedule(() -> bridge.fail(
+        // Off the scheduler thread, because stopping shuts the scheduler down and doing
+        // that from one of its own tasks means interrupting itself mid-shutdown.
+        scheduler.schedule(() -> bridge.stopLater(null,
                         "The wallet connection timed out. Try again when the browser is ready."),
                 limit.toMillis(), TimeUnit.MILLISECONDS);
 
@@ -177,15 +181,52 @@ public final class LocalWalletBridge implements WalletBridge {
 
     @Override
     public void close() {
+        // A screen the player walked away from must not leave a future nobody will finish.
+        stop(null, "The wallet connection was closed before it finished");
+    }
+
+    /**
+     * Stops the listener, then settles the binding. That order is the contract.
+     *
+     * <p>Anyone waiting on {@link #binding()} is waiting to find out whether the bridge is
+     * finished with, so the port has to be shut <em>before</em> the future tells them it
+     * is. Completing first and closing afterwards leaves a window in which the mod says the
+     * handshake is over while the socket is still accepting connections — briefly true of
+     * this class, and caught by the test that connects to the port the moment the future
+     * resolves.
+     *
+     * <p>Idempotent: the first caller wins and every later one returns at once, so a
+     * success cannot be overwritten by the screen closing a moment later.
+     *
+     * @param verified the address that was proved, or {@code null} if the attempt ended
+     *                 some other way
+     * @param reason   why it ended, used only when {@code verified} is {@code null}
+     */
+    private void stop(WalletBinding verified, String reason) {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        // A screen the player walked away from must not leave a future nobody will finish.
-        binding.completeExceptionally(
-                new WalletBridgeException("The wallet connection was closed before it finished"));
         server.stop(0);
+        if (verified != null) {
+            binding.complete(verified);
+        } else {
+            binding.completeExceptionally(new WalletBridgeException(reason));
+        }
         scheduler.shutdownNow();
         LOGGER.log(Level.INFO, "Wallet bridge stopped");
+    }
+
+    /**
+     * Runs {@link #stop} off the thread that is serving a request.
+     *
+     * <p>Two reasons it cannot happen inline. The reply has to be flushed rather than cut
+     * off by the server it is travelling through; and {@code stop} shuts down the very
+     * executor that runs the handlers, which from a handler means interrupting itself.
+     */
+    private void stopLater(WalletBinding verified, String reason) {
+        Thread closer = new Thread(() -> stop(verified, reason), "MCAgents-wallet-bridge-stop");
+        closer.setDaemon(true);
+        closer.start();
     }
 
     // ------------------------------------------------------------ handlers
@@ -253,10 +294,9 @@ public final class LocalWalletBridge implements WalletBridge {
         body.addProperty("platform", platform.displayName());
         sendJson(exchange, 200, body);
 
-        binding.complete(verified);
-        // Verified, answered, done. Stopping from another thread so the reply is flushed
-        // rather than cut off by the server it was sent through.
-        stopAfterResponse();
+        // Verified, answered, done. The listener closes before the binding is handed over —
+        // see stop() for why that order matters.
+        stopLater(verified, null);
     }
 
     private void handleCancel(HttpExchange exchange) throws IOException {
@@ -264,7 +304,7 @@ public final class LocalWalletBridge implements WalletBridge {
             return;
         }
         send(exchange, 204, new byte[0]);
-        fail("The wallet connection was cancelled in the browser.");
+        stopLater(null, "The wallet connection was cancelled in the browser.");
     }
 
     // ------------------------------------------------------------ plumbing
@@ -311,21 +351,6 @@ public final class LocalWalletBridge implements WalletBridge {
         return candidate != null && MessageDigest.isEqual(
                 candidate.getBytes(StandardCharsets.UTF_8),
                 token.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private void stopAfterResponse() {
-        Thread closer = new Thread(this::close, "MCAgents-wallet-bridge-stop");
-        closer.setDaemon(true);
-        closer.start();
-    }
-
-    /** Ends the attempt with a reason, unless it has already finished. */
-    private void fail(String reason) {
-        if (binding.isDone()) {
-            return;
-        }
-        binding.completeExceptionally(new WalletBridgeException(reason));
-        stopAfterResponse();
     }
 
     private static byte[] readPage() throws IOException {
