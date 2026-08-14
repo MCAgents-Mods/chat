@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.common.storage.sqlite;
 
 import io.github.mcagents.clientfabric.api.storage.ApiKeyRepository;
+import io.github.mcagents.clientfabric.api.storage.ChangeFeed;
 import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
@@ -8,6 +9,7 @@ import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.storage.SettingsRepository;
 import io.github.mcagents.clientfabric.api.storage.WalletRepository;
 import io.github.mcagents.clientfabric.common.storage.CachingContentRepository;
+import io.github.mcagents.clientfabric.common.storage.RevisionedChatRepository;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
@@ -24,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The local store, backed by SQLite.
@@ -51,6 +54,7 @@ public final class SqliteDatabase implements LocalDatabase {
     private final ChatRepository chat;
     private final SettingsRepository settings;
     private final WalletRepository wallets;
+    private final AtomicLong chatRevision = new AtomicLong();
 
     private SqliteDatabase(Path file, Connection connection, ExecutorService executor) {
         this.file = file;
@@ -63,7 +67,10 @@ public final class SqliteDatabase implements LocalDatabase {
         // player asks, so reads of them go through a cache. The database stays the record;
         // the cache is dropped whenever a write touches what it holds.
         this.contents = new CachingContentRepository(new SqliteContentRepository(worker));
-        this.chat = new SqliteChatRepository(worker);
+        // Wrapped so that a write from the game and a write from the web console move the
+        // same counter. A counter owned by the console would only ever see the console's
+        // own writes, and the sync would work in one direction while looking finished.
+        this.chat = new RevisionedChatRepository(new SqliteChatRepository(worker), chatRevision);
         this.settings = new SqliteSettingsRepository(worker);
         // Not cached. A player has a handful of wallets, they are read when a screen opens
         // rather than on every question, and a stale address is the one thing here that
@@ -158,6 +165,13 @@ public final class SqliteDatabase implements LocalDatabase {
     @Override
     public WalletRepository wallets() {
         return wallets;
+    }
+
+    @Override
+    public ChangeFeed changes() {
+        // A read of an AtomicLong and nothing else, so this is safe to call from the client
+        // thread on every tick — which is exactly what the chat screen does with it.
+        return chatRevision::get;
     }
 
     @Override
