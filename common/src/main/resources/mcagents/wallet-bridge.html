@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<!--
+  The page the mod hands the player's browser for one MetaMask handshake.
+
+  Deliberately static: every value it needs is fetched from the bridge at runtime, so
+  nothing is ever substituted into this file and there is no way to inject anything into it.
+  Everything is inline — the mod may well be running with no internet at all, and a page
+  that reaches for a stylesheet on a CDN would simply not render.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>MCAgents · Bind a wallet</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; background: #101014; color: #e0e0e0;
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { width: min(560px, 92vw); padding: 28px 0; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { color: #9a9aa4; margin: 0 0 20px; }
+    .card {
+      background: #17171d; border: 1px solid #3a3a42; border-radius: 10px;
+      padding: 18px 20px; margin-bottom: 16px;
+    }
+    pre {
+      white-space: pre-wrap; word-break: break-word; margin: 0;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #c8c8d0;
+    }
+    .warn { border-color: #6b5a1f; background: #1d1a10; color: #e8d9a0; }
+    .warn strong { color: #ffd97a; }
+    button {
+      font: inherit; font-weight: 600; padding: 11px 18px; border-radius: 8px;
+      border: 1px solid transparent; cursor: pointer;
+    }
+    .primary { background: #2f6fb8; color: #fff; }
+    .primary:hover:not(:disabled) { background: #3a82d2; }
+    .ghost { background: transparent; color: #9a9aa4; border-color: #3a3a42; }
+    .ghost:hover:not(:disabled) { color: #e0e0e0; }
+    button:disabled { opacity: .5; cursor: default; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    #status { margin-top: 14px; min-height: 22px; }
+    .ok { color: #7fd18a; }
+    .bad { color: #ff8080; }
+    .muted { color: #9a9aa4; }
+    code { color: #9cc4ff; word-break: break-all; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Bind a wallet to MCAgents</h1>
+  <p class="sub">This page is served by the mod on your own machine and closes itself when
+    you are done.</p>
+
+  <div class="card warn">
+    <strong>MCAgents will never ask for your Secret Recovery Phrase or a private key.</strong>
+    This page asks MetaMask for one signature. A signature proves you control the address —
+    it authorises nothing, moves no funds, and never reaches a chain. If any page ever asks
+    you for a recovery phrase, close it.
+  </div>
+
+  <div class="card">
+    <p class="muted" style="margin:0 0 10px">You will be asked to sign this message:</p>
+    <pre id="message">Loading…</pre>
+  </div>
+
+  <div class="row">
+    <button id="connect" class="primary" disabled>Connect MetaMask</button>
+    <button id="cancel" class="ghost">Cancel</button>
+  </div>
+  <div id="status" class="muted"></div>
+</main>
+
+<script>
+  (function () {
+    'use strict';
+
+    // The token is only ever in this tab's address bar. Every request carries it; the
+    // bridge refuses anything that does not.
+    const token = new URLSearchParams(location.search).get('t') || '';
+    const connectButton = document.getElementById('connect');
+    const cancelButton = document.getElementById('cancel');
+    const statusLine = document.getElementById('status');
+    const messageBlock = document.getElementById('message');
+
+    let message = '';
+    let finished = false;
+
+    function say(text, kind) {
+      statusLine.textContent = text;
+      statusLine.className = kind || 'muted';
+    }
+
+    function url(path) {
+      return path + '?t=' + encodeURIComponent(token);
+    }
+
+    // MetaMask expects personal_sign data as hex-encoded UTF-8 and shows the decoded text
+    // in its prompt. Passing the raw string works in some builds and not others.
+    function toHex(text) {
+      const bytes = new TextEncoder().encode(text);
+      let hex = '0x';
+      for (const value of bytes) {
+        hex += value.toString(16).padStart(2, '0');
+      }
+      return hex;
+    }
+
+    async function loadChallenge() {
+      try {
+        const response = await fetch(url('/challenge'));
+        if (!response.ok) {
+          throw new Error('rejected');
+        }
+        message = (await response.json()).message;
+        messageBlock.textContent = message;
+      } catch (error) {
+        messageBlock.textContent = '';
+        say('This link is no longer valid. Start the connection again from the game.', 'bad');
+        return;
+      }
+
+      if (!window.ethereum) {
+        say('No MetaMask found in this browser. Open this page in the browser MetaMask is '
+          + 'installed in — the address is in the game window.', 'bad');
+        return;
+      }
+      connectButton.disabled = false;
+      say('Ready when you are.');
+    }
+
+    async function connect() {
+      connectButton.disabled = true;
+      say('Waiting for MetaMask…');
+
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No account was shared.');
+        }
+        const address = accounts[0];
+
+        say('Confirm the signature in MetaMask…');
+        const signature = await window.ethereum.request({
+          method: 'personal_sign',
+          params: [toHex(message), address]
+        });
+
+        let chainId = '';
+        try {
+          chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        } catch (ignored) {
+          // The chain is a nicety: it decides which chain the address is filed under, and
+          // the mod falls back to Ethereum without it. Not worth failing the binding for.
+        }
+
+        const response = await fetch(url('/callback'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: address, signature: signature, chainId: chainId })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'The mod rejected the signature.');
+        }
+
+        finished = true;
+        connectButton.style.display = 'none';
+        cancelButton.style.display = 'none';
+        statusLine.innerHTML = 'Bound <code>' + result.address + '</code> on '
+          + result.platform + '. You can close this tab and go back to the game.';
+        statusLine.className = 'ok';
+      } catch (error) {
+        connectButton.disabled = false;
+        const reason = (error && (error.message || error.reason)) || String(error);
+        say(reason.includes('User rejected') || reason.includes('user rejected')
+          ? 'You declined in MetaMask. Nothing was bound.'
+          : reason, 'bad');
+      }
+    }
+
+    async function cancel() {
+      cancelButton.disabled = true;
+      connectButton.disabled = true;
+      try {
+        await fetch(url('/cancel'), { method: 'POST' });
+      } catch (ignored) {
+        // The bridge stops either way; there is nothing useful to report here.
+      }
+      say('Cancelled. You can close this tab.');
+    }
+
+    connectButton.addEventListener('click', connect);
+    cancelButton.addEventListener('click', cancel);
+    // Closing the tab mid-handshake tells the mod, so it stops listening now rather than
+    // waiting out its timeout.
+    window.addEventListener('pagehide', function () {
+      if (!finished) {
+        navigator.sendBeacon(url('/cancel'));
+      }
+    });
+
+    loadChallenge();
+  })();
+</script>
+</body>
+</html>
