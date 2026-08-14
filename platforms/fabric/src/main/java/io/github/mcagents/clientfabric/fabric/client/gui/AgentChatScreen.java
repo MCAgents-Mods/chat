@@ -9,6 +9,7 @@ import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.fabric.MCAgentsClientMod;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
+import io.github.mcagents.clientfabric.fabric.client.PlayerAccounts;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -167,6 +168,17 @@ public final class AgentChatScreen extends Screen {
                         height - MARGIN - FOOTER_HEIGHT, sendWidth, LINE)
                 .build());
 
+        // The corner under the session list was the last empty space on this screen, and
+        // wallets are the one thing here that belong beside the conversation list rather
+        // than beside the prompt: they are a property of the player, not of the answer.
+        addRenderableWidget(Button.builder(
+                        Component.translatable("gui.mcagents.wallets.open"),
+                        button -> openWallets())
+                .bounds(MARGIN, height - MARGIN - FOOTER_HEIGHT, sidebarWidth, LINE)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
+                        Component.translatable("gui.mcagents.wallets.open.tip")))
+                .build());
+
         if (!hasStorage()) {
             // The one control that matters when storage is down. Placed where the send
             // button would be, because that is where the player is already looking.
@@ -257,7 +269,7 @@ public final class AgentChatScreen extends Screen {
         if (!hasStorage() || minecraft == null) {
             return;
         }
-        minecraft.setScreenAndShow(new RenameSessionScreen(session, this,
+        minecraft.setScreenAndShow(RenameScreen.forSession(session, this,
                 title -> renameSession(session.id(), title)));
     }
 
@@ -304,6 +316,13 @@ public final class AgentChatScreen extends Screen {
     private void openKeySettings() {
         if (minecraft != null && hasStorage()) {
             minecraft.setScreenAndShow(new ApiKeyScreen(database, this));
+        }
+    }
+
+    private void openWallets() {
+        if (minecraft != null && hasStorage()) {
+            minecraft.setScreenAndShow(new WalletScreen(
+                    database, this, PlayerAccounts.current(minecraft)));
         }
     }
 
