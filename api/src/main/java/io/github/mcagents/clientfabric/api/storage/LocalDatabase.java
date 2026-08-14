@@ -35,6 +35,9 @@ public interface LocalDatabase extends AutoCloseable {
     /** Player preferences, including the selected chat and embedding models. */
     SettingsRepository settings();
 
+    /** The player's bound wallets and the chain addresses under each one. */
+    WalletRepository wallets();
+
     /**
      * Closes the store and stops the thread it runs its work on. Pending work is allowed
      * to finish first. Calling this twice is harmless.

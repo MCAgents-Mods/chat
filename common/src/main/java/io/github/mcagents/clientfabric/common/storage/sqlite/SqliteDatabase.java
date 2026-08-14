@@ -6,6 +6,7 @@ import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.storage.SettingsRepository;
+import io.github.mcagents.clientfabric.api.storage.WalletRepository;
 import io.github.mcagents.clientfabric.common.storage.CachingContentRepository;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
@@ -49,6 +50,7 @@ public final class SqliteDatabase implements LocalDatabase {
     private final ContentRepository contents;
     private final ChatRepository chat;
     private final SettingsRepository settings;
+    private final WalletRepository wallets;
 
     private SqliteDatabase(Path file, Connection connection, ExecutorService executor) {
         this.file = file;
@@ -63,6 +65,10 @@ public final class SqliteDatabase implements LocalDatabase {
         this.contents = new CachingContentRepository(new SqliteContentRepository(worker));
         this.chat = new SqliteChatRepository(worker);
         this.settings = new SqliteSettingsRepository(worker);
+        // Not cached. A player has a handful of wallets, they are read when a screen opens
+        // rather than on every question, and a stale address is the one thing here that
+        // would actually cost the player something.
+        this.wallets = new SqliteWalletRepository(worker);
     }
 
     /**
@@ -147,6 +153,11 @@ public final class SqliteDatabase implements LocalDatabase {
     @Override
     public SettingsRepository settings() {
         return settings;
+    }
+
+    @Override
+    public WalletRepository wallets() {
+        return wallets;
     }
 
     @Override
