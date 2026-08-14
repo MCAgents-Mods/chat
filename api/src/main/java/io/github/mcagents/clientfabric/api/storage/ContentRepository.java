@@ -3,6 +3,9 @@ package io.github.mcagents.clientfabric.api.storage;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
+import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,16 @@ public interface ContentRepository {
 
     /** Packs matching a browser query, by title. */
     CompletableFuture<List<KnowledgeContent>> find(ContentQuery query);
+
+    /**
+     * One window of the packs matching a query, without their bodies.
+     *
+     * <p>Summaries, and a window at a time, because the alternative is reading every
+     * pack's text and embedding off disk to render a list of titles — see
+     * {@link KnowledgeSummary}. The total is counted so a caller knows whether anything
+     * follows without asking for it.
+     */
+    CompletableFuture<Page<KnowledgeSummary>> findSummaryPage(ContentQuery query, PageRequest page);
 
     /** One pack, or empty if it has not been downloaded. */
     CompletableFuture<Optional<KnowledgeContent>> findById(String id);

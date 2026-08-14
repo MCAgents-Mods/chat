@@ -3,6 +3,8 @@ package io.github.mcagents.clientfabric.api.storage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,16 @@ public interface ChatRepository {
      * updated first. A blank search returns everything.
      */
     CompletableFuture<List<ChatSession>> searchSessions(String text);
+
+    /**
+     * One window of the conversations matching a search, most recently updated first.
+     *
+     * <p>A blank search returns everything. The ordering is total rather than merely
+     * sensible: two conversations touched in the same second carry identical timestamps,
+     * and a window taken from an ambiguous ordering shows some rows twice and skips others
+     * as the reader scrolls.
+     */
+    CompletableFuture<Page<ChatSession>> findSessionPage(String search, PageRequest page);
 
     /** One conversation, or empty if it does not exist. */
     CompletableFuture<Optional<ChatSession>> findSession(String id);

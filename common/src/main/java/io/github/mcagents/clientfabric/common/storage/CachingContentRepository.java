@@ -5,6 +5,9 @@ import io.github.mcagents.clientfabric.api.cache.CacheStats;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
+import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.common.cache.TtlCache;
 
@@ -94,6 +97,16 @@ public final class CachingContentRepository implements ContentRepository {
         // Not cached: a search key changes on nearly every keystroke, so caching would
         // evict the pack bodies that are worth holding.
         return delegate.find(query);
+    }
+
+    @Override
+    public CompletableFuture<Page<KnowledgeSummary>> findSummaryPage(
+            ContentQuery query, PageRequest page) {
+        // Not cached either, and less cacheable still: the key is a search key plus a
+        // window, so it changes on every keystroke *and* every scroll. Summaries are small
+        // and the query is indexed; the cost of missing here is far below the cost of
+        // evicting a pack body to hold one.
+        return delegate.findSummaryPage(query, page);
     }
 
     @Override

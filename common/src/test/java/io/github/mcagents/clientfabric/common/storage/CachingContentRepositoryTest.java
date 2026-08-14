@@ -3,6 +3,9 @@ package io.github.mcagents.clientfabric.common.storage;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
+import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,7 @@ class CachingContentRepositoryTest {
         int findByIdCalls;
         int findAllCategoriesCalls;
         int findCalls;
+        int findSummaryPageCalls;
         int findStoredVersionsCalls;
 
         @Override
@@ -55,6 +59,17 @@ class CachingContentRepositoryTest {
         public CompletableFuture<List<KnowledgeContent>> find(ContentQuery query) {
             findCalls++;
             return CompletableFuture.completedFuture(List.copyOf(stored.values()));
+        }
+
+        @Override
+        public CompletableFuture<Page<KnowledgeSummary>> findSummaryPage(
+                ContentQuery query, PageRequest page) {
+            findSummaryPageCalls++;
+            List<KnowledgeSummary> summaries = stored.values().stream()
+                    .map(KnowledgeSummary::of)
+                    .toList();
+            return CompletableFuture.completedFuture(
+                    new Page<>(summaries, page.offset(), page.limit(), summaries.size()));
         }
 
         @Override
