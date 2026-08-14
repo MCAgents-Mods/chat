@@ -1,0 +1,175 @@
+/* Silver Glass — header, nav, footer, breadcrumbs. */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: var(--header-h);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  font-weight: 700;
+  color: var(--ink-900);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: linear-gradient(150deg, var(--silver-500), var(--accent));
+  color: var(--white);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  margin-left: .5rem;
+  flex: 1;
+}
+
+.nav__link {
+  padding: .45rem .75rem;
+  border-radius: 999px;
+  color: var(--ink-500);
+  text-decoration: none;
+  font-weight: 550;
+  font-size: .92rem;
+  white-space: nowrap;
+}
+
+.nav__link:hover {
+  background: var(--glass-faint);
+  color: var(--ink-900);
+}
+
+.nav__link.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.nav__spacer { margin-left: auto; }
+
+.nav__status {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .8rem;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+.nav__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.nav__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--hairline);
+  background: var(--glass-strong);
+  color: var(--ink-700);
+  cursor: pointer;
+}
+
+/* Footer */
+
+.site-footer {
+  border-top: 1px solid var(--hairline);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  padding: 1.5rem 0;
+  margin-top: 2rem;
+}
+
+.footer__inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: .85rem;
+  color: var(--ink-400);
+}
+
+.footer__brand {
+  font-weight: 650;
+  color: var(--ink-700);
+}
+
+/* Breadcrumbs */
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .85rem;
+  color: var(--ink-400);
+  margin-bottom: .9rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumbs a { color: var(--ink-500); text-decoration: none; }
+.breadcrumbs a:hover { color: var(--accent-strong); text-decoration: underline; }
+.breadcrumbs .sep { color: var(--silver-400); }
+
+@media (max-width: 900px) {
+  .nav__toggle { display: inline-flex; }
+
+  .nav__links {
+    /* Opaque, and no backdrop-filter. This panel covers page content, and a blurred child
+     * inside the blurred header loses its background paint wherever backdrop-filter is
+     * unsupported — the content behind then bleeds through. See the design system. */
+    display: none;
+    position: absolute;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .15rem;
+    padding: .75rem 1.25rem 1rem;
+    background: var(--white);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: 1px solid var(--hairline);
+    box-shadow: var(--shadow-md);
+  }
+
+  .nav__links.is-open { display: flex; }
+  .nav__spacer { margin-left: 0; }
+  .nav { position: relative; }
+}

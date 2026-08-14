@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!--
+  The knowledge list. Served at /knowledge/ by LocalWebConsole.
+
+  Everything below is static: the page fetches what it shows, so this file never contains
+  player data and there is nothing here to escape. Assets are same-origin and nothing is
+  fetched from off the machine — see .agents/design/web-design-system.md.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Knowledge · MCAgents Console</title>
+  <script>
+    window.SITE_ROOT = '../';
+    window.PAGE_SECTION = 'knowledge';
+  </script>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/shared/layout.css">
+  <link rel="stylesheet" href="../assets/css/shared/components.css">
+  <link rel="stylesheet" href="../assets/css/knowledge/knowledge.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+  <div class="container">
+    <section class="hero">
+      <p class="eyebrow">Local library</p>
+      <h1>Knowledge Packs</h1>
+      <p class="lead">Everything downloaded to this machine. Twenty load at a time — keep
+        scrolling for more.</p>
+    </section>
+
+    <div class="toolbar">
+      <div class="search">
+        <label class="visually-hidden" for="knowledge-search">Search packs</label>
+        <input class="field" id="knowledge-search" type="search" autocomplete="off"
+               placeholder="Search titles and text…">
+      </div>
+      <span class="count" id="knowledge-count"></span>
+    </div>
+
+    <div class="chip-row" id="knowledge-filters" role="group" aria-label="Filter by category">
+      <button class="chip" type="button" data-availability="free">Free</button>
+      <button class="chip" type="button" data-availability="premium">Premium</button>
+    </div>
+
+    <div class="card-grid" id="knowledge-list" style="margin-top:1rem"></div>
+    <div id="scroll-sentinel" aria-hidden="true"></div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../assets/js/site.js"></script>
+<script src="../assets/js/knowledge.js"></script>
+</body>
+</html>

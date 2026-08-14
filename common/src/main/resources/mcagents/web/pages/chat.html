@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--
+  The chat page. Served at /chat/.
+
+  Writes as well as reads: a question asked here goes to the same store and the same agent
+  the in-game screen uses. The page polls a revision counter so a message typed in Minecraft
+  appears without a refresh.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Chat · MCAgents Console</title>
+  <script>
+    window.SITE_ROOT = '../';
+    window.PAGE_SECTION = 'chat';
+  </script>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/shared/layout.css">
+  <link rel="stylesheet" href="../assets/css/shared/components.css">
+  <link rel="stylesheet" href="../assets/css/chat/chat.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+  <div class="container">
+    <div class="chat-layout">
+      <aside class="panel chat-side" aria-label="Conversations">
+        <div class="btn-row">
+          <button class="btn btn--primary btn--small" type="button" id="new-chat">New chat</button>
+          <span class="count" id="chat-count"></span>
+        </div>
+
+        <label class="visually-hidden" for="chat-search">Search chats</label>
+        <input class="field" id="chat-search" type="search" autocomplete="off"
+               placeholder="Search chats…" style="margin-top:.6rem">
+
+        <div class="chat-side__list" id="chat-list">
+          <div id="scroll-sentinel" aria-hidden="true"></div>
+        </div>
+      </aside>
+
+      <section class="panel chat-main" aria-label="Conversation">
+        <header class="chat-main__head">
+          <span class="chat-main__title" id="chat-title">No chat selected</span>
+          <button class="btn btn--small" type="button" id="rename-chat" disabled>Rename</button>
+          <button class="btn btn--small btn--danger" type="button" id="delete-chat" disabled>Delete</button>
+        </header>
+
+        <div class="messages" id="messages">
+          <div class="state">Pick a chat on the left, or start a new one.</div>
+        </div>
+
+        <div class="composer">
+          <label class="visually-hidden" for="prompt">Ask the agent</label>
+          <textarea class="field" id="prompt" rows="2" placeholder="Ask the agent…" disabled></textarea>
+          <button class="btn btn--primary" type="button" id="send" disabled>Send</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../assets/js/site.js"></script>
+<script src="../assets/js/chat.js"></script>
+</body>
+</html>
