@@ -7,6 +7,8 @@ import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.agent.ModelException;
 import io.github.mcagents.clientfabric.api.agent.PromptMessage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
+import io.github.mcagents.clientfabric.api.model.ChatRole;
+import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 
 import java.io.IOException;
@@ -34,6 +36,7 @@ public final class OpenRouterAgent implements Agent {
 
     private final LocalDatabase database;
     private final ModelClient client;
+    private final KnowledgeRetriever retriever;
     private final Path personaFile;
 
     /**
@@ -45,6 +48,7 @@ public final class OpenRouterAgent implements Agent {
         this.database = Objects.requireNonNull(database, "database");
         this.client = Objects.requireNonNull(client, "client");
         this.personaFile = Objects.requireNonNull(personaFile, "personaFile");
+        this.retriever = new KnowledgeRetriever(database, client);
     }
 
     @Override
@@ -64,10 +68,29 @@ public final class OpenRouterAgent implements Agent {
                     "There is nothing to answer: the conversation is empty"));
         }
 
-        List<PromptMessage> messages =
-                PromptAssembler.assemble(readPersona(), conversation.messages());
+        // Retrieval is scored against the newest question rather than the whole
+        // conversation: a thread that wandered would otherwise keep pulling packs for what
+        // it used to be about.
+        String question = newestQuestion(conversation.messages());
 
-        return client.complete(new ChatRequest(conversation.model(), messages));
+        return retriever.retrieve(conversation.preferences(), question)
+                .thenCompose(knowledge -> {
+                    List<PromptMessage> messages = PromptAssembler.assemble(
+                            readPersona(), conversation.messages(), knowledge);
+                    return client.complete(
+                            new ChatRequest(conversation.preferences().chatModel(), messages));
+                });
+    }
+
+    /** The text of the newest user message, or blank if the conversation has none. */
+    private static String newestQuestion(List<ChatMessage> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            ChatMessage message = messages.get(i);
+            if (message.role() == ChatRole.USER) {
+                return message.content();
+            }
+        }
+        return "";
     }
 
     /**
@@ -88,12 +111,13 @@ public final class OpenRouterAgent implements Agent {
         }
     }
 
-    /** The model to use and the conversation to send, gathered in one step. */
-    private record Conversation(String model, List<ChatMessage> messages) {
-
-        Conversation(io.github.mcagents.clientfabric.api.model.ModelPreferences preferences,
-                     List<ChatMessage> messages) {
-            this(preferences.chatModel(), messages);
-        }
+    /**
+     * The player's model settings and the conversation to send, gathered in one step.
+     *
+     * <p>Holds the whole preference record rather than just the chat model id: retrieval
+     * needs the embedding model and the switch, and reading the settings twice could see
+     * two different answers if the player saved between the reads.
+     */
+    private record Conversation(ModelPreferences preferences, List<ChatMessage> messages) {
     }
 }
