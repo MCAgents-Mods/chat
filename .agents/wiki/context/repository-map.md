@@ -36,8 +36,8 @@ exists because the architecture mentions it — check.
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — and `common.wallet` — the MetaMask bridge and the cryptography it needs. | Embedding and retrieval. No Minecraft on the classpath. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, and `client.gui` — the chat screen, its panels, the model settings screen, and the wallet screens. | Mixins, context injection, the content browser. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.wallet` — the MetaMask bridge and the cryptography it needs — and `common.web` — the web console and the pages it serves from `resources/mcagents/web/`. | Embedding and retrieval. No Minecraft on the classpath. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, and `client.gui` — the chat screen, its panels, the model settings screen, the wallet screens, and the console screen. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -211,8 +211,8 @@ ready, and a dead key is indistinguishable from a mod that never loaded. Storage
 reported *inside* the screen, with a Retry button, where the player is already looking.
 
 Everything the player configures lives in the interface — sessions, models (gear), API keys
-(key icon), and wallets (bottom-left). There is no command, and adding one would be treating
-a symptom.
+(key icon), the web console (globe), and wallets (bottom-left). There is no command, and
+adding one would be treating a symptom.
 
 ## Gotchas
 
@@ -235,6 +235,17 @@ a symptom.
 * **The wallet bridge is a listener, not a server.** It binds to `127.0.0.1` on an ephemeral
   port for one handshake and stops the moment a signature verifies. Any change that lets it
   outlive that — a fixed port, a retry loop, a cached instance — is a defect.
+* **The web console is the opposite, deliberately.** It runs until the player stops it,
+  because a browser tab whose server vanished is a page that stops working while it is being
+  read. The two share their defences and nothing else; **do not change either to match the
+  other.**
+* **A green Java suite says nothing about whether a page works.** Driving the console in a
+  browser found three defects the API tests could not see — a dead observer, two panels that
+  could not scroll, and a composer that scrolled itself off-screen. Chromium is available;
+  use it. See `.agents/memory/tasks/web-console.md`.
+* **Anything a window is paged over needs a total ordering.** `LIMIT`/`OFFSET` over an
+  ambiguous sort shows some rows twice and never shows others, which reads as data loss
+  rather than as a sort bug.
 * **The mod never handles a private key or a recovery phrase.** Not in a field, not in a
   parameter, not in a log. Wallet code deals in public addresses and signatures over
   messages the mod chose.

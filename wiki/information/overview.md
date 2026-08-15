@@ -54,6 +54,16 @@ them.
 **Public addresses only.** The mod has no field for a private key or a recovery phrase, and
 refuses anything that looks like one. See [`wallet-binding.md`](wallet-binding.md).
 
+### The web console
+
+The mod can serve your own data to your own browser: your Knowledge Packs, your chats, and
+your API keys, on `127.0.0.1` and nowhere else. It is for the jobs a Minecraft screen is bad
+at — reading a long pack, scanning a year of conversations, pasting a key. Chat works both
+ways, so a message typed in the browser appears in the game and the other way round.
+
+Keys are shown shortened and never sent to the browser in full. See
+[`web-console.md`](web-console.md).
+
 ### Local storage
 
 Everything the mod remembers lives on the player's own machine:
@@ -101,6 +111,9 @@ embedding model from the suggested lists, or type any OpenRouter model id you li
 lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
 ships.
 
+The globe button beside the key button starts the web console and opens your browser at it.
+It keeps running when you close the screen, so you can read in a browser while you play.
+
 The Wallets button in the bottom-left corner opens wallet management: accounts across the
 top, wallets down the left, and the selected wallet's chain addresses on the right. Click any
 address to copy it in full.
@@ -119,5 +132,6 @@ context injection — inventory, the block you are looking at, chat logs and sco
 
 * [`architecture.md`](architecture.md) — how the modules are split and why.
 * [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.
+* [`web-console.md`](web-console.md) — the browser view of your own data.
 * [`../environments/setup.md`](../environments/setup.md) — building and running it.
 * `MCAgents/server-fabric-expressjs` — the central Knowledge Pack service.
