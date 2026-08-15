@@ -30,10 +30,14 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   Chromium against a seeded store — paging, live search, filters, sending a message, adding
   and removing keys — but no screen of it has been opened in a real client. See
   `.agents/memory/tasks/web-console.md`.
-* **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by 55
-  tests in `common/`, but no screen has been opened in a real client and no signature from
-  the real MetaMask extension has ever been checked — the tests sign with their own
-  secp256k1 signer. See `.agents/memory/tasks/wallet-binding.md`.
+* **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by tests
+  in `common/`, but no screen has been opened in a real client and **no signature from the
+  real MetaMask extension has ever been checked** — the tests sign with their own secp256k1
+  signer. The multi-address handshake makes that gap sharper: nothing has confirmed how many
+  accounts a real extension shares by default, only that the mod binds however many it is
+  given. The `/wallets/` page has been driven in Chromium. See
+  `.agents/memory/tasks/wallet-binding.md` and
+  `.agents/memory/tasks/wallet-accounts.md`.
 * Key rotation, retry with backoff, and the failure messages for each `ModelException` kind
   — all covered by tests against a stub transport, none seen against real OpenRouter.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
@@ -83,10 +87,15 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   unlike the wallet bridge** — do not change either to match the other. A chat write from
   either side moves one counter in `RevisionedChatRepository`, which is what keeps the game
   and the browser in step.
-* Wallets: `player_wallets` and `wallet_platform_addresses` in the same store;
-  `LocalWalletBridge` serves one page on `127.0.0.1` and stops the moment a signature
-  verifies. Keccak-256 and secp256k1 recovery are written out in `common.wallet` — the
-  JDK's SHA3-256 is a different function and would recover the wrong address.
+* Wallets: `player_wallets` and `wallet_platform_addresses` in the same store. One handshake
+  proves **every** address the browser shares, each over its own message and single-use
+  nonce, and each becomes a wallet of its own. `LocalWalletBridge` serves one page on
+  `127.0.0.1` for the in-game path and stops when the page says it has finished; the
+  console's `/wallets/` page needs no bridge, because it is already a page in the browser.
+  `AccountWallets` is the only way into the store, and it checks that a wallet belongs to
+  the account acting on it — the boundary is in the mod, never in the interface. Keccak-256
+  and secp256k1 recovery are written out in `common.wallet` — the JDK's SHA3-256 is a
+  different function and would recover the wrong address.
 
 ## Stack
 
@@ -131,7 +140,8 @@ answers with `RateLimit-*` headers.
 
 Two things are outstanding, and the second is the more interesting.
 
-1. Wallets, the web console, the console button, and the embedding toggle on
+1. Wallets — now a screen of account columns rather than one account behind a dropdown —
+   the web console, the console button, and the embedding toggle on
    `ModelSettingsScreen` are compile-verified and unopened. `platforms/fabric` has no test
    source set, so nothing here can prove any of them. One session in a real client would
    settle them all, plus a binding through the real MetaMask extension and a message typed

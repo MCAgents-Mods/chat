@@ -29,6 +29,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/screen-layout.md`](../memory/tasks/screen-layout.md) | The console screen's colliding text, why constants caused it, and how a screen's arithmetic got under test without Minecraft. |
 | [`../memory/tasks/knowledge-lifecycle.md`](../memory/tasks/knowledge-lifecycle.md) | A pack's life on one machine: arriving, being embedded, going stale, being removed — and why the catalog panel never hides. |
 | [`../memory/tasks/console-dialogs.md`](../memory/tasks/console-dialogs.md) | Why the console draws its own dialogs, what each sync button is allowed to cost, and the self-inflicted deletion a browser caught. |
+| [`../memory/tasks/wallet-accounts.md`](../memory/tasks/wallet-accounts.md) | Proving every address in one trip, where the account boundary is enforced and why, the wallets page and the account columns, and the row-height guess a browser caught. |
 
 ## Maintenance
 

@@ -2,7 +2,7 @@
 
 MCAgentsClient can serve your own data to your own browser. Press `G` in game, then the
 globe button beside the key button, and the mod opens a small web server on `127.0.0.1`
-with three pages: your Knowledge Packs, your chats, and your API keys.
+with your Knowledge Packs, your chats, your models, your wallets, and your API keys.
 
 It exists because a Minecraft screen is a good place to ask a question and a poor place to
 read a thousand-word pack or scan a year of conversations. A browser has a scrollbar, a find
@@ -15,9 +15,13 @@ operating system picks. Nothing outside your machine can connect to it, and noth
 is published or announced.
 
 **Not the wallet bridge.** That is a listener which exists for one MetaMask handshake and
-stops the instant a signature verifies. The console is the opposite by design: it runs from
-when you start it until you stop it, because a browser tab whose server vanished is a page
-that stops working while you are reading it.
+stops as soon as the browser has finished with it. The console is the opposite by design: it
+runs from when you start it until you stop it, because a browser tab whose server vanished is
+a page that stops working while you are reading it.
+
+The console has no need of that bridge for itself. The bridge exists because a Minecraft
+screen has no `window.ethereum` and something has to hand the browser a page; `/wallets/`
+*is* a page in the browser, so it asks MetaMask directly.
 
 **Not a network dependency.** Everything except asking a new question is local. Closing the
 console changes nothing about the game.
@@ -121,6 +125,29 @@ one setting with two homes is one setting that can be shown two ways — the cha
 to behave differently, applying at once because that page has no Save button. The in-game
 model screen keeps its own copy, for a player who never opens a browser.
 
+### `/wallets/`
+
+Every account you keep wallets under, **one panel per account**, side by side. Each panel
+shows five wallets and scrolls past that, so an account with forty of them cannot make its
+own column forty rows tall and push every other account off the window. On a narrow window
+the panels stack and go back to flowing with the page.
+
+The five is measured rather than declared. A wallet row is one line with no address and four
+with three, so a height written in the stylesheet showed five rows in one account and two in
+the next.
+
+**Connect MetaMask** proves every address the browser shares — each with its own message and
+its own single-use nonce — and files each one as a wallet of its own, in that panel's account
+and no other. A declined signature skips that address rather than abandoning the ones already
+proved. See [`wallet-binding.md`](wallet-binding.md).
+
+**A panel can only act on its own account.** Rename, delete, remove an address, bind one: all
+of them name the account, and the mod checks that rather than trusting it. A request naming
+one account and a wallet in another changes nothing.
+
+Nothing here needs the central service, so none of it is disabled when the service is asleep.
+Wallets live on this machine and the service has never heard of them.
+
 ### `/keys/`
 
 Your OpenRouter keys, ten at a time, with add and remove.
@@ -201,7 +228,7 @@ yours. Every page and every data route stays behind the token.
 | Layer | What it holds |
 |---|---|
 | `api/` | `WebConsole`, `WebConsoleException`, `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary` |
-| `common/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, `RevisionedChatRepository`, and the pages under `resources/mcagents/web/` |
+| `common/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets`, and the pages under `resources/mcagents/web/` |
 | `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder`, and the button on `AgentChatScreen` |
 
 The pages are built from the Silver Glass design system — see
@@ -212,5 +239,5 @@ fetched from anywhere, so the console looks the same with no internet at all.
 
 * [`architecture.md`](architecture.md) — the module split these layers follow.
 * [`knowledge-retrieval.md`](knowledge-retrieval.md) — what the Embedding switch governs.
-* [`wallet-binding.md`](wallet-binding.md) — the other thing the mod serves in a browser,
-  and why its server works the opposite way.
+* [`wallet-binding.md`](wallet-binding.md) — what `/wallets/` manages, and why the in-game
+  handshake runs its own short-lived server while this page does not need one.
