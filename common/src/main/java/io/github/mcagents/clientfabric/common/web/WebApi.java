@@ -171,6 +171,45 @@ final class WebApi {
     }
 
     /**
+     * Whether one pack is behind, without downloading it.
+     *
+     * <p>The detail page asks about the pack it is showing. The chat page asks about the
+     * whole library. Neither is a substitute for the other: a reader looking at one pack does
+     * not want a listing of every other one, and a player about to ask a question does not
+     * want to check packs one at a time.
+     */
+    JsonObject packUpdate(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("Name the pack to check.");
+        }
+        KnowledgeSync.PackStatus status = await(sync.checkPack(id), SERVICE_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("id", status.id());
+        body.addProperty("stored", status.stored());
+        body.addProperty("storedVersion", status.storedVersion());
+        body.addProperty("publishedVersion", status.publishedVersion());
+        body.addProperty("updateAvailable", status.updateAvailable());
+        return body;
+    }
+
+    /**
+     * Removes a downloaded pack.
+     *
+     * <p>Local only. Deleting here takes the pack off this machine; it does not unpublish
+     * anything, and the pack reappears under "Available to download" the moment the page is
+     * reloaded — which is the honest outcome, because that is exactly what has happened.
+     *
+     * @return whether a pack was removed, so a missing one answers 404 rather than pretending
+     */
+    boolean deletePack(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("Name the pack to delete.");
+        }
+        return await(database.contents().remove(id), STORAGE_TIMEOUT);
+    }
+
+    /**
      * How much of the library can be retrieved against.
      *
      * <p>Free — it reads the local table and compares vector widths — so the chat page can

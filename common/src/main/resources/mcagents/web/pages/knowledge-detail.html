@@ -61,6 +61,19 @@
         </div>
       </div>
 
+      <!-- Only for a pack that is stored. Checking an update and removing the copy are both
+           about a pack this machine has; neither means anything for one it does not. -->
+      <section class="panel" id="stored-actions" hidden>
+        <h2>This copy</h2>
+        <p class="muted field-note">Both act on your machine only. Nothing here changes what
+          the service publishes.</p>
+        <div class="btn-row">
+          <button class="btn" type="button" id="check-update">Check for update</button>
+          <button class="btn btn--danger" type="button" id="delete-pack">Delete</button>
+          <span class="sync-note" id="stored-note"></span>
+        </div>
+      </section>
+
       <section class="panel">
         <h2>Details</h2>
         <div class="deflist" id="pack-facts"></div>
