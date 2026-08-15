@@ -4,6 +4,7 @@ import io.github.mcagents.clientfabric.api.agent.PromptMessage;
 import io.github.mcagents.clientfabric.api.agent.TokenUsage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
+import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -140,6 +141,65 @@ class PromptCachingTest {
 
         assertEquals(PromptAssembler.defaultPersona(), prompt.getFirst().text());
         assertTrue(prompt.getFirst().cacheBreakpoint());
+    }
+
+    @Test
+    void placesRetrievedPacksAfterTheLastBreakpointAndBeforeTheQuestion() {
+        // The rule the class comment states, as a test. Retrieved content changes with every
+        // question; anywhere inside the cached prefix would re-bill the whole conversation
+        // on every turn, and after the question would bury what was asked.
+        List<PromptMessage> prompt = PromptAssembler.assemble(
+                PERSONA, conversation(2, "how do repeaters work?"), List.of(pack("redstone")));
+
+        PromptMessage last = prompt.getLast();
+        assertEquals("how do repeaters work?", last.text(), "the question stays last");
+
+        PromptMessage injected = prompt.get(prompt.size() - 2);
+        assertEquals(ChatRole.SYSTEM, injected.role());
+        assertTrue(injected.text().contains("Repeaters delay a signal."));
+        assertFalse(injected.cacheBreakpoint());
+
+        assertFalse(cachedPrefix(prompt).contains("Repeaters delay a signal."),
+                "pack text inside the cached prefix would invalidate it every turn");
+    }
+
+    @Test
+    void keepsTheCachedPrefixIdenticalWhetherOrNotPacksWereRetrieved() {
+        // Switching retrieval on or off must not move the breakpoints, or every player who
+        // flips the switch pays for one uncached turn to find that out.
+        List<ChatMessage> messages = conversation(2, "same question");
+
+        assertEquals(
+                cachedPrefix(PromptAssembler.assemble(PERSONA, messages)),
+                cachedPrefix(PromptAssembler.assemble(PERSONA, messages, List.of(pack("redstone")))));
+    }
+
+    @Test
+    void namesEachPackItAttaches() {
+        List<PromptMessage> prompt = PromptAssembler.assemble(
+                PERSONA, conversation(0, "anything"), List.of(pack("redstone"), pack("farming")));
+
+        String injected = prompt.get(prompt.size() - 2).text();
+        assertTrue(injected.contains("redstone") && injected.contains("farming"),
+                "an unattributed wall of text gives the model no way to say where an answer "
+                        + "came from");
+        assertTrue(injected.contains("v1.0.0"));
+    }
+
+    @Test
+    void addsNothingAtAllWhenRetrievalFoundNothing() {
+        List<ChatMessage> messages = conversation(1, "next");
+
+        assertEquals(PromptAssembler.assemble(PERSONA, messages),
+                PromptAssembler.assemble(PERSONA, messages, List.of()));
+    }
+
+    private static KnowledgeContent pack(String id) {
+        String body = id.equals("redstone")
+                ? "Repeaters delay a signal."
+                : "Wheat needs light.";
+        return new KnowledgeContent(id, 1, "1.0.0", false, "Pack " + id, body, "[1, 0, 0]",
+                Instant.now(), Instant.now());
     }
 
     @Test

@@ -3,6 +3,7 @@ package io.github.mcagents.clientfabric.common.agent;
 import io.github.mcagents.clientfabric.api.agent.PromptMessage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
+import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,14 +38,33 @@ public final class PromptAssembler {
     }
 
     /**
-     * Builds the message list.
+     * Builds the message list, with no retrieved content.
      *
      * @param persona  the player's instructions, or blank if they have written none
      * @param messages the stored conversation, oldest first, already including the
      *                 player's newest message
      */
     public static List<PromptMessage> assemble(String persona, List<ChatMessage> messages) {
-        List<PromptMessage> prompt = new ArrayList<>(messages.size() + 1);
+        return assemble(persona, messages, List.of());
+    }
+
+    /**
+     * Builds the message list.
+     *
+     * <p>Retrieved packs go in as one system message immediately before the newest question
+     * — after the last cache breakpoint, so they never invalidate the settled prefix, and
+     * before the question, so the thing the model is being asked stays last. See the class
+     * note: putting them in the persona would re-bill the whole conversation every turn.
+     *
+     * @param persona   the player's instructions, or blank if they have written none
+     * @param messages  the stored conversation, oldest first, already including the
+     *                  player's newest message
+     * @param knowledge the packs retrieval chose, best first; empty when retrieval is off,
+     *                  found nothing, or could not run
+     */
+    public static List<PromptMessage> assemble(String persona, List<ChatMessage> messages,
+                                               List<KnowledgeContent> knowledge) {
+        List<PromptMessage> prompt = new ArrayList<>(messages.size() + 2);
 
         String instructions = persona == null || persona.isBlank()
                 ? defaultPersona()
@@ -53,7 +73,12 @@ public final class PromptAssembler {
         prompt.add(PromptMessage.system(instructions).asCacheBreakpoint());
 
         int lastSettledTurn = lastSettledTurnIndex(messages);
+        int questionIndex = knowledge.isEmpty() ? -1 : newestQuestionIndex(messages);
+
         for (int i = 0; i < messages.size(); i++) {
+            if (i == questionIndex) {
+                prompt.add(PromptMessage.system(reference(knowledge)));
+            }
             ChatMessage message = messages.get(i);
             // A stored system message is context that was deliberately persisted; a stored
             // user or assistant message is a turn. All three replay as they were.
@@ -63,10 +88,57 @@ public final class PromptAssembler {
             prompt.add(i == lastSettledTurn ? entry.asCacheBreakpoint() : entry);
         }
 
+        if (!knowledge.isEmpty() && questionIndex == -1) {
+            // No user message to sit in front of — unusual, but appending is still correct
+            // and losing the content silently would not be.
+            prompt.add(PromptMessage.system(reference(knowledge)));
+        }
+
         if (prompt.size() == 1) {
             throw new IllegalArgumentException("A prompt needs at least one stored message");
         }
         return List.copyOf(prompt);
+    }
+
+    /**
+     * The retrieved packs, as one system message.
+     *
+     * <p>Each is named and versioned. The model is told where this came from and told it may
+     * be irrelevant, because retrieval by similarity has no notion of whether it was right —
+     * an instruction to use the content regardless would turn a near miss into a confident
+     * wrong answer.
+     */
+    private static String reference(List<KnowledgeContent> knowledge) {
+        StringBuilder text = new StringBuilder(
+                "Reference material from the player's Knowledge Packs, selected as possibly "
+                        + "relevant to the question that follows. Use what helps and ignore "
+                        + "what does not; it was matched by similarity and may be off-topic. "
+                        + "Do not mention this material unless you draw on it.");
+
+        for (KnowledgeContent pack : knowledge) {
+            text.append("\n\n--- ").append(pack.title() == null || pack.title().isBlank()
+                            ? pack.id()
+                            : pack.title())
+                    .append(" (").append(pack.id()).append(" v").append(pack.version())
+                    .append(") ---\n")
+                    .append(pack.rawContent() == null ? "" : pack.rawContent());
+        }
+        return text.toString();
+    }
+
+    /**
+     * The index of the newest user message — the question being asked.
+     *
+     * <p>Returns {@code -1} if the conversation ends without one, which {@code respond} does
+     * not produce but a stored conversation could.
+     */
+    private static int newestQuestionIndex(List<ChatMessage> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if (messages.get(i).role() == ChatRole.USER) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
