@@ -42,6 +42,24 @@ inventing one the real service never sends. The fixture now publishes `""`, like
 **When a test double is more generous than the real thing, it tests a system that does not
 exist.**
 
+## Being behind is shown, not counted
+
+`/api/catalog` compared versions from the start but returned only a count, so the library
+list could not mark the pack that was stale — the reader had to open each one to find it. It
+names them now (`outdatedItems`: id, stored version, published version) and the card carries
+the published version as a badge.
+
+**A badge is only ever a version the service reported.** The map is empty before the catalog
+is read and emptied again when it cannot be, so an unreachable service shows nothing rather
+than a claim it can no longer support. That is the same rule the catalog panel follows.
+
+**The catalog is read before the list is rendered**, because the badges depend on it; a later
+catalog read that changes the answer re-renders. The two lists load independently and the
+local one always wins the race, so without that the first paint would be unbadged.
+
+Each list has its own Refresh. The catalog's is the one worth pressing after the service
+wakes up, and pressing it does not re-read a local table that has not changed.
+
 ## Where each operation lives, and why
 
 | Operation | Scope | Where |

@@ -31,10 +31,24 @@ so the search box and the category filters stay where you left them however larg
 library grows. The search box filters as you type, across titles and pack text. The chips
 filter by category and by free or premium.
 
+**Refresh** re-reads your library *and* checks it against the service. A pack the service
+has moved past is badged with the version it now publishes — `v1.0.0 published` beside your
+`v0.1.0` — so being behind is visible on the pack rather than buried in a count. The button
+says how many are behind, or that everything is current. It downloads nothing; **Update
+knowledge** on the chat page is what applies them.
+
+A badge only ever repeats a version the service actually reported. Before the catalog has
+been read, and again if it stops answering, there are no badges at all — an unreachable
+service produces silence rather than a stale claim.
+
 Below it, **Available to download** lists what the service publishes that you do not have,
-in a scrolling panel of its own. Both lists are boxed for the same reason: a library or a
-catalog of any size would otherwise push the search box, the filters, and the headings that
-tell the two lists apart off the top of the window.
+in a scrolling panel of its own, with **its own Refresh**. That is the half of this page
+which depends on the service, so it is the half worth retrying once the banner clears — and
+retrying it does not re-read the library, which has not changed.
+
+Both lists are boxed for the same reason: a library or a catalog of any size would otherwise
+push the search box, the filters, and the headings that tell the two lists apart off the top
+of the window.
 
 **The second panel stays on the page even when it is empty**, saying so — everything
 downloaded, nothing published yet, or the service not answering. It used to hide itself, so
@@ -130,8 +144,8 @@ Nothing on any page depends on it. The lists, the conversations, and the keys al
 it is unreachable; only the refresh and update buttons are disabled, because they are the
 only things that need it.
 
-**Refresh** on the knowledge page downloads nothing. It re-reads your library and the
-catalog, which is what refresh means everywhere else.
+**Refresh** on the knowledge page downloads nothing. It re-reads your library, checks it
+against the catalog, and badges whatever is behind.
 
 **Update knowledge** on the chat page brings the packs you already have up to their published
 versions, and takes nothing new. A new pack is downloaded from its own page, one at a time,
