@@ -230,6 +230,17 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.refreshKnowledge());
             return;
         }
+        if (path.equals("/api/service/updates") && method.equals("GET")) {
+            sendJson(exchange, 200, api.knowledgeUpdates());
+            return;
+        }
+        if (path.startsWith("/api/knowledge/") && path.endsWith("/download")
+                && method.equals("POST")) {
+            String id = path.substring("/api/knowledge/".length(),
+                    path.length() - "/download".length());
+            sendJson(exchange, 200, api.downloadPack(decode(id)));
+            return;
+        }
         if (path.equals("/api/models")) {
             if (method.equals("GET")) {
                 sendJson(exchange, 200, api.models());

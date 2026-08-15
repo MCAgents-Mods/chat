@@ -8,6 +8,7 @@ import com.google.gson.JsonSyntaxException;
 import io.github.mcagents.clientfabric.api.MCAgents;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
+import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
 import io.github.mcagents.clientfabric.common.agent.HttpCall;
 import io.github.mcagents.clientfabric.common.agent.HttpReply;
 import io.github.mcagents.clientfabric.common.agent.HttpTransport;
@@ -132,6 +133,36 @@ public final class CentralService {
         });
     }
 
+    /**
+     * Every pack the service publishes, as summaries.
+     *
+     * <p>What {@link #publishedVersions()} reads, kept rather than reduced to a map. The
+     * console needs the title, the category and the premium flag to show a pack the player
+     * does not have yet, and those already travel in the same response — throwing them away
+     * and asking again for each pack would be one request per row.
+     *
+     * <p>{@code hasEmbedding} is always false on a summary from here. Packs are published as
+     * text and embedded by the client that stores them, so a published pack has no vector by
+     * definition.
+     */
+    public CompletableFuture<List<KnowledgeSummary>> catalog() {
+        return catalog(0, new ArrayList<>());
+    }
+
+    private CompletableFuture<List<KnowledgeSummary>> catalog(
+            int offset, List<KnowledgeSummary> collected) {
+        return get("/v1/contents?offset=" + offset + "&pageSize=100").thenCompose(body -> {
+            for (JsonElement element : array(body, "items")) {
+                collected.add(readSummary(element.getAsJsonObject()));
+            }
+            boolean hasMore = body.has("hasMore") && body.get("hasMore").getAsBoolean();
+            int next = body.has("nextOffset") ? body.get("nextOffset").getAsInt() : offset + 100;
+            return hasMore && next > offset
+                    ? catalog(next, collected)
+                    : CompletableFuture.completedFuture(List.copyOf(collected));
+        });
+    }
+
     /** One pack in full, ready to store. */
     public CompletableFuture<KnowledgeContent> content(String id) {
         return get("/v1/contents/" + encode(id)).thenApply(CentralService::readContent);
@@ -171,6 +202,20 @@ public final class CentralService {
             return "The service does not publish that.";
         }
         return "The service answered " + reply.status() + ".";
+    }
+
+    private static KnowledgeSummary readSummary(JsonObject row) {
+        return new KnowledgeSummary(
+                row.get("id").getAsString(),
+                row.get("categoryId").getAsLong(),
+                row.get("version").getAsString(),
+                row.has("premium") && row.get("premium").getAsBoolean(),
+                string(row, "title"),
+                // Never true from the service: publishing a vector would fix the whole
+                // catalog into one model's space. Embedding is the client's job.
+                false,
+                readInstant(row, "createdAt"),
+                readInstant(row, "updatedAt"));
     }
 
     private static KnowledgeContent readContent(JsonObject row) {

@@ -186,6 +186,90 @@ class KnowledgeSyncTest {
                 "tell the player how long to wait rather than reporting a status code");
     }
 
+    // --------------------------------------------------- one pack at a time
+
+    @Test
+    void downloadsOnePackIntoACompletelyEmptyStore() {
+        // The download button on a pack's page, pressed by a player who has nothing stored.
+        // Same foreign-key trap as the base pack: no categories yet, so the category has to
+        // be written first or the save fails.
+        transport
+                .reply(200, categories())
+                .reply(200, fullPack("wanted", "1.0.0"));
+
+        KnowledgeContent stored = await(sync().download("wanted"));
+
+        assertEquals("wanted", stored.id());
+        assertTrue(await(database.contents().findById("wanted")).isPresent());
+    }
+
+    @Test
+    void downloadsAPackEvenWhenTheStoredCopyIsAlreadyCurrent() {
+        // Deliberately not a version check. The player pressed the button for this pack; a
+        // button that decided there was nothing to do and did nothing looks broken.
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("wanted", "1.0.0")));
+        transport
+                .reply(200, categories())
+                .reply(200, fullPack("wanted", "1.0.0"));
+
+        assertEquals("Pack wanted", await(sync().download("wanted")).title(),
+                "the published copy replaced the stored one");
+    }
+
+    @Test
+    void reportsWhatARefreshWouldFetchWithoutFetchingIt() {
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("current", "1.0.0")));
+        await(database.contents().save(pack("stale", "1.0.0")));
+        transport.reply(200, """
+                {"items":[{"id":"current","version":"1.0.0"},
+                          {"id":"stale","version":"2.0.0"},
+                          {"id":"brand-new","version":"1.0.0"}],"hasMore":false}
+                """);
+
+        KnowledgeSync.UpdateStatus status = await(sync().checkForUpdates());
+
+        assertEquals(java.util.List.of("brand-new"), status.missingIds());
+        assertEquals(java.util.List.of("stale"), status.outdatedIds());
+        assertEquals(2, status.available());
+        assertEquals(3, status.published());
+        // One request, and no pack bodies among them. The check is what lets the chat page
+        // say "two updates available" without spending a download to find out.
+        assertEquals(1, transport.callCount());
+    }
+
+    @Test
+    void reportsNothingToDoWhenTheLibraryIsCurrent() {
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("only", "1.0.0")));
+        transport.reply(200, "{\"items\":[{\"id\":\"only\",\"version\":\"1.0.0\"}],\"hasMore\":false}");
+
+        assertFalse(await(sync().checkForUpdates()).hasUpdates());
+    }
+
+    @Test
+    void listsThePublishedCatalogWithTitlesRatherThanJustVersions() {
+        // The knowledge page shows packs the player does not have yet, so it needs the
+        // title and the category. Both already travel in this response; asking again per
+        // pack would be one request per row.
+        transport.reply(200, """
+                {"items":[{"id":"one","categoryId":2,"version":"1.0.0","premium":true,
+                           "title":"The first one",
+                           "createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}],
+                 "hasMore":false}
+                """);
+
+        var catalog = await(new CentralService(transport, "https://example.invalid").catalog());
+
+        assertEquals(1, catalog.size());
+        assertEquals("The first one", catalog.getFirst().title());
+        assertEquals(2, catalog.getFirst().categoryId());
+        assertTrue(catalog.getFirst().premium());
+        assertFalse(catalog.getFirst().hasEmbedding(),
+                "a published pack never carries a vector; the client embeds what it stores");
+    }
+
     // ----------------------------------------------------- base knowledge
 
     @Test

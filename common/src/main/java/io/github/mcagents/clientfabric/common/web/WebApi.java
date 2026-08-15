@@ -9,6 +9,7 @@ import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ContentAvailability;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
+import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
 import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
@@ -113,6 +114,46 @@ final class WebApi {
         body.addProperty("failed", result.failed());
         body.addProperty("published", result.published());
         body.addProperty("changed", result.changedAnything());
+        return body;
+    }
+
+    /**
+     * What a refresh would fetch, without fetching any of it.
+     *
+     * <p>The chat page asks this when it opens. Checking is one request; downloading is
+     * however many packs have changed, over somebody's home connection, while they are in a
+     * game. Keeping them separate is what lets the page say "three updates available"
+     * without having spent anything to find out.
+     */
+    JsonObject knowledgeUpdates() {
+        KnowledgeSync.UpdateStatus status = await(sync.checkForUpdates(), SERVICE_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("available", status.available());
+        body.addProperty("missing", status.missingIds().size());
+        body.addProperty("outdated", status.outdatedIds().size());
+        body.addProperty("published", status.published());
+        return body;
+    }
+
+    /**
+     * Downloads one pack by id.
+     *
+     * <p>The button on a pack's own page. It does not check the version first: the player
+     * asked for this pack, and deciding it was already current and doing nothing would look
+     * like a broken button.
+     */
+    JsonObject downloadPack(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("Name the pack to download.");
+        }
+        KnowledgeContent stored = await(sync.download(id), SYNC_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("id", stored.id());
+        body.addProperty("version", stored.version());
+        body.addProperty("title", stored.title());
+        body.addProperty("hasEmbedding", stored.hasEmbedding());
         return body;
     }
 
