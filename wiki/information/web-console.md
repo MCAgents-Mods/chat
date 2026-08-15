@@ -130,10 +130,15 @@ Nothing on any page depends on it. The lists, the conversations, and the keys al
 it is unreachable; only the refresh and update buttons are disabled, because they are the
 only things that need it.
 
-**Refresh** on the knowledge page and **Update knowledge** on the chat page are the same
-operation: download whatever the service publishes that this machine does not have. The
-service rate-limits those reads, so pressing repeatedly earns a short wait rather than a
-faster answer.
+**Refresh** on the knowledge page downloads nothing. It re-reads your library and the
+catalog, which is what refresh means everywhere else.
+
+**Update knowledge** on the chat page brings the packs you already have up to their published
+versions, and takes nothing new. A new pack is downloaded from its own page, one at a time,
+where you can see what you are taking. It asks before it runs, because updating a pack drops
+its embedding — so the real cost of pressing it includes embedding the result. The service
+rate-limits these reads, so pressing repeatedly earns a short wait rather than a faster
+answer.
 
 The chat page also **checks** when it opens, and says how many updates are waiting. That
 check is one request and downloads nothing — pressing the button is still the only thing
@@ -142,7 +147,13 @@ that spends bandwidth. Startup checks one pack and one pack only, `mcagents-info
 
 **Check embeddings** beside it is not a service operation at all. It asks your model
 provider to embed the packs that have no usable vector, so it keeps working while the
-service is asleep and is never disabled with the buttons that need it.
+service is asleep and is never disabled with the buttons that need it. It asks first and
+tells you how many packs it is about to send: each one is a separate request charged to your
+API key.
+
+Every question the console asks — rename, delete, update, embed — is a dialog drawn by the
+page itself, never a browser popup. Browsers let you silence their own dialogs after the
+second one, and a "delete this?" that has been silenced is a deletion.
 
 ## What keeps it safe
 
