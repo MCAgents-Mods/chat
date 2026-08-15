@@ -254,8 +254,10 @@
   /**
    * Paints a state button: the words, the colour, and what assistive technology is told.
    *
-   * One function because the model page and the chat page show the same switch, and two
-   * copies would eventually disagree about which colour meant which state.
+   * Shared rather than inlined so the colours keep meaning one thing across the console.
+   * The embedding switch is the only such button today and lives on /model/ alone — it was
+   * on the chat header too, which gave one setting two homes that could disagree about what
+   * it currently was.
    */
   function paintToggle(button, enabled, labels) {
     var words = labels || { on: 'Embedding on', off: 'Embedding off' };
@@ -266,52 +268,6 @@
     button.title = enabled
       ? 'Questions are matched against your Knowledge Packs, and the closest are sent with them.'
       : 'Questions are sent on their own. Knowledge Packs are not used, and no embedding is charged for.';
-  }
-
-  /**
-   * Wires the embedding switch where flipping it takes effect at once.
-   *
-   * The chat page has no Save button, so a switch that waited for one would never be
-   * applied. It writes only the flag: sending the model ids back would let a stale page
-   * overwrite a model the player had just changed in the game.
-   *
-   * The button is repainted from what the console stored, not from what was clicked. If the
-   * write fails, the button goes back to the truth rather than showing a state the mod is
-   * not in.
-   */
-  function wireEmbeddingToggle(button, onChange) {
-    if (!button) {
-      return { set: function () {} };
-    }
-    var enabled = true;
-
-    function show(value) {
-      enabled = value;
-      paintToggle(button, enabled);
-    }
-
-    button.addEventListener('click', async function () {
-      button.disabled = true;
-      try {
-        var stored = await api('/models', {
-          method: 'PUT',
-          body: { embeddingEnabled: !enabled }
-        });
-        show(stored.embeddingEnabled);
-        if (onChange) {
-          onChange(stored.embeddingEnabled, null);
-        }
-      } catch (error) {
-        show(enabled);
-        if (onChange) {
-          onChange(enabled, error);
-        }
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    return { set: show };
   }
 
   window.MCAgents = {
@@ -326,7 +282,6 @@
     onVisible: onVisible,
     wireSyncButton: wireSyncButton,
     paintToggle: paintToggle,
-    wireEmbeddingToggle: wireEmbeddingToggle,
     formatDate: formatDate
   };
 
