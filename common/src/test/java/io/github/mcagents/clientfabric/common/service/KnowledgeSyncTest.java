@@ -270,6 +270,67 @@ class KnowledgeSyncTest {
                 "a published pack never carries a vector; the client embeds what it stores");
     }
 
+    // --------------------------------------------- embeddings and versions
+
+    @Test
+    void dropsTheEmbeddingWhenAPackIsUpdatedToANewVersion() {
+        // An embedding describes the text it was made from. A new version is new text, so
+        // keeping the old vector would leave the pack matching questions about wording that
+        // is no longer in it — wrong in a way nothing on screen would show, because the pack
+        // would still say "Embedded".
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("moving", "1.0.0")));
+        assertTrue(await(database.contents().findById("moving")).orElseThrow().hasEmbedding());
+
+        transport
+                .reply(200, categories())
+                .reply(200, "{\"items\":[{\"id\":\"moving\",\"version\":\"2.0.0\"}],\"hasMore\":false}")
+                .reply(200, fullPack("moving", "2.0.0"));
+
+        await(sync().refresh());
+
+        KnowledgeContent after = await(database.contents().findById("moving")).orElseThrow();
+        assertEquals("2.0.0", after.version());
+        assertFalse(after.hasEmbedding(),
+                "the new text needs a new vector, and until it has one it must say so");
+    }
+
+    @Test
+    void keepsTheEmbeddingWhenTheSameVersionIsDownloadedAgain() {
+        // The download button does not check the version first, so it will happily re-fetch
+        // a pack the player already has. The text that comes back is byte-identical, so the
+        // vector still describes it — throwing it away would charge the player to compute
+        // the same numbers twice.
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("steady", "1.0.0")));
+
+        transport
+                .reply(200, categories())
+                .reply(200, fullPack("steady", "1.0.0"));
+
+        await(sync().download("steady"));
+
+        KnowledgeContent after = await(database.contents().findById("steady")).orElseThrow();
+        assertTrue(after.hasEmbedding(), "same version, same text, same vector");
+        assertEquals("[0.1]", after.embeddedData());
+    }
+
+    @Test
+    void dropsTheEmbeddingWhenOnePackIsDownloadedAtANewVersion() {
+        // The same rule through the single-pack path, because a player who updates one pack
+        // from its own page is doing the same thing refresh does to all of them.
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("moving", "1.0.0")));
+
+        transport
+                .reply(200, categories())
+                .reply(200, fullPack("moving", "3.0.0"));
+
+        await(sync().download("moving"));
+
+        assertFalse(await(database.contents().findById("moving")).orElseThrow().hasEmbedding());
+    }
+
     // ----------------------------------------------------- base knowledge
 
     @Test
@@ -347,10 +408,17 @@ class KnowledgeSyncTest {
                 + "\"createdAt\":\"2026-01-01T00:00:00Z\",\"updatedAt\":\"2026-01-01T00:00:00Z\"}]}";
     }
 
+    /**
+     * A pack as the service publishes it: text, and no vector.
+     *
+     * <p>Empty on purpose, and not a shortcut. An embedding is only comparable inside the
+     * space of the model that made it, so the service ships none and the client embeds what
+     * it stores. A fixture that carried one would test a service that does not exist.
+     */
     private static String fullPack(String id, String version) {
         return "{\"id\":\"" + id + "\",\"categoryId\":1,\"version\":\"" + version + "\","
                 + "\"premium\":false,\"title\":\"Pack " + id + "\","
-                + "\"rawContent\":\"Body of " + id + "\",\"embeddedData\":\"[0.1]\","
+                + "\"rawContent\":\"Body of " + id + "\",\"embeddedData\":\"\","
                 + "\"createdAt\":\"2026-01-01T00:00:00Z\",\"updatedAt\":\"2026-01-01T00:00:00Z\"}";
     }
 
