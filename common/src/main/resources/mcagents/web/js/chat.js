@@ -371,12 +371,20 @@
     var noteEl = document.getElementById('sync-note');
     var updateButton = document.getElementById('update-knowledge');
     M.wireSyncButton(updateButton, noteEl, function () {
-      /* A download leaves packs without vectors, and the very next thing the player needs
-       * is to be told so. */
+      /* Both numbers moved: what was waiting has arrived, and it arrived without a vector.
+       * Re-read rather than adjusted, so the line cannot drift from the truth. */
+      checkForUpdates();
       showEmbeddingStatus();
     });
     window.MCAgentsService.onChange(function (reachable) {
       updateButton.disabled = !reachable;
+      if (reachable) {
+        /* Checked here rather than at startup. The loader fetches one pack -- the one
+         * describing the mod -- and nothing else, because a game that stalls on somebody
+         * else's host while it loads is a game that stalls. Everything else is checked when
+         * this page opens, which is when a player is actually thinking about knowledge. */
+        checkForUpdates();
+      }
     });
     window.MCAgentsService.start();
 
@@ -409,14 +417,49 @@
      * that do need it. */
     var embedButton = document.getElementById('embed-knowledge');
 
+    /* Two questions, one line.
+     *
+     * They are asked separately and answered together because they arrive at different
+     * times — the update check waits for the service to prove it is awake, the embedding
+     * count is local and instant — and two functions each writing to one note would race,
+     * with whichever finished last silently erasing the other.
+     *
+     * It has its own element rather than sharing the buttons' note. That one reports what a
+     * button just did; this reports what is still true. Sharing it meant "Downloaded 3
+     * packs." was wiped a moment later by the standing state it had just changed. */
+    var notices = { updates: 0, needingEmbedding: 0 };
+    var noticeEl = document.getElementById('knowledge-notice');
+
+    function showNotices() {
+      var parts = [];
+      if (notices.updates > 0) {
+        parts.push(notices.updates
+          + (notices.updates === 1 ? ' update available' : ' updates available'));
+      }
+      if (notices.needingEmbedding > 0) {
+        parts.push(notices.needingEmbedding
+          + (notices.needingEmbedding === 1 ? ' pack needs embedding' : ' packs need embedding'));
+      }
+      noticeEl.textContent = parts.length ? parts.join(' · ') + '.' : '';
+    }
+
+    /* One request that downloads nothing, so the page can say what is waiting without
+     * having spent a download to find out. Pressing Update knowledge remains the only
+     * thing that fetches anything. */
+    async function checkForUpdates() {
+      try {
+        notices.updates = (await M.api('/service/updates')).available;
+        showNotices();
+      } catch (ignored) {
+        /* An asleep service is the ordinary case, and the banner already says so. */
+      }
+    }
+
     async function showEmbeddingStatus() {
       try {
         var status = await M.api('/embeddings');
-        if (status.needing > 0) {
-          noteEl.textContent = status.needing
-            + (status.needing === 1 ? ' pack needs embedding.' : ' packs need embedding.');
-          noteEl.className = 'sync-note';
-        }
+        notices.needingEmbedding = status.needing;
+        showNotices();
         return status;
       } catch (ignored) {
         return null;
