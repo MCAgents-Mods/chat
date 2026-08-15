@@ -367,6 +367,14 @@
     // Watched against the sidebar's own scroller, not the viewport: the list scrolls
     // inside that panel, so the page's scrollbar says nothing about reaching its end.
     sentinelVisible = M.onVisible(sentinel, loadMore, listEl);
+
+    var updateButton = document.getElementById('update-knowledge');
+    M.wireSyncButton(updateButton, document.getElementById('sync-note'));
+    window.MCAgentsService.onChange(function (reachable) {
+      updateButton.disabled = !reachable;
+    });
+    window.MCAgentsService.start();
+
     await syncRevision();
     await resetList();
     window.setInterval(poll, POLL_MS);
