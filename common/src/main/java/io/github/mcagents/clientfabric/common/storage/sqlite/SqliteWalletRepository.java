@@ -85,6 +85,26 @@ final class SqliteWalletRepository implements WalletRepository {
     }
 
     @Override
+    public CompletableFuture<Optional<Wallet>> findWalletInAccount(
+            String accountId, String walletId) {
+        return worker.submit("Reading a wallet in an account", connection -> {
+            // The account is in the WHERE clause rather than checked after the read, so
+            // there is no moment at which a wallet from another account has been loaded and
+            // is waiting to be rejected.
+            String sql = "SELECT " + WALLET_COLUMNS + " FROM player_wallets "
+                    + "WHERE id = ? AND account_id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, walletId);
+                statement.setString(2, required(accountId, "an account id"));
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<Wallet> found = withAddresses(connection, readWalletRows(rows));
+                    return found.isEmpty() ? Optional.empty() : Optional.of(found.getFirst());
+                }
+            }
+        });
+    }
+
+    @Override
     public CompletableFuture<Wallet> createWallet(String accountId, String label) {
         String id = UUID.randomUUID().toString();
 

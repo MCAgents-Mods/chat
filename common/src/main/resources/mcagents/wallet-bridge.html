@@ -49,6 +49,16 @@
     .bad { color: #ff8080; }
     .muted { color: #9a9aa4; }
     code { color: #9cc4ff; word-break: break-all; }
+    /* Five rows, then it scrolls: a browser with a long account list must not push the
+       buttons off the bottom of the window. */
+    #accounts { max-height: 11.5rem; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+    #accounts li {
+      display: flex; gap: 10px; align-items: baseline; justify-content: space-between;
+      padding: 4px 0; border-bottom: 1px solid #26262e;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    #accounts li:last-child { border-bottom: 0; }
+    #accounts .state { font-family: inherit; flex: none; }
   </style>
 </head>
 <body>
@@ -59,18 +69,26 @@
 
   <div class="card warn">
     <strong>MCAgents will never ask for your Secret Recovery Phrase or a private key.</strong>
-    This page asks MetaMask for one signature. A signature proves you control the address —
-    it authorises nothing, moves no funds, and never reaches a chain. If any page ever asks
-    you for a recovery phrase, close it.
+    This page asks MetaMask for one signature per address. A signature proves you control
+    that address — it authorises nothing, moves no funds, and never reaches a chain. If any
+    page ever asks you for a recovery phrase, close it.
   </div>
 
   <div class="card">
-    <p class="muted" style="margin:0 0 10px">You will be asked to sign this message:</p>
-    <pre id="message">Loading…</pre>
+    <p class="muted" style="margin:0 0 10px">You will be asked to sign one message per
+      address. Each names the address it proves, so one signature can never stand for
+      another.</p>
+    <pre id="message">Every address MetaMask shares with this page will be bound.</pre>
+  </div>
+
+  <div class="card" id="accounts-card" hidden>
+    <p class="muted" style="margin:0 0 10px">Addresses in this connection:</p>
+    <ul id="accounts"></ul>
   </div>
 
   <div class="row">
     <button id="connect" class="primary" disabled>Connect MetaMask</button>
+    <button id="choose" class="ghost">Choose accounts…</button>
     <button id="cancel" class="ghost">Cancel</button>
   </div>
   <div id="status" class="muted"></div>
@@ -84,11 +102,12 @@
     // bridge refuses anything that does not.
     const token = new URLSearchParams(location.search).get('t') || '';
     const connectButton = document.getElementById('connect');
+    const chooseButton = document.getElementById('choose');
     const cancelButton = document.getElementById('cancel');
     const statusLine = document.getElementById('status');
-    const messageBlock = document.getElementById('message');
+    const accountsCard = document.getElementById('accounts-card');
+    const accountsList = document.getElementById('accounts');
 
-    let message = '';
     let finished = false;
 
     function say(text, kind) {
@@ -96,8 +115,10 @@
       statusLine.className = kind || 'muted';
     }
 
-    function url(path) {
-      return path + '?t=' + encodeURIComponent(token);
+    function url(path, params) {
+      const query = new URLSearchParams(params || {});
+      query.set('t', token);
+      return path + '?' + query.toString();
     }
 
     // MetaMask expects personal_sign data as hex-encoded UTF-8 and shows the decoded text
@@ -111,91 +132,179 @@
       return hex;
     }
 
-    async function loadChallenge() {
-      try {
-        const response = await fetch(url('/challenge'));
-        if (!response.ok) {
-          throw new Error('rejected');
-        }
-        message = (await response.json()).message;
-        messageBlock.textContent = message;
-      } catch (error) {
-        messageBlock.textContent = '';
-        say('This link is no longer valid. Start the connection again from the game.', 'bad');
+    function shorten(address) {
+      return address.length > 13
+        ? address.slice(0, 7) + '\u2026' + address.slice(-5)
+        : address;
+    }
+
+    /** One row per address, so the player can see which ones are still to come. */
+    function addRow(address) {
+      const row = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = shorten(address);
+      const state = document.createElement('span');
+      state.className = 'state muted';
+      state.textContent = 'waiting';
+      row.append(name, state);
+      accountsList.append(row);
+      accountsCard.hidden = false;
+      return state;
+    }
+
+    /** Lets the player hand over accounts they did not connect the first time. */
+    async function choose() {
+      if (!window.ethereum) {
         return;
+      }
+      try {
+        await window.ethereum.request({
+          method: 'wallet_requestPermissions',
+          params: [{ eth_accounts: {} }]
+        });
+      } catch (ignored) {
+        // Declining is an ordinary answer, and the accounts already shared still stand.
+      }
+    }
+
+    /** Signs one address and posts it back. Returns whether it was accepted. */
+    async function prove(address, state) {
+      state.textContent = 'signing\u2026';
+      state.className = 'state muted';
+
+      const challenge = await fetch(url('/challenge', { address: address }));
+      if (!challenge.ok) {
+        throw new Error('This link is no longer valid.');
+      }
+      const issued = await challenge.json();
+
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [toHex(issued.message), address]
+      });
+
+      let chainId = '';
+      try {
+        chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      } catch (ignored) {
+        // The chain is a nicety: it decides which chain the address is filed under, and
+        // the mod falls back to Ethereum without it. Not worth failing the binding for.
       }
 
-      if (!window.ethereum) {
-        say('No MetaMask found in this browser. Open this page in the browser MetaMask is '
-          + 'installed in — the address is in the game window.', 'bad');
-        return;
+      const response = await fetch(url('/callback'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nonce: issued.nonce, address: address, signature: signature, chainId: chainId
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'The mod rejected the signature.');
       }
-      connectButton.disabled = false;
-      say('Ready when you are.');
+      state.textContent = 'bound \u00b7 ' + result.platform;
+      state.className = 'state ok';
+      return true;
     }
 
     async function connect() {
       connectButton.disabled = true;
-      say('Waiting for MetaMask…');
+      chooseButton.disabled = true;
+      accountsList.replaceChildren();
+      say('Waiting for MetaMask\u2026');
 
+      let accounts;
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || accounts.length === 0) {
-          throw new Error('No account was shared.');
-        }
-        const address = accounts[0];
-
-        say('Confirm the signature in MetaMask…');
-        const signature = await window.ethereum.request({
-          method: 'personal_sign',
-          params: [toHex(message), address]
-        });
-
-        let chainId = '';
-        try {
-          chainId = await window.ethereum.request({ method: 'eth_chainId' });
-        } catch (ignored) {
-          // The chain is a nicety: it decides which chain the address is filed under, and
-          // the mod falls back to Ethereum without it. Not worth failing the binding for.
-        }
-
-        const response = await fetch(url('/callback'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address: address, signature: signature, chainId: chainId })
-        });
-        const result = await response.json();
-        if (!response.ok) {
-          throw new Error(result.error || 'The mod rejected the signature.');
-        }
-
-        finished = true;
-        connectButton.style.display = 'none';
-        cancelButton.style.display = 'none';
-        statusLine.innerHTML = 'Bound <code>' + result.address + '</code> on '
-          + result.platform + '. You can close this tab and go back to the game.';
-        statusLine.className = 'ok';
+        accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       } catch (error) {
         connectButton.disabled = false;
-        const reason = (error && (error.message || error.reason)) || String(error);
-        say(reason.includes('User rejected') || reason.includes('user rejected')
-          ? 'You declined in MetaMask. Nothing was bound.'
-          : reason, 'bad');
+        chooseButton.disabled = false;
+        say(describe(error), 'bad');
+        return;
+      }
+      if (!accounts || accounts.length === 0) {
+        connectButton.disabled = false;
+        chooseButton.disabled = false;
+        say('No account was shared. Nothing was bound.', 'bad');
+        return;
+      }
+
+      const rows = accounts.map(function (address) { return [address, addRow(address)]; });
+      let bound = 0;
+
+      // Every address in turn, and one that fails does not take the rest with it: a
+      // declined signature on the third of five is a reason to skip it, not to throw away
+      // the two already proved.
+      for (const [address, state] of rows) {
+        say('Confirm in MetaMask \u2014 ' + (bound + 1) + ' of ' + rows.length + '\u2026');
+        try {
+          await prove(address, state);
+          bound += 1;
+        } catch (error) {
+          state.textContent = 'skipped';
+          state.className = 'state bad';
+          if (String(describe(error)).indexOf('no longer valid') >= 0) {
+            say('This link is no longer valid. Start the connection again from the game.',
+              'bad');
+            return;
+          }
+        }
+      }
+
+      if (bound === 0) {
+        connectButton.disabled = false;
+        chooseButton.disabled = false;
+        say('Nothing was signed, so nothing was bound.', 'bad');
+        return;
+      }
+
+      finished = true;
+      connectButton.style.display = 'none';
+      chooseButton.style.display = 'none';
+      cancelButton.style.display = 'none';
+      say('Bound ' + bound + (bound === 1 ? ' address' : ' addresses')
+        + '. You can close this tab and go back to the game.', 'ok');
+
+      // Telling the bridge the list is finished is what stops it: only this page knows how
+      // many accounts MetaMask exposed.
+      try {
+        await fetch(url('/done'), { method: 'POST' });
+      } catch (ignored) {
+        // The bridge stops on its own timeout regardless; there is nothing to report.
       }
     }
 
     async function cancel() {
       cancelButton.disabled = true;
       connectButton.disabled = true;
+      chooseButton.disabled = true;
       try {
         await fetch(url('/cancel'), { method: 'POST' });
       } catch (ignored) {
         // The bridge stops either way; there is nothing useful to report here.
       }
-      say('Cancelled. You can close this tab.');
+      say('Cancelled. Anything already signed was kept; you can close this tab.');
+    }
+
+    function describe(error) {
+      const reason = (error && (error.message || error.reason)) || String(error);
+      return reason.indexOf('User rejected') >= 0 || reason.indexOf('user rejected') >= 0
+        ? 'You declined in MetaMask.'
+        : reason;
+    }
+
+    function ready() {
+      if (!window.ethereum) {
+        say('No MetaMask found in this browser. Open this page in the browser MetaMask is '
+          + 'installed in \u2014 the address is in the game window.', 'bad');
+        return;
+      }
+      connectButton.disabled = false;
+      say('Ready when you are. Every address you share will be signed in turn.');
     }
 
     connectButton.addEventListener('click', connect);
+    chooseButton.addEventListener('click', choose);
     cancelButton.addEventListener('click', cancel);
     // Closing the tab mid-handshake tells the mod, so it stops listening now rather than
     // waiting out its timeout.
@@ -205,7 +314,7 @@
       }
     });
 
-    loadChallenge();
+    ready();
   })();
 </script>
 </body>

@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.api.wallet;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -18,9 +19,14 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>It is <strong>not a server the mod runs</strong>. It binds to {@code 127.0.0.1} on a
  * port the operating system picks, it answers only requests carrying the one-time token in
- * {@link #url()}, and <strong>it stops the moment the signature verifies</strong> — or when
- * the player cancels, or when the timeout passes, whichever comes first. Nothing outside
- * the machine can reach it and nothing keeps it alive.
+ * {@link #url()}, and <strong>it stops as soon as the browser says it has finished</strong>
+ * — or when the player cancels, or when the timeout passes, whichever comes first. Nothing
+ * outside the machine can reach it and nothing keeps it alive.
+ *
+ * <p>One handshake, but not one address. A browser holds as many accounts as the player has
+ * connected, and asking them to make this trip once per address was making them do by hand
+ * what the page can do in a loop — so the page signs every address in turn and the bridge
+ * collects them all before it stops.
  *
  * <p>It is also <strong>not a network dependency</strong>. Every wallet already bound stays
  * readable and every screen stays usable with no internet at all; only binding a new one
@@ -40,20 +46,26 @@ public interface WalletBridge extends AutoCloseable {
     URI url();
 
     /**
-     * Completes with the verified address once the player signs.
+     * Completes with every address the player proved, in the order they were signed.
      *
-     * <p>Completes exceptionally with a {@link WalletBridgeException} if the player cancels,
-     * the signature does not match the address it was offered with, or the timeout passes.
-     * It never completes with an unverified address — an address that arrived without a
-     * matching signature is a failure, not a result.
+     * <p>Completes exceptionally with a {@link WalletBridgeException} when the attempt ended
+     * with nothing proved: the player cancelled before signing anything, the timeout passed,
+     * or the screen closed. A signature that does not match the address it arrived with is
+     * refused on the spot and simply never joins the list.
+     *
+     * <p><strong>What was proved is kept.</strong> An attempt that ends early after two of
+     * five addresses were signed completes with those two rather than throwing them away:
+     * they were proved, and discarding them would only mean asking the player to sign them
+     * again. The list never contains an unverified address.
      */
-    CompletableFuture<WalletBinding> binding();
+    CompletableFuture<List<WalletBinding>> bindings();
 
     /**
      * Stops listening. Safe to call twice, and safe to call after the binding has completed.
      *
-     * <p>A pending {@link #binding()} is completed exceptionally rather than left hanging:
-     * a screen waiting on a future nobody will finish is a screen that waits forever.
+     * <p>A pending {@link #bindings()} is settled rather than left hanging — with whatever
+     * was already proved, or exceptionally if nothing was. A screen waiting on a future
+     * nobody will finish is a screen that waits forever.
      */
     @Override
     void close();

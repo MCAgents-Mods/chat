@@ -4,6 +4,8 @@ import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.wallet.ChainAddress;
 import io.github.mcagents.clientfabric.api.wallet.ChainPlatform;
 import io.github.mcagents.clientfabric.api.wallet.Wallet;
+import io.github.mcagents.clientfabric.api.wallet.WalletBinding;
+import io.github.mcagents.clientfabric.common.wallet.AccountWallets;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -57,6 +59,7 @@ public final class WalletScreen extends Screen {
     private static final int STATUS_TICKS = 80;
 
     private final LocalDatabase database;
+    private final AccountWallets accountWallets;
     private final Screen parent;
     private final WaitingIndicator waiting = new WaitingIndicator();
 
@@ -86,6 +89,7 @@ public final class WalletScreen extends Screen {
     public WalletScreen(LocalDatabase database, Screen parent, String defaultAccount) {
         super(Component.translatable("gui.mcagents.wallets.title"));
         this.database = database;
+        this.accountWallets = new AccountWallets(database.wallets());
         this.parent = parent;
         this.activeAccount = defaultAccount;
     }
@@ -315,19 +319,45 @@ public final class WalletScreen extends Screen {
     }
 
     /**
-     * Starts the MetaMask handshake for the selected wallet.
+     * Starts the MetaMask handshake for this account.
      *
      * <p>The bridge, the browser, and the signature check all live behind
-     * {@link WalletConnectScreen}; what comes back here is an address that has already been
-     * proved.
+     * {@link WalletConnectScreen}; what comes back here is a list of addresses that have
+     * already been proved — <strong>every</strong> account the browser shared, not only the
+     * one it happened to have selected.
+     *
+     * <p>They are filed by {@link AccountWallets}, one wallet per address, and only into the
+     * account this screen is showing — which is also the account named in the message the
+     * player signed.
      */
     private void connectWallet() {
         if (minecraft == null) {
             return;
         }
-        withWallet(wallet -> minecraft.setScreenAndShow(
-                new WalletConnectScreen(account(), wallet, this, binding -> bind(
-                        wallet, binding.platform(), binding.address(), true))));
+        String account = account();
+        if (account.isBlank()) {
+            show(Component.translatable("gui.mcagents.wallets.account.missing"), true);
+            return;
+        }
+        // No wallet has to exist first. The handshake belongs to the account, and what comes
+        // back decides how many wallets there are — pre-making one would only guess at a
+        // number the browser has not told us yet.
+        minecraft.setScreenAndShow(new WalletConnectScreen(account, this, this::bindProved));
+    }
+
+    private void bindProved(List<WalletBinding> proved) {
+        String account = account();
+        if (account.isBlank() || proved.isEmpty()) {
+            return;
+        }
+        onClientThread(waiting.track(accountWallets.bindAll(account, proved)), bound -> {
+            if (!bound.isEmpty()) {
+                selectedWalletId = bound.getFirst().id();
+            }
+            loadAccounts();
+            loadWallets();
+            show(Component.translatable("gui.mcagents.wallets.bound.many", bound.size()), false);
+        }, "Could not store the proved addresses");
     }
 
     /**
@@ -356,9 +386,15 @@ public final class WalletScreen extends Screen {
         }, "Could not create the wallet");
     }
 
+    /**
+     * Records one hand-typed address, through the account check rather than around it.
+     *
+     * <p>The wallet came from this account's own list, so the check passes — which is the
+     * point: there is one way into the store and it is the one that knows about accounts.
+     */
     private void bind(Wallet wallet, ChainPlatform platform, String address, boolean verified) {
-        onClientThread(waiting.track(database.wallets()
-                        .addOrUpdateAddress(wallet.id(), platform, address, verified)),
+        onClientThread(waiting.track(accountWallets
+                        .bind(account(), wallet.id(), platform, address, verified)),
                 stored -> {
                     selectedWalletId = stored.id();
                     loadWallets();

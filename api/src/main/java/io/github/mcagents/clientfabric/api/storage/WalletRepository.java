@@ -39,6 +39,22 @@ public interface WalletRepository {
     CompletableFuture<Optional<Wallet>> findWalletById(String walletId);
 
     /**
+     * One wallet, but only if it belongs to the account named.
+     *
+     * <p>This is the account boundary, and it exists because a wallet id alone does not
+     * carry one. Anything acting on a wallet on behalf of an account — a page showing that
+     * account's panel, a screen with that account selected, a handshake that named it in the
+     * message the player signed — resolves the wallet through here rather than by id, so a
+     * request that names one account and a wallet in another finds nothing rather than
+     * quietly writing across the boundary.
+     *
+     * <p>Empty means "not in that account", which covers both a wallet that has been deleted
+     * and a wallet that belongs to somebody else. The caller cannot tell the two apart, and
+     * has no reason to.
+     */
+    CompletableFuture<Optional<Wallet>> findWalletInAccount(String accountId, String walletId);
+
+    /**
      * Creates an empty wallet under an account, creating the account by naming it.
      *
      * @param label what the player calls it; blank falls back to {@link Wallet#DEFAULT_LABEL}
