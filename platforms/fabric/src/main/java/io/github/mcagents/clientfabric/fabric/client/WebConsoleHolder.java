@@ -2,7 +2,7 @@ package io.github.mcagents.clientfabric.fabric.client;
 
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
-import io.github.mcagents.clientfabric.common.web.LocalWebConsole;
+import io.github.mcagents.clientfabric.website.LocalWebConsole;
 
 import java.util.Optional;
 

@@ -6,6 +6,11 @@
 
 plugins {
     id 'java-library'
+
+    // StubTransport and TestSigner are used by website/ as well as here. A test source set
+    // is private to its own project, so the doubles both modules test against live in
+    // src/testFixtures instead — which this project's own tests still see automatically.
+    id 'java-test-fixtures'
 }
 
 base {

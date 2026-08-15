@@ -22,5 +22,8 @@ project(':mcagents-fabric-api').projectDir = file('api')
 include 'mcagents-fabric-common'
 project(':mcagents-fabric-common').projectDir = file('common')
 
+include 'mcagents-fabric-website'
+project(':mcagents-fabric-website').projectDir = file('website')
+
 include 'mcagents-fabric'
 project(':mcagents-fabric').projectDir = file('platforms/fabric')
