@@ -18,10 +18,19 @@ import java.util.concurrent.CompletableFuture;
  *
  * <h2>Only ever when asked</h2>
  *
- * <p>Nothing here runs on a timer or in the background. The player presses refresh or
- * update, or the mod fetches the one base pack at startup, and that is the complete list of
- * reasons this class does anything. A mod that quietly re-downloaded a library would be
- * spending someone else's bandwidth to answer a question nobody asked.
+ * <p>Nothing here runs on a timer or in the background. The player presses update, or
+ * downloads one pack, or the mod fetches the one base pack at startup, and that is the
+ * complete list of reasons this class does anything. A mod that quietly re-downloaded a
+ * library would be spending someone else's bandwidth to answer a question nobody asked.
+ *
+ * <h2>Nothing here downloads a pack the player did not choose</h2>
+ *
+ * <p>There is deliberately no "fetch everything published" operation. Updating brings the
+ * packs on this machine up to date; taking a new one is done from that pack's own page,
+ * where the player can see what they are taking. A button that filled the library because
+ * somebody wanted their existing packs refreshed would spend their bandwidth, their disk,
+ * and — since every new pack then needs embedding — their model credit, on content they
+ * never chose.
  *
  * <h2>Version is the whole protocol</h2>
  *
@@ -49,25 +58,44 @@ public final class KnowledgeSync {
     }
 
     /**
-     * Downloads everything published that is missing or out of date locally.
+     * Updates the packs this machine already has, and fetches nothing new.
      *
-     * <p>This is the refresh button. It reads what the service publishes, compares it
-     * against what is stored, and fetches only the difference — so pressing it twice in a
-     * row does nothing the second time, which is exactly what an impatient player will do.
+     * <p>This is the update button, and it is the whole of what that button does: a player
+     * pressing "update knowledge" is asking for what they have to be current, not for
+     * everything the service publishes to be pulled onto their disk.
+     *
+     * <p>New packs are downloaded one at a time from their own page, which is where a player
+     * can see what they are taking.
      */
-    public CompletableFuture<SyncResult> refresh() {
+    public CompletableFuture<SyncResult> updateStored() {
         return service.categories()
                 .thenCompose(this::storeCategories)
                 .thenCompose(ignored -> service.publishedVersions())
-                .thenCompose(this::downloadOutdated);
+                .thenCompose(published -> database.contents().findStoredVersions()
+                        .thenCompose(stored -> {
+                            List<String> wanted = new ArrayList<>();
+                            stored.forEach((id, version) -> {
+                                String latest = published.get(id);
+                                // Absent means the service no longer publishes it. The local
+                                // copy is left alone: it still answers questions, and
+                                // deleting somebody's pack because a catalog changed is not
+                                // an update.
+                                if (latest != null && !latest.equals(version)) {
+                                    wanted.add(id);
+                                }
+                            });
+                            wanted.sort(String::compareTo);
+                            return downloadEach(wanted,
+                                    new SyncResult(0, 0, published.size(), List.of()));
+                        }));
     }
 
     /**
      * Downloads one pack, whether or not it is already stored.
      *
-     * <p>This is the download button on a pack's own page. Unlike {@link #refresh()} it does
-     * not compare versions first: the player pressed the button for this pack, and a button
-     * that decided the pack was already current and did nothing would be a button that
+     * <p>This is the download button on a pack's own page. Unlike {@link #updateStored()} it
+     * does not compare versions first: the player pressed the button for this pack, and a
+     * button that decided the pack was already current and did nothing would be a button that
      * appears broken.
      *
      * <p>The categories are stored first for the same reason they are in
@@ -219,19 +247,6 @@ public final class KnowledgeSync {
                     .thenApply(saved -> null));
         }
         return chain;
-    }
-
-    private CompletableFuture<SyncResult> downloadOutdated(Map<String, String> published) {
-        return database.contents().findStoredVersions().thenCompose(stored -> {
-            List<String> wanted = new ArrayList<>();
-            published.forEach((id, version) -> {
-                if (!version.equals(stored.get(id))) {
-                    wanted.add(id);
-                }
-            });
-            wanted.sort(String::compareTo);
-            return downloadEach(wanted, new SyncResult(0, 0, published.size(), List.of()));
-        });
     }
 
     /**

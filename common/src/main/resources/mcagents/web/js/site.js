@@ -207,51 +207,6 @@
   }
 
   /**
-   * Wires a "download what I do not have" button.
-   *
-   * The refresh button on the knowledge page and the update button on the chat page are the
-   * same operation — the second exists only because the chat page is where a player notices
-   * the agent is missing something. One implementation, so they cannot behave differently.
-   *
-   * Disabled while it runs and while the service is unreachable, which is most of what stops
-   * a player producing the flood the service rate-limits.
-   */
-  function wireSyncButton(button, note, onDone) {
-    if (!button) {
-      return;
-    }
-    function say(message, kind) {
-      if (note) {
-        note.textContent = message || '';
-        note.className = 'sync-note' + (kind ? ' is-' + kind : '');
-      }
-    }
-
-    button.addEventListener('click', async function () {
-      button.disabled = true;
-      say('Checking…');
-      try {
-        var result = await api('/service/refresh', { method: 'POST' });
-        if (result.downloaded > 0) {
-          say('Downloaded ' + result.downloaded
-            + (result.downloaded === 1 ? ' pack.' : ' packs.'), 'ok');
-        } else if (result.failed > 0) {
-          say(result.failed + ' could not be downloaded.', 'error');
-        } else {
-          say('Already up to date.', 'ok');
-        }
-        if (onDone) {
-          onDone(result);
-        }
-      } catch (error) {
-        say(error.message, 'error');
-      } finally {
-        button.disabled = false;
-      }
-    });
-  }
-
-  /**
    * Paints a state button: the words, the colour, and what assistive technology is told.
    *
    * Shared rather than inlined so the colours keep meaning one thing across the console.
@@ -270,6 +225,62 @@
       : 'Questions are sent on their own. Knowledge Packs are not used, and no embedding is charged for.';
   }
 
+  /**
+   * Wires the "update the packs I already have" button.
+   *
+   * It asks first. The operation spends somebody's bandwidth downloading pack bodies while
+   * they are in a game, and every pack it replaces loses its embedding — so the true cost of
+   * pressing it includes the provider calls needed to embed the result. A button that
+   * expensive should not be one an accidental click can fire.
+   *
+   * It updates and never acquires: a pack this machine does not have is not fetched here.
+   * Taking a new one is done from that pack's own page, where the reader can see what they
+   * are taking.
+   */
+  function wireSyncButton(button, note, onDone) {
+    if (!button) {
+      return;
+    }
+    function say(message, kind) {
+      if (note) {
+        note.textContent = message || '';
+        note.className = 'sync-note' + (kind ? ' is-' + kind : '');
+      }
+    }
+
+    button.addEventListener('click', async function () {
+      var confirmed = await confirmDialog({
+        title: 'Update your Knowledge Packs?',
+        message: 'Packs already on this machine are brought up to their published versions. '
+          + 'Nothing new is downloaded. An updated pack loses its embedding, because the new '
+          + 'version is new text — you will need to embed it again afterwards.',
+        confirmLabel: 'Update packs'
+      });
+      if (!confirmed) {
+        return;
+      }
+      button.disabled = true;
+      say('Checking…');
+      try {
+        var result = await api('/service/update', { method: 'POST' });
+        if (result.downloaded > 0) {
+          say('Updated ' + result.downloaded
+            + (result.downloaded === 1 ? ' pack.' : ' packs.'), 'ok');
+        } else if (result.failed > 0) {
+          say(result.failed + ' could not be updated.', 'error');
+        } else {
+          say('Every pack you have is already current.', 'ok');
+        }
+        if (onDone) {
+          onDone(result);
+        }
+      } catch (error) {
+        say(error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
 
   /* ---------------------------------------------------------------- dialog */
 
