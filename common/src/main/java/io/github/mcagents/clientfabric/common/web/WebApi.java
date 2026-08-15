@@ -9,6 +9,8 @@ import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ContentAvailability;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
+import io.github.mcagents.clientfabric.api.model.ModelCatalog;
+import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 
@@ -107,6 +109,51 @@ final class WebApi {
         return ApiKeyHandles.resolve(await(database.apiKeys().findAll()), handle)
                 .map(key -> await(database.apiKeys().remove(key.value())))
                 .orElse(false);
+    }
+
+    /**
+     * The chosen models, and the ids the page offers as suggestions.
+     *
+     * <p>The suggestions travel with the selection so the page has no list of its own to
+     * drift out of step with the one the game screen shows.
+     */
+    JsonObject models() {
+        ModelPreferences current = await(database.settings().loadModelPreferences());
+
+        JsonObject body = new JsonObject();
+        body.addProperty("chatModel", current.chatModel());
+        body.addProperty("embeddingModel", current.embeddingModel());
+        body.addProperty("defaultChatModel", ModelCatalog.DEFAULT_CHAT_MODEL);
+        body.addProperty("defaultEmbeddingModel", ModelCatalog.DEFAULT_EMBEDDING_MODEL);
+
+        JsonArray chat = new JsonArray();
+        ModelCatalog.SUGGESTED_CHAT_MODELS.forEach(chat::add);
+        body.add("suggestedChatModels", chat);
+
+        JsonArray embedding = new JsonArray();
+        ModelCatalog.SUGGESTED_EMBEDDING_MODELS.forEach(embedding::add);
+        body.add("suggestedEmbeddingModels", embedding);
+        return body;
+    }
+
+    /**
+     * Stores a model selection.
+     *
+     * <p>Nothing is validated against the suggested lists. They are suggestions, and a
+     * provider adds and retires models faster than this mod ships — an id it does not serve
+     * fails at request time with the provider's own message, which is more use than
+     * anything this could invent. A blank field is not an error either: it resolves to the
+     * default, which is how a player gets back to it by hand.
+     */
+    JsonObject saveModels(String body) {
+        ModelPreferences requested =
+                ModelPreferences.of(string(body, "chatModel"), string(body, "embeddingModel"));
+        ModelPreferences stored = await(database.settings().saveModelPreferences(requested));
+
+        JsonObject result = new JsonObject();
+        result.addProperty("chatModel", stored.chatModel());
+        result.addProperty("embeddingModel", stored.embeddingModel());
+        return result;
     }
 
     JsonObject categories() {

@@ -184,6 +184,42 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void readsAndWritesTheModelSelection() {
+        JsonObject before = json(url("/api/models"));
+        assertEquals("deepseek/deepseek-v4-flash", before.get("chatModel").getAsString());
+        assertEquals("openai/text-embedding-3-small", before.get("embeddingModel").getAsString());
+        assertTrue(before.getAsJsonArray("suggestedChatModels").size() > 0,
+                "the page takes its suggestions from the console, so there is only one list");
+
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
+                .statusCode());
+
+        JsonObject after = json(url("/api/models"));
+        assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
+        assertEquals("openai/text-embedding-3-small", after.get("embeddingModel").getAsString(),
+                "a blank field resolves to the default rather than storing nothing");
+    }
+
+    @Test
+    void acceptsAModelIdItHasNeverHeardOf() {
+        // The lists are suggestions. A provider adds and retires models faster than the mod
+        // ships, so refusing an unfamiliar id would break a player who is right.
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"someone/brand-new-model\",\"embeddingModel\":\"\"}")))
+                .statusCode());
+
+        assertEquals("someone/brand-new-model",
+                json(url("/api/models")).get("chatModel").getAsString());
+    }
+
+    @Test
     void acceptsTheTokenInAHeaderAsWellAsTheUrl() {
         HttpResponse<String> response = send(HttpRequest.newBuilder()
                 .uri(URI.create(base() + "/api/revision"))
