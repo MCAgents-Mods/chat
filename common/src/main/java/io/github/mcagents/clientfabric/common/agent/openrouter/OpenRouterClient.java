@@ -152,7 +152,7 @@ public final class OpenRouterClient implements ModelClient {
     private <T> CompletableFuture<T> attempt(
             String url, String body, String apiKey, Function<String, T> reader, int attempt) {
 
-        HttpCall call = new HttpCall(url, headers(apiKey), body);
+        HttpCall call = HttpCall.post(url, headers(apiKey), body);
 
         return transport.send(call)
                 .handle((reply, failure) -> {
