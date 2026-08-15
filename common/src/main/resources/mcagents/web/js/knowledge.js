@@ -12,6 +12,7 @@
   var PAGE_SIZE = 20;
 
   var list;
+  var scroller;
   var sentinel;
   var sentinelVisible;
   var countLabel;
@@ -124,6 +125,20 @@
     }
   }
 
+  /**
+   * The box the sentinel is measured against.
+   *
+   * Decided by whether the panel is *meant* to scroll, not by whether it currently does.
+   * This runs before a single card has loaded, so an emptiness test would say "does not
+   * overflow" every time and silently root the observer on the viewport instead.
+   *
+   * Below the breakpoint the panel stops being a scroller and the list flows with the page,
+   * so the page is the right root there.
+   */
+  function scrollRoot() {
+    return scroller && getComputedStyle(scroller).overflowY === 'auto' ? scroller : null;
+  }
+
   function reset() {
     state.run += 1;
     state.offset = 0;
@@ -174,6 +189,7 @@
 
   document.addEventListener('mcagents:ready', async function () {
     list = document.getElementById('knowledge-list');
+    scroller = document.getElementById('pack-scroller');
     sentinel = document.getElementById('scroll-sentinel');
     countLabel = document.getElementById('knowledge-count');
     searchBox = document.getElementById('knowledge-search');
@@ -181,7 +197,10 @@
 
     wireFilters();
     await loadCategories();
-    sentinelVisible = window.MCAgents.onVisible(sentinel, loadMore);
+    // Rooted on the panel the list actually scrolls inside. Watched against the viewport
+    // it would read as permanently visible and the list would load every pack at once —
+    // the same failure the chat sidebar had.
+    sentinelVisible = window.MCAgents.onVisible(sentinel, loadMore, scrollRoot());
     reset();
     searchBox.focus();
   });

@@ -47,8 +47,11 @@
       <button class="chip" type="button" data-availability="premium">Premium</button>
     </div>
 
-    <div class="card-grid" id="knowledge-list" style="margin-top:1rem"></div>
-    <div id="scroll-sentinel" aria-hidden="true"></div>
+    <div class="pack-scroller" id="pack-scroller" tabindex="0"
+         role="region" aria-label="Knowledge Packs">
+      <div class="card-grid" id="knowledge-list"></div>
+      <div id="scroll-sentinel" aria-hidden="true"></div>
+    </div>
   </div>
 </main>
 
