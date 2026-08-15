@@ -14,13 +14,19 @@ import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.api.wallet.ChainPlatform;
+import io.github.mcagents.clientfabric.api.wallet.Wallet;
+import io.github.mcagents.clientfabric.api.wallet.WalletBinding;
 import io.github.mcagents.clientfabric.common.agent.EmbeddingBackfill;
 import io.github.mcagents.clientfabric.common.service.CentralService;
 import io.github.mcagents.clientfabric.common.service.ContentNotPublishedException;
 import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
 import io.github.mcagents.clientfabric.common.service.ServiceHealth;
+import io.github.mcagents.clientfabric.common.wallet.AccountWallets;
+import io.github.mcagents.clientfabric.common.wallet.WalletChallenges;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -84,9 +90,19 @@ final class WebApi {
     private final CentralService service;
     private final KnowledgeSync sync;
     private final EmbeddingBackfill backfill;
+    private final AccountWallets accountWallets;
+
+    /**
+     * The challenges this console has issued and not yet seen answered.
+     *
+     * <p>One per console rather than one per request, because a challenge is issued by one
+     * request and redeemed by the next. It outlives neither the console nor the game.
+     */
+    private final WalletChallenges challenges = new WalletChallenges();
 
     WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync,
            EmbeddingBackfill backfill) {
+        this.accountWallets = new AccountWallets(database.wallets());
         this.database = database;
         this.agent = agent;
         this.service = service;
@@ -577,6 +593,152 @@ final class WebApi {
         } catch (JsonSyntaxException | IllegalStateException e) {
             return Optional.empty();
         }
+    }
+
+    // -------------------------------------------------------------- wallets
+
+    /**
+     * Every account, each with the wallets that belong to it.
+     *
+     * <p>Grouped rather than flat, because the account <em>is</em> the grouping the player
+     * thinks in and the page draws one panel per account. Flattening it here would only mean
+     * the page grouping it again, and a page that regroups is a page that can group it
+     * differently from the mod.
+     *
+     * <p>Accounts have no table: one exists exactly as long as a wallet names it. So this is
+     * assembled from the wallets rather than read from a list of accounts, and an account
+     * with nothing in it simply is not there.
+     */
+    JsonObject wallets() {
+        JsonArray accounts = new JsonArray();
+        int wallets = 0;
+
+        for (String accountId : await(database.wallets().findAccounts())) {
+            List<Wallet> held = await(database.wallets().findWalletsByAccount(accountId));
+            wallets += held.size();
+
+            JsonArray items = new JsonArray();
+            held.forEach(wallet -> items.add(WebJson.wallet(wallet)));
+
+            JsonObject account = new JsonObject();
+            account.addProperty("id", accountId);
+            account.addProperty("total", held.size());
+            account.addProperty("verified",
+                    held.stream().filter(Wallet::hasVerifiedAddress).count());
+            account.add("wallets", items);
+            accounts.add(account);
+        }
+
+        JsonObject body = new JsonObject();
+        body.add("accounts", accounts);
+        body.addProperty("accountCount", accounts.size());
+        body.addProperty("total", wallets);
+        return body;
+    }
+
+    /** Creates an empty wallet, creating the account with it if the name is a new one. */
+    JsonObject createWallet(String body) {
+        String accountId = string(body, "accountId").trim();
+        if (accountId.isEmpty()) {
+            throw new IllegalArgumentException("Name the account this wallet belongs to.");
+        }
+        return WebJson.wallet(
+                await(database.wallets().createWallet(accountId, string(body, "label").trim())));
+    }
+
+    /**
+     * Renames a wallet in one account.
+     *
+     * @return whether a wallet <em>in that account</em> was renamed; false covers a wallet
+     *         that has gone and one that was never the caller's to rename
+     */
+    boolean renameWallet(String walletId, String body) {
+        return await(accountWallets.rename(
+                account(string(body, "accountId")), walletId, string(body, "label")));
+    }
+
+    /** Deletes a wallet in one account, with every address under it. */
+    boolean deleteWallet(String walletId, Map<String, String> query) {
+        return await(accountWallets.delete(account(query.get("accountId")), walletId));
+    }
+
+    /** Removes one chain's address from a wallet in one account. */
+    boolean removeWalletAddress(String walletId, String platform, Map<String, String> query) {
+        return await(accountWallets.removeAddress(account(query.get("accountId")), walletId,
+                ChainPlatform.fromStorageName(platform)));
+    }
+
+    /**
+     * Records an address the player typed rather than proved.
+     *
+     * <p>Stored as unverified, and the interface says so. A typed address is a useful record
+     * and it is not evidence of anything — letting the two look alike would make the tick
+     * beside a proved one meaningless.
+     */
+    JsonObject addWalletAddress(String walletId, String body) {
+        String address = string(body, "address").trim();
+        if (address.isEmpty()) {
+            throw new IllegalArgumentException("Type an address first.");
+        }
+        return WebJson.wallet(await(accountWallets.bind(account(string(body, "accountId")),
+                walletId, ChainPlatform.fromStorageName(string(body, "platform")),
+                address, false)));
+    }
+
+    /**
+     * Hands the page a message to sign for one address, in one account.
+     *
+     * <p>The console can do this itself: unlike a Minecraft screen, {@code /wallets/} is
+     * already a page in the player's browser, so it reaches {@code window.ethereum} without
+     * anything opening a second server. The checking is the same
+     * {@link WalletChallenges} the in-game bridge uses.
+     */
+    JsonObject walletChallenge(Map<String, String> query) {
+        String accountId = account(query.get("accountId"));
+        String address = query.getOrDefault("address", "").trim();
+        if (address.isEmpty()) {
+            throw new IllegalArgumentException("A challenge has to name the address it proves.");
+        }
+
+        WalletChallenges.Challenge challenge = challenges.issue(accountId, address);
+        JsonObject body = new JsonObject();
+        body.addProperty("nonce", challenge.nonce());
+        body.addProperty("message", challenge.message());
+        return body;
+    }
+
+    /**
+     * Checks a signature and files the address it proves.
+     *
+     * <p>The address the page claims is never taken at its word — it is compared against the
+     * address recovered from the signature. It lands in the account named in the message the
+     * player signed, and in no other: see {@link AccountWallets}.
+     */
+    JsonObject verifyWallet(String body) {
+        String accountId = account(string(body, "accountId"));
+        WalletBinding proved = challenges.redeem(
+                        string(body, "nonce"), string(body, "address"),
+                        string(body, "signature"), string(body, "chainId"))
+                // Deliberately not saying which of the three was wrong: to anyone probing
+                // this route the distinction is the only useful thing it could give.
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "That signature does not match the address it arrived with."));
+
+        List<Wallet> bound = await(accountWallets.bindAll(accountId, List.of(proved)));
+
+        JsonObject result = new JsonObject();
+        result.addProperty("address", proved.address());
+        result.addProperty("platform", proved.platform().displayName());
+        result.add("wallet", bound.isEmpty() ? null : WebJson.wallet(bound.getFirst()));
+        return result;
+    }
+
+    private static String account(String value) {
+        String accountId = value == null ? "" : value.trim();
+        if (accountId.isEmpty()) {
+            throw new IllegalArgumentException("Name the account this wallet belongs to.");
+        }
+        return accountId;
     }
 
     /**

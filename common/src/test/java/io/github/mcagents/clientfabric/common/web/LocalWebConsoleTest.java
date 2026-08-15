@@ -128,7 +128,7 @@ class LocalWebConsoleTest {
     void stillHasNoRouteForAnythingItDoesNotManage() {
         assertEquals(404, statusOf(url("/api/apikeys")));
         assertEquals(404, statusOf(url("/api/settings")));
-        assertEquals(404, statusOf(url("/api/wallets")));
+        assertEquals(404, statusOf(url("/api/accounts")));
     }
 
     @Test
