@@ -154,8 +154,15 @@
     deleteButton.addEventListener('click', async function () {
       /* Confirmed, because it is not undoable from here — the pack has to be downloaded
        * again, and its embedding recomputed and paid for. */
-      if (!window.confirm('Delete this pack from this machine? '
-          + 'You can download it again, but it will need embedding again too.')) {
+      var confirmed = await M.confirm({
+        title: 'Delete this pack?',
+        message: 'It is removed from this machine only. You can download it again from the '
+          + 'knowledge page, but it will need embedding again — and that costs a request to '
+          + 'your model provider.',
+        confirmLabel: 'Delete pack',
+        danger: true
+      });
+      if (!confirmed) {
         return;
       }
       deleteButton.disabled = true;
