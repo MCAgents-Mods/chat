@@ -334,6 +334,58 @@ public final class LocalWebConsole implements WebConsole {
             sendOrNotFound(exchange, api.knowledgeById(id), "No such Knowledge Pack.");
             return;
         }
+        if (path.equals("/api/wallets")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.wallets());
+                return;
+            }
+            if (method.equals("POST")) {
+                sendJson(exchange, 201, api.createWallet(readBody(exchange)));
+                return;
+            }
+        }
+        if (path.equals("/api/wallets/challenge") && method.equals("GET")) {
+            sendJson(exchange, 200, api.walletChallenge(query));
+            return;
+        }
+        if (path.equals("/api/wallets/verify") && method.equals("POST")) {
+            sendJson(exchange, 200, api.verifyWallet(readBody(exchange)));
+            return;
+        }
+        if (path.startsWith("/api/wallets/")) {
+            String rest = path.substring("/api/wallets/".length());
+            int slash = rest.indexOf('/');
+            String walletId = decode(slash < 0 ? rest : rest.substring(0, slash));
+            String sub = slash < 0 ? "" : rest.substring(slash + 1);
+
+            // Every one of these names an account as well as a wallet, and the account is
+            // checked rather than trusted — a request that names one account and a wallet in
+            // another changes nothing. See AccountWallets.
+            if (sub.startsWith("addresses")) {
+                if (sub.equals("addresses") && method.equals("POST")) {
+                    sendJson(exchange, 200, api.addWalletAddress(walletId, readBody(exchange)));
+                    return;
+                }
+                if (method.equals("DELETE")) {
+                    String platform = decode(sub.substring("addresses/".length()));
+                    sendChanged(exchange,
+                            api.removeWalletAddress(walletId, platform, query),
+                            "No such address in that account.");
+                    return;
+                }
+            } else if (sub.isEmpty()) {
+                if (method.equals("PUT")) {
+                    sendChanged(exchange, api.renameWallet(walletId, readBody(exchange)),
+                            "No such wallet in that account.");
+                    return;
+                }
+                if (method.equals("DELETE")) {
+                    sendChanged(exchange, api.deleteWallet(walletId, query),
+                            "No such wallet in that account.");
+                    return;
+                }
+            }
+        }
         if (path.equals("/api/chats")) {
             if (method.equals("GET")) {
                 sendJson(exchange, 200, api.chats(query));

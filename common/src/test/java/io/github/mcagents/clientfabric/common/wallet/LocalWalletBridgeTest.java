@@ -9,7 +9,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -39,12 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class LocalWalletBridgeTest {
 
-    private static final BigInteger PLAYER_KEY = new BigInteger(
-            "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318", 16);
-
-    /** A second account in the same browser — the one the bridge used to drop. */
-    private static final BigInteger SECOND_KEY = new BigInteger(
-            "2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8091a", 16);
+    private static final TestSigner PLAYER = TestSigner.PLAYER;
+    private static final TestSigner SECOND = TestSigner.SECOND;
 
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -63,19 +58,19 @@ class LocalWalletBridgeTest {
     void bindsAnAddressTheBrowserProves() {
         bridge = LocalWalletBridge.start("Personal");
 
-        Challenge challenge = challengeFor(addressOf(PLAYER_KEY));
+        Challenge challenge = challengeFor(PLAYER.address());
         assertTrue(challenge.message().contains("Account: Personal"));
-        assertTrue(challenge.message().contains("Address: " + addressOf(PLAYER_KEY)),
+        assertTrue(challenge.message().contains("Address: " + PLAYER.address()),
                 "a challenge that does not name its address could be answered with any other");
         assertTrue(challenge.message().contains("It authorises nothing"),
                 "the player is about to approve this; it has to say what it does");
 
-        assertEquals(200, prove(challenge, PLAYER_KEY, "0x1").statusCode());
+        assertEquals(200, prove(challenge, PLAYER, "0x1").statusCode());
         done();
 
         List<WalletBinding> bound = settled();
         assertEquals(1, bound.size());
-        assertEquals(addressOf(PLAYER_KEY), bound.getFirst().address());
+        assertEquals(PLAYER.address(), bound.getFirst().address());
         assertEquals(ChainPlatform.ETHEREUM, bound.getFirst().platform());
         assertEquals(1, bound.getFirst().chainId());
     }
@@ -87,12 +82,12 @@ class LocalWalletBridgeTest {
         // which made a player with five wallets take the same journey five times.
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
-        prove(challengeFor(addressOf(SECOND_KEY)), SECOND_KEY, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
+        prove(challengeFor(SECOND.address()), SECOND, "0x1");
         done();
 
         List<WalletBinding> bound = settled();
-        assertEquals(List.of(addressOf(PLAYER_KEY), addressOf(SECOND_KEY)),
+        assertEquals(List.of(PLAYER.address(), SECOND.address()),
                 bound.stream().map(WalletBinding::address).toList(),
                 "both addresses, in the order they were signed");
     }
@@ -103,11 +98,11 @@ class LocalWalletBridgeTest {
         // behaviour being replaced.
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
 
         assertFalse(bridge.bindings().isDone(),
                 "one address is not a finished handshake — only the page knows how many there are");
-        assertEquals(200, prove(challengeFor(addressOf(SECOND_KEY)), SECOND_KEY, "0x1").statusCode(),
+        assertEquals(200, prove(challengeFor(SECOND.address()), SECOND, "0x1").statusCode(),
                 "and the bridge is still there to take the next one");
     }
 
@@ -117,8 +112,8 @@ class LocalWalletBridgeTest {
         // into two.
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
         done();
 
         assertEquals(1, settled().size());
@@ -137,7 +132,7 @@ class LocalWalletBridgeTest {
         bridge = LocalWalletBridge.start("Personal");
         int port = bridge.url().getPort();
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
         done();
         settled();
 
@@ -162,7 +157,7 @@ class LocalWalletBridgeTest {
     void filesTheAddressUnderTheChainTheBrowserWasOn() {
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x2105");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x2105");
         done();
 
         WalletBinding binding = settled().getFirst();
@@ -176,7 +171,7 @@ class LocalWalletBridgeTest {
         // problem rather than a reason to refuse a signature that verified.
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x4d2");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x4d2");
         done();
 
         WalletBinding binding = settled().getFirst();
@@ -194,11 +189,11 @@ class LocalWalletBridgeTest {
     @Test
     void refusesASignatureThatDoesNotMatchTheAddressItArrivedWith() {
         bridge = LocalWalletBridge.start("Personal");
-        Challenge challenge = challengeFor(addressOf(PLAYER_KEY));
+        Challenge challenge = challengeFor(PLAYER.address());
 
         HttpResponse<String> response = callback(challenge.nonce(),
                 "0x0000000000000000000000000000000000000001",
-                signWith(PLAYER_KEY, challenge.message()), "0x1");
+                PLAYER.sign(challenge.message()), "0x1");
 
         assertEquals(400, response.statusCode());
         done();
@@ -211,12 +206,12 @@ class LocalWalletBridgeTest {
         // The nonce is spent on the first redemption, so a signature captured in flight
         // cannot be replayed — including against the very challenge it answered.
         bridge = LocalWalletBridge.start("Personal");
-        Challenge challenge = challengeFor(addressOf(PLAYER_KEY));
-        String signature = signWith(PLAYER_KEY, challenge.message());
+        Challenge challenge = challengeFor(PLAYER.address());
+        String signature = PLAYER.sign(challenge.message());
 
-        assertEquals(200, callback(challenge.nonce(), addressOf(PLAYER_KEY), signature, "0x1")
+        assertEquals(200, callback(challenge.nonce(), PLAYER.address(), signature, "0x1")
                 .statusCode());
-        assertEquals(400, callback(challenge.nonce(), addressOf(PLAYER_KEY), signature, "0x1")
+        assertEquals(400, callback(challenge.nonce(), PLAYER.address(), signature, "0x1")
                 .statusCode());
     }
 
@@ -225,11 +220,11 @@ class LocalWalletBridgeTest {
         // A signature captured from an earlier attempt carries an earlier nonce, so it
         // cannot be replayed into this one.
         bridge = LocalWalletBridge.start("Personal");
-        Challenge challenge = challengeFor(addressOf(PLAYER_KEY));
-        String stale = signWith(PLAYER_KEY,
+        Challenge challenge = challengeFor(PLAYER.address());
+        String stale = PLAYER.sign(
                 "MCAgents wallet binding\n\nAccount: Personal\nNonce: stale");
 
-        assertEquals(400, callback(challenge.nonce(), addressOf(PLAYER_KEY), stale, "0x1")
+        assertEquals(400, callback(challenge.nonce(), PLAYER.address(), stale, "0x1")
                 .statusCode());
     }
 
@@ -306,10 +301,10 @@ class LocalWalletBridgeTest {
         // them away would only mean asking the player to sign them again.
         bridge = LocalWalletBridge.start("Personal");
 
-        prove(challengeFor(addressOf(PLAYER_KEY)), PLAYER_KEY, "0x1");
+        prove(challengeFor(PLAYER.address()), PLAYER, "0x1");
         cancel();
 
-        assertEquals(List.of(addressOf(PLAYER_KEY)),
+        assertEquals(List.of(PLAYER.address()),
                 settled().stream().map(WalletBinding::address).toList());
     }
 
@@ -360,8 +355,8 @@ class LocalWalletBridgeTest {
         LocalWalletBridge second = LocalWalletBridge.start("Personal");
         try {
             assertNotEquals(bridge.url().getQuery(), second.url().getQuery());
-            assertNotEquals(challengeFor(addressOf(PLAYER_KEY)).nonce(),
-                    challengeFor(addressOf(SECOND_KEY)).nonce(),
+            assertNotEquals(challengeFor(PLAYER.address()).nonce(),
+                    challengeFor(SECOND.address()).nonce(),
                     "one nonce for two addresses would let one signature stand for both");
         } finally {
             second.close();
@@ -382,9 +377,9 @@ class LocalWalletBridgeTest {
         return new Challenge(body.get("nonce").getAsString(), body.get("message").getAsString());
     }
 
-    private HttpResponse<String> prove(Challenge challenge, BigInteger key, String chainId) {
-        return callback(challenge.nonce(), addressOf(key),
-                signWith(key, challenge.message()), chainId);
+    private HttpResponse<String> prove(Challenge challenge, TestSigner signer, String chainId) {
+        return callback(challenge.nonce(), signer.address(),
+                signer.sign(challenge.message()), chainId);
     }
 
     private HttpResponse<String> callback(
@@ -440,33 +435,4 @@ class LocalWalletBridgeTest {
         return send(HttpRequest.newBuilder().uri(URI.create(uri)).GET()).statusCode();
     }
 
-    private static String addressOf(BigInteger key) {
-        return EvmSignatures.toChecksumAddress(
-                EvmSignatures.toAddress(Secp256k1.multiply(Secp256k1.G, key)));
-    }
-
-    /** Signs the way MetaMask would, so the bridge has something real to check. */
-    private static String signWith(BigInteger key, String message) {
-        byte[] hash = EvmSignatures.hashPersonalMessage(message);
-        BigInteger n = Secp256k1.N;
-        BigInteger e = new BigInteger(1, hash);
-        BigInteger k = new BigInteger(1, Keccak256.digest(
-                (key.toString(16) + ":" + message).getBytes(StandardCharsets.UTF_8)))
-                .mod(n.subtract(BigInteger.ONE)).add(BigInteger.ONE);
-
-        Secp256k1.Point point = Secp256k1.multiply(Secp256k1.G, k);
-        BigInteger r = point.x().mod(n);
-        BigInteger s = k.modInverse(n).multiply(e.add(r.multiply(key))).mod(n);
-        int recoveryId = (point.y().testBit(0) ? 1 : 0) | (point.x().compareTo(n) >= 0 ? 2 : 0);
-        if (s.compareTo(n.shiftRight(1)) > 0) {
-            s = n.subtract(s);
-            recoveryId ^= 1;
-        }
-        return "0x" + pad(r) + pad(s) + String.format("%02x", recoveryId + 27);
-    }
-
-    private static String pad(BigInteger value) {
-        String hex = value.toString(16);
-        return "0".repeat(64 - hex.length()) + hex;
-    }
 }

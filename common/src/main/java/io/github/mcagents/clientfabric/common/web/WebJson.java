@@ -9,6 +9,8 @@ import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
 import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
 import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.wallet.ChainAddress;
+import io.github.mcagents.clientfabric.api.wallet.Wallet;
 
 import java.util.function.Function;
 
@@ -30,6 +32,48 @@ final class WebJson {
 
     private WebJson() {
         throw new AssertionError("No instances.");
+    }
+
+    /**
+     * One wallet, with every chain address under it.
+     *
+     * <p>The account travels with it. The page acts on a wallet by naming the account as
+     * well as the id, and a row that did not carry its own account would leave the page
+     * guessing which panel it came from.
+     */
+    static JsonObject wallet(Wallet wallet) {
+        JsonArray addresses = new JsonArray();
+        wallet.addresses().forEach(address -> addresses.add(chainAddress(address)));
+
+        JsonObject body = new JsonObject();
+        body.addProperty("id", wallet.id());
+        body.addProperty("accountId", wallet.accountId());
+        body.addProperty("label", wallet.label());
+        body.addProperty("active", wallet.active());
+        body.addProperty("verified", wallet.hasVerifiedAddress());
+        body.add("addresses", addresses);
+        body.addProperty("createdAt", wallet.createdAt().toString());
+        body.addProperty("updatedAt", wallet.updatedAt().toString());
+        return body;
+    }
+
+    /**
+     * One public address on one chain.
+     *
+     * <p>Both forms travel: the shortened one the list renders, and the whole value, because
+     * an address the player cannot copy is an address they cannot use. Shortening is a
+     * layout decision here, never secrecy — a public address authorises nothing.
+     */
+    static JsonObject chainAddress(ChainAddress address) {
+        JsonObject body = new JsonObject();
+        body.addProperty("id", address.id());
+        body.addProperty("platform", address.platform().storageName());
+        body.addProperty("platformName", address.platform().displayName());
+        body.addProperty("address", address.address());
+        body.addProperty("masked", address.masked());
+        body.addProperty("verified", address.verified());
+        body.addProperty("createdAt", address.createdAt().toString());
+        return body;
     }
 
     /** A window of rows, with everything the page needs to ask for the next one. */
