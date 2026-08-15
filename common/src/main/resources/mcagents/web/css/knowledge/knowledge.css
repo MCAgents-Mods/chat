@@ -28,3 +28,41 @@
 #scroll-sentinel {
   height: 1px;
 }
+
+/*
+ * The pack list scrolls inside its own panel rather than growing the page.
+ *
+ * With a few hundred packs the window scrollbar becomes useless — the toolbar and the
+ * filters scroll away with everything else, so filtering means scrolling back to the top
+ * first. Keeping the list in a fixed box leaves the search box and the chips where the
+ * reader left them.
+ */
+.pack-scroller {
+  margin-top: 1rem;
+  padding: .85rem;
+  max-height: calc(100vh - var(--header-h) - 21.5rem);
+  min-height: 18rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  background: var(--glass-faint);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.pack-scroller:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  /* On a short window a fixed box would show three cards and its own scrollbar inside the
+   * page's. Below this width the list goes back to flowing with the page. */
+  .pack-scroller {
+    max-height: none;
+    overflow-y: visible;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+}
