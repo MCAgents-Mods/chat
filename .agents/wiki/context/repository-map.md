@@ -32,16 +32,21 @@ retrieval, and the interface are all implemented. Do not assume a source file ex
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
 
-## The three modules
+## The four modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever` and `Vectors` — `common.wallet` — the MetaMask bridge and the cryptography it needs — and `common.web` — the web console and the pages it serves from `resources/mcagents/web/`. | Streaming and context injection. No Minecraft on the classpath. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever` and `Vectors` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — and `common.ui`, the screen arithmetic that can be tested without Minecraft. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and context injection. No Minecraft on the classpath. |
+| `website/` | `mcagents-fabric-website` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and every page under `resources/mcagents/web/`. Everything a browser ever sees, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
 | `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, and `client.gui` — the chat screen, its panels, the model settings screen, the wallet screens, and the console screen. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
+
+The dependency chain is one-way: `api/` ← `common/` ← `website/` ← `platforms/fabric/`. The
+`WebConsole` contract stays in `api/` even though only `website/` implements it — `api/` is
+where contracts go.
 
 `api/` and `common/` are plain `java-library` modules. Their classes are **merged into the
 mod jar** by the `jar` task in `platforms/fabric/build.gradle` rather than nested as

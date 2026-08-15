@@ -36,7 +36,7 @@ else it improves.
 
 ## Module boundaries
 
-Three Gradle modules, and the dependency direction is one-way. See
+Four Gradle modules, and the dependency direction is one-way. See
 [`../../wiki/information/architecture.md`](../../wiki/information/architecture.md) for the
 diagram and the reasoning.
 
@@ -44,18 +44,34 @@ diagram and the reasoning.
 |---|---|---|---|
 | API | `api/` | `mcagents-fabric-api` | Nothing but the JDK. |
 | Common | `common/` | `mcagents-fabric-common` | `api/` and plain JVM libraries. |
-| Fabric platform | `platforms/fabric/` | `mcagents-fabric` | `api/`, `common/`, Minecraft, Fabric. |
+| Website | `website/` | `mcagents-fabric-website` | `api/`, `common/`, plain JVM libraries. |
+| Fabric platform | `platforms/fabric/` | `mcagents-fabric` | all of the above, Minecraft, Fabric. |
 
 * `api/` holds **contracts only** — interfaces, records, enums, sealed types, abstract
   classes. No implementation logic, no I/O, no third-party dependency.
 * `common/` holds the implementations of those contracts. It must compile and be testable
   **without Minecraft on the classpath**. If a class in `common/` needs a Minecraft type,
   the design is wrong: pass the value in through an `api/` contract instead.
+* `website/` holds **everything a browser ever sees** — the loopback server, its routes,
+  the JSON it writes, and the pages under `resources/mcagents/web/`. It has the same
+  no-Minecraft rule as `common/`, and it sits *above* `common/` rather than beside it:
+  serving a page means reading storage, driving the agent, syncing knowledge and filing
+  wallets, so it depends on those implementations and **nothing in `common/` may depend
+  back on it**.
 * `platforms/fabric/` holds everything Minecraft-specific — the mod initializer, screens,
   key bindings, mixins, event listeners, and the resolution of filesystem paths from the
   game directory.
-* Nothing in `api/` or `common/` imports `net.minecraft.*` or `net.fabricmc.*`. Nothing in
-  `platforms/fabric/` re-implements logic that belongs in `common/`.
+* Nothing in `api/`, `common/`, or `website/` imports `net.minecraft.*` or
+  `net.fabricmc.*`. Nothing in `platforms/fabric/` re-implements logic that belongs below
+  it.
+
+**A contract stays in `api/` even when only one module implements it.** `WebConsole` lives
+there while `LocalWebConsole` lives in `website/`, because `api/` is where contracts go and
+a contract that follows its implementation out is a rule that has stopped applying.
+
+**A test double used by two modules lives in `common/src/testFixtures/`.** A test source set
+is private to its own Gradle project, so the alternative is a copy in each — and a
+duplicated double drifts until the two modules are testing against different fictions.
 
 ## Never block the render thread
 

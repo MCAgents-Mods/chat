@@ -1,29 +1,57 @@
 # Architecture
 
-MCAgentsClient is split into three Gradle modules with a one-way dependency chain. The
+MCAgentsClient is split into four Gradle modules with a one-way dependency chain. The
 split exists so that the logic that matters — storage, retrieval, the model client — can be
 compiled, tested, and reasoned about without Minecraft anywhere near it.
 
 ```
   api/                      contracts only
-   ^        ^
-   |        |
-common/     |               implementations, no Minecraft
-   ^        |
-   |        |
+   ^   ^   ^
+   |   |   |
+common/  |  |               implementations, no Minecraft
+   ^     |  |
+   |     |  |
+website/ |  |               everything a browser sees
+   ^     |  |
+   |     |  |
 platforms/fabric/           the mod: GUI, mixins, events, paths
 ```
 
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `mcagents-fabric-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval. Plain Java. |
-| `platforms/fabric/` | `mcagents-fabric` | `api/`, `common/` | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
+| `common/` | `mcagents-fabric-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography. Plain Java. |
+| `website/` | `mcagents-fabric-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
+| `platforms/fabric/` | `mcagents-fabric` | all of the above | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
-`mcagents-fabric-api` to `api/`, `mcagents-fabric-common` to `common/`, and
-`mcagents-fabric` to `platforms/fabric/`. The `platforms/` folder is where a second loader
-— Forge, NeoForge, Quilt — would go without disturbing anything else.
+`mcagents-fabric-api` to `api/`, `mcagents-fabric-common` to `common/`,
+`mcagents-fabric-website` to `website/`, and `mcagents-fabric` to `platforms/fabric/`. The
+`platforms/` folder is where a second loader — Forge, NeoForge, Quilt — would go without
+disturbing anything else.
+
+### Why the console is a module and not a package
+
+It was a package in `common/`, sitting beside storage, the model client and the wallet
+cryptography — four unrelated purposes sharing a module because they happened to share one
+constraint, that none of them needs Minecraft. "Does not need Minecraft" is not a purpose.
+
+It is a module because it has a boundary worth naming: **everything a browser ever sees,
+and nothing else.** Moving it cost nothing to untangle, because nothing in `common/`
+outside it had ever referenced it — which is the sign that it was always a separate thing.
+
+It sits *above* `common/`, not beside it. Serving a page means reading storage, driving the
+agent, syncing knowledge, and filing wallets, so the console depends on those
+implementations. Nothing in `common/` may depend back on it, and the day something wants to
+is the day that logic belongs in `common/` instead.
+
+**`WebConsole` stays in `api/`** while `LocalWebConsole` lives in `website/`. A contract
+that follows its implementation out of the contracts module is a rule that has quietly
+stopped applying.
+
+`platforms/fabric` merges all three lower modules into the mod jar rather than nesting them
+as separate Fabric mods, so the split is a build-time and reading-time boundary; the shipped
+jar is unchanged by it.
 
 ## Rules the split enforces
 
@@ -33,8 +61,21 @@ The directory names and the Gradle module names differ on purpose: `settings.gra
   `common/` needs a value that only the game knows — the game directory, the player's
   inventory, the block being looked at — that value arrives through an `api/` contract that
   `platforms/fabric/` implements.
+* **`website/` never sees Minecraft either**, and `common/` never sees `website/`. The
+  arrow points one way: a page may read anything below it, and nothing below it knows a
+  browser exists.
 * **`platforms/fabric/` never re-implements.** It wires, renders, and translates. Logic
   lives one layer down.
+
+## Test doubles shared between modules
+
+A Gradle test source set is private to its own project, so a double two modules need cannot
+simply be imported across. `common/` carries `java-test-fixtures` and keeps those doubles in
+`src/testFixtures/` — currently `StubTransport`, which answers HTTP from a script, and
+`TestSigner`, which signs the way MetaMask would.
+
+The alternative is a copy in each module, and a duplicated double drifts until the two are
+testing against different fictions.
 
 ## Everything that does I/O is asynchronous
 

@@ -228,8 +228,16 @@ yours. Every page and every data route stays behind the token.
 | Layer | What it holds |
 |---|---|
 | `api/` | `WebConsole`, `WebConsoleException`, `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary` |
-| `common/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets`, and the pages under `resources/mcagents/web/` |
+| `common/` | `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets` — what the console reads, drives, and writes through |
+| `website/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and the pages under `resources/mcagents/web/` |
 | `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder`, and the button on `AgentChatScreen` |
+
+**The console is a module of its own**, `website/`, holding everything a browser ever sees
+and nothing else. It sits above `common/`: serving a page means reading storage, driving the
+agent, syncing knowledge and filing wallets, so it depends on those — and nothing in
+`common/` depends back on it. `platforms/fabric` merges it into the mod jar with the rest,
+so the split changes what the source looks like and not what ships. See
+[`architecture.md`](architecture.md).
 
 The pages are built from the Silver Glass design system — see
 `.agents/design/web-design-system.md`. Everything they use ships inside the jar; nothing is
