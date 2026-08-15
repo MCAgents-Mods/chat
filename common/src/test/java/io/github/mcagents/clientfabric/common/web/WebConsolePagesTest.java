@@ -74,11 +74,14 @@ class WebConsolePagesTest {
         // Any path under /knowledge/ is a pack id; the detail page reads it from the
         // address bar rather than being handed it by the server.
         assertEquals(200, statusOf(url("/knowledge/some-pack-id")));
+        assertEquals(200, statusOf(url("/keys/")));
+        assertEquals(200, statusOf(url("/model/")));
     }
 
     @Test
     void everyAssetEachPageReferencesActuallyExists() {
-        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack")) {
+        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
+                "/keys/", "/model/")) {
             String markup = body(url(page));
             Matcher matcher = ASSET_REFERENCE.matcher(markup);
             int checked = 0;
@@ -121,14 +124,15 @@ class WebConsolePagesTest {
     void servesPagesThatFetchNothingFromOffTheMachine() {
         // The design system's hard rule. A page that reaches for a CDN renders unstyled on
         // the machine that needed it most.
-        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack")) {
+        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
+                "/keys/", "/model/")) {
             String markup = body(url(page));
             assertFalse(markup.contains("http://") || markup.contains("https://"),
                     page + " must not reference anything off this machine");
         }
         for (String asset : List.of("/assets/css/main.css", "/assets/js/site.js",
-                "/assets/js/chat.js", "/assets/js/knowledge.js",
-                "/assets/css/shared/components.css")) {
+                "/assets/js/chat.js", "/assets/js/knowledge.js", "/assets/js/keys.js",
+                "/assets/js/model.js", "/assets/css/shared/components.css")) {
             String source = body(base() + asset);
             assertFalse(source.contains("https://") || source.contains("cdn."),
                     asset + " must not fetch anything off this machine");

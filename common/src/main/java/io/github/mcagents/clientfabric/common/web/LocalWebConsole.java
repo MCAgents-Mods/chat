@@ -212,6 +212,16 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.revision());
             return;
         }
+        if (path.equals("/api/models")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.models());
+                return;
+            }
+            if (method.equals("PUT")) {
+                sendJson(exchange, 200, api.saveModels(readBody(exchange)));
+                return;
+            }
+        }
         if (path.equals("/api/keys")) {
             if (method.equals("GET")) {
                 sendJson(exchange, 200, api.keys(query));
@@ -293,6 +303,7 @@ public final class LocalWebConsole implements WebConsole {
             case "/knowledge", "/knowledge/" -> "pages/knowledge.html";
             case "/chat", "/chat/" -> "pages/chat.html";
             case "/keys", "/keys/" -> "pages/keys.html";
+            case "/model", "/model/" -> "pages/model.html";
             default -> path.startsWith("/assets/")
                     ? path.substring("/assets/".length())
                     // Anything else under /knowledge/ is a pack id, and the detail page
