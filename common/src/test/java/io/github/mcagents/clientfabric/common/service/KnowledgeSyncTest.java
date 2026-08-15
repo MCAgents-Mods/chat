@@ -287,6 +287,22 @@ class KnowledgeSyncTest {
     }
 
     @Test
+    void asksForNothingButTheBasePackAtStartup() {
+        // The loader's whole budget. Everything else is checked when the chat page opens,
+        // because a game that stalls on somebody else's host while it loads is a game that
+        // stalls — and because a player who never opens the console never asked for a
+        // library to be kept current.
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack(MCAgents.BASE_KNOWLEDGE_ID, "0.0.0")));
+        transport.reply(200, fullPack(MCAgents.BASE_KNOWLEDGE_ID, "0.0.0"));
+
+        await(sync().ensureBaseKnowledge());
+
+        assertEquals(1, transport.callCount(),
+                "one request, for one pack, by id — no catalog listing and no downloads");
+    }
+
+    @Test
     void leavesTheBasePackAloneWhenItIsAlreadyCurrent() {
         await(database.contents().saveCategory(1, "Guides"));
         await(database.contents().save(pack(MCAgents.BASE_KNOWLEDGE_ID, "0.0.0")));
