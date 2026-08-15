@@ -205,6 +205,46 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void readsAndWritesTheEmbeddingSwitch() {
+        assertTrue(json(url("/api/models")).get("embeddingEnabled").getAsBoolean(),
+                "retrieval is on until the player says otherwise");
+
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"\",\"embeddingModel\":\"\",\"embeddingEnabled\":false}")))
+                .statusCode());
+
+        assertFalse(json(url("/api/models")).get("embeddingEnabled").getAsBoolean());
+    }
+
+    @Test
+    void leavesTheEmbeddingSwitchAloneWhenARequestDoesNotMentionIt() {
+        // A page that edits only the model ids must not reset retrieval. Absent is "do not
+        // change it" — collapsing absent into false would switch the feature off on every
+        // save made by a client that had never heard of the field.
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"\",\"embeddingModel\":\"\",\"embeddingEnabled\":false}")))
+                .statusCode());
+
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
+                .statusCode());
+
+        JsonObject after = json(url("/api/models"));
+        assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
+        assertFalse(after.get("embeddingEnabled").getAsBoolean(),
+                "the switch survived a save that said nothing about it");
+    }
+
+    @Test
     void acceptsAModelIdItHasNeverHeardOf() {
         // The lists are suggestions. A provider adds and retires models faster than the mod
         // ships, so refusing an unfamiliar id would break a player who is right.

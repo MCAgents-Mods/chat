@@ -172,6 +172,7 @@ final class WebApi {
         JsonObject body = new JsonObject();
         body.addProperty("chatModel", current.chatModel());
         body.addProperty("embeddingModel", current.embeddingModel());
+        body.addProperty("embeddingEnabled", current.embeddingEnabled());
         body.addProperty("defaultChatModel", ModelCatalog.DEFAULT_CHAT_MODEL);
         body.addProperty("defaultEmbeddingModel", ModelCatalog.DEFAULT_EMBEDDING_MODEL);
 
@@ -195,13 +196,20 @@ final class WebApi {
      * default, which is how a player gets back to it by hand.
      */
     JsonObject saveModels(String body) {
-        ModelPreferences requested =
-                ModelPreferences.of(string(body, "chatModel"), string(body, "embeddingModel"));
+        // An absent switch means "leave it as it is", not "use the default". A page that
+        // only edits the two model ids must not reset a player's retrieval setting, and a
+        // future page that omits the field by accident should do nothing rather than harm.
+        boolean enabled = flag(body, "embeddingEnabled")
+                .orElseGet(() -> await(database.settings().loadModelPreferences()).embeddingEnabled());
+
+        ModelPreferences requested = ModelPreferences.of(
+                string(body, "chatModel"), string(body, "embeddingModel"), enabled);
         ModelPreferences stored = await(database.settings().saveModelPreferences(requested));
 
         JsonObject result = new JsonObject();
         result.addProperty("chatModel", stored.chatModel());
         result.addProperty("embeddingModel", stored.embeddingModel());
+        result.addProperty("embeddingEnabled", stored.embeddingEnabled());
         return result;
     }
 
@@ -336,6 +344,28 @@ final class WebApi {
     }
 
     /** Reads one string member out of a request body, treating anything malformed as absent. */
+    /**
+     * A boolean member, or empty if the body does not carry one.
+     *
+     * <p>Empty and {@code false} are different answers here: absent means "do not change
+     * it", and a handler that collapsed the two would let a request that says nothing about
+     * a setting switch it off.
+     */
+    private static Optional<Boolean> flag(String body, String member) {
+        if (body == null || body.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            JsonObject root = JsonParser.parseString(body).getAsJsonObject();
+            if (!root.has(member) || !root.get(member).isJsonPrimitive()) {
+                return Optional.empty();
+            }
+            return Optional.of(root.get(member).getAsBoolean());
+        } catch (JsonSyntaxException | IllegalStateException e) {
+            return Optional.empty();
+        }
+    }
+
     private static String string(String body, String member) {
         if (body == null || body.isBlank()) {
             return "";

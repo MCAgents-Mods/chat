@@ -42,7 +42,7 @@ class ModelDefaultsTest {
         // every request until they thought to look at the setting.
         assertTrue(ModelCatalog.isRetired("deepseek/deepseek-v4-flash-latest"));
         assertEquals(ModelCatalog.DEFAULT_CHAT_MODEL,
-                ModelPreferences.of("deepseek/deepseek-v4-flash-latest", "").chatModel());
+                ModelPreferences.of("deepseek/deepseek-v4-flash-latest", "", true).chatModel());
         assertEquals(ModelCatalog.DEFAULT_CHAT_MODEL,
                 ModelCatalog.resolve("  deepseek/deepseek-v4-flash-latest  "));
     }
@@ -53,15 +53,15 @@ class ModelDefaultsTest {
         // never heard of keeps it — that is the whole reason the lists are suggestions.
         assertFalse(ModelCatalog.isRetired("some/model-nobody-here-knows"));
         assertEquals("some/model-nobody-here-knows",
-                ModelPreferences.of("some/model-nobody-here-knows", "").chatModel());
+                ModelPreferences.of("some/model-nobody-here-knows", "", true).chatModel());
         assertEquals("deepseek/deepseek-v4-pro",
-                ModelPreferences.of("deepseek/deepseek-v4-pro", "").chatModel());
+                ModelPreferences.of("deepseek/deepseek-v4-pro", "", true).chatModel());
     }
 
     @Test
     void stillFallsBackWhenNothingIsChosen() {
-        assertEquals(ModelCatalog.DEFAULT_CHAT_MODEL, ModelPreferences.of("  ", null).chatModel());
+        assertEquals(ModelCatalog.DEFAULT_CHAT_MODEL, ModelPreferences.of("  ", null, true).chatModel());
         assertEquals(ModelCatalog.DEFAULT_EMBEDDING_MODEL,
-                ModelPreferences.of(null, "  ").embeddingModel());
+                ModelPreferences.of(null, "  ", true).embeddingModel());
     }
 }

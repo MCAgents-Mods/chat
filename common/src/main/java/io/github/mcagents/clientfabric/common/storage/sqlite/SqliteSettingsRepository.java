@@ -17,6 +17,7 @@ final class SqliteSettingsRepository implements SettingsRepository {
 
     static final String CHAT_MODEL_KEY = "model.chat";
     static final String EMBEDDING_MODEL_KEY = "model.embedding";
+    static final String EMBEDDING_ENABLED_KEY = "model.embedding.enabled";
 
     private final SqlWorker worker;
 
@@ -27,11 +28,13 @@ final class SqliteSettingsRepository implements SettingsRepository {
     @Override
     public CompletableFuture<ModelPreferences> loadModelPreferences() {
         return worker.submit("Reading the model preferences", connection -> {
-            // Read both in one call rather than two round trips, and let ModelPreferences
-            // substitute the defaults for anything unset.
+            // Read all three in one call rather than three round trips, and let
+            // ModelPreferences substitute the defaults for anything unset.
             String chat = readValue(connection, CHAT_MODEL_KEY).orElse(null);
             String embedding = readValue(connection, EMBEDDING_MODEL_KEY).orElse(null);
-            return ModelPreferences.of(chat, embedding);
+            boolean enabled = readFlag(connection, EMBEDDING_ENABLED_KEY,
+                    ModelPreferences.DEFAULT_EMBEDDING_ENABLED);
+            return ModelPreferences.of(chat, embedding, enabled);
         });
     }
 
@@ -40,12 +43,18 @@ final class SqliteSettingsRepository implements SettingsRepository {
         Objects.requireNonNull(preferences, "preferences");
         // Normalise before storing: a blank becomes the default, so nothing downstream has
         // to handle an empty model id.
-        ModelPreferences normalised =
-                ModelPreferences.of(preferences.chatModel(), preferences.embeddingModel());
+        ModelPreferences normalised = ModelPreferences.of(
+                preferences.chatModel(),
+                preferences.embeddingModel(),
+                preferences.embeddingEnabled());
 
         return worker.submitInTransaction("Storing the model preferences", connection -> {
             writeValue(connection, CHAT_MODEL_KEY, normalised.chatModel());
             writeValue(connection, EMBEDDING_MODEL_KEY, normalised.embeddingModel());
+            // The embedding model id is written whether or not retrieval is on. Switching
+            // off is not a reason to forget which model the player picked.
+            writeValue(connection, EMBEDDING_ENABLED_KEY,
+                    Boolean.toString(normalised.embeddingEnabled()));
             return normalised;
         });
     }
@@ -79,6 +88,29 @@ final class SqliteSettingsRepository implements SettingsRepository {
                 return rows.next() ? Optional.ofNullable(rows.getString("value")) : Optional.empty();
             }
         }
+    }
+
+    /**
+     * A stored flag, or {@code fallback} if it has never been set.
+     *
+     * <p>Only the two values this repository writes are recognised. Anything else — a row
+     * edited by hand, a value from a future version — falls back rather than being guessed
+     * at, so an unreadable setting behaves as though it were unset.
+     */
+    private static boolean readFlag(Connection connection, String key, boolean fallback)
+            throws SQLException {
+        Optional<String> stored = readValue(connection, key);
+        if (stored.isEmpty()) {
+            return fallback;
+        }
+        String value = stored.get().trim();
+        if (value.equalsIgnoreCase("true")) {
+            return true;
+        }
+        if (value.equalsIgnoreCase("false")) {
+            return false;
+        }
+        return fallback;
     }
 
     private static void writeValue(Connection connection, String key, String value) throws SQLException {

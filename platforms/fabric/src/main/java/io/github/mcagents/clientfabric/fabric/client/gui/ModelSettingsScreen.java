@@ -120,8 +120,11 @@ public final class ModelSettingsScreen extends Screen {
     private void save() {
         // Blank fields are not an error: ModelPreferences substitutes the catalog default,
         // so "clear it and save" is how a player gets back to the default by hand.
-        ModelPreferences requested =
-                ModelPreferences.of(chatModel.value(), embeddingModel.value());
+        // The switch is carried through from what was loaded. This screen does not offer it
+        // yet, and a save that dropped it would turn retrieval back on for a player who had
+        // turned it off somewhere else.
+        ModelPreferences requested = ModelPreferences.of(
+                chatModel.value(), embeddingModel.value(), current.embeddingEnabled());
 
         onClientThread(waiting.track(database.settings().saveModelPreferences(requested)), stored -> {
             current = stored;
