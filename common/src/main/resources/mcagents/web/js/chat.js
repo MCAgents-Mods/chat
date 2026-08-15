@@ -368,12 +368,37 @@
     // inside that panel, so the page's scrollbar says nothing about reaching its end.
     sentinelVisible = M.onVisible(sentinel, loadMore, listEl);
 
+    var noteEl = document.getElementById('sync-note');
     var updateButton = document.getElementById('update-knowledge');
-    M.wireSyncButton(updateButton, document.getElementById('sync-note'));
+    M.wireSyncButton(updateButton, noteEl);
     window.MCAgentsService.onChange(function (reachable) {
       updateButton.disabled = !reachable;
     });
     window.MCAgentsService.start();
+
+    /* The switch applies at once here, because this page has no Save button to wait for.
+     * It shares the note with the update button: both say what just happened to knowledge,
+     * and two separate lines saying so would be one line too many in a header. */
+    var toggle = M.wireEmbeddingToggle(document.getElementById('embedding-toggle'),
+      function (enabled, error) {
+        if (error) {
+          noteEl.textContent = error.message;
+          noteEl.className = 'sync-note is-error';
+          return;
+        }
+        noteEl.textContent = enabled
+          ? 'Knowledge Packs will be used again.'
+          : 'Answers will not use Knowledge Packs.';
+        noteEl.className = 'sync-note';
+      });
+
+    /* Read rather than assumed: the player may have switched it in the game, and a button
+     * that started green regardless would be lying until the first click. */
+    try {
+      toggle.set((await M.api('/models')).embeddingEnabled);
+    } catch (ignored) {
+      /* The chat page works without it; the button keeps its markup state. */
+    }
 
     await syncRevision();
     await resetList();

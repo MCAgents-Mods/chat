@@ -245,6 +245,46 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void leavesTheModelsAloneWhenARequestOnlyFlipsTheSwitch() {
+        // The chat page's toggle sends nothing but the flag. A handler that read the two
+        // absent ids as blanks would reset both models to the defaults every time a player
+        // switched retrieval off.
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"openai/gpt-4o-mini\","
+                                + "\"embeddingModel\":\"qwen/qwen3-embedding-8b\"}")))
+                .statusCode());
+
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString("{\"embeddingEnabled\":false}")))
+                .statusCode());
+
+        JsonObject after = json(url("/api/models"));
+        assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
+        assertEquals("qwen/qwen3-embedding-8b", after.get("embeddingModel").getAsString());
+        assertFalse(after.get("embeddingEnabled").getAsBoolean());
+    }
+
+    @Test
+    void stillTreatsAClearedBoxAsARequestForTheDefault() {
+        // Blank must keep meaning "give me the default" — it is how a player resets by hand,
+        // and it is the one case that must not be folded into "said nothing about it".
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/models")))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(
+                        "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
+                .statusCode());
+
+        assertEquals("openai/text-embedding-3-small",
+                json(url("/api/models")).get("embeddingModel").getAsString());
+    }
+
+    @Test
     void acceptsAModelIdItHasNeverHeardOf() {
         // The lists are suggestions. A provider adds and retires models faster than the mod
         // ships, so refusing an unfamiliar id would break a player who is right.

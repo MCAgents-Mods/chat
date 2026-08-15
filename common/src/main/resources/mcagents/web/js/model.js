@@ -11,8 +11,19 @@
 
   var chatBox;
   var embeddingBox;
+  var toggleButton;
   var noteEl;
-  var defaults = { chat: '', embedding: '' };
+  var defaults = { chat: '', embedding: '', enabled: true };
+
+  /* Held here rather than read back off the button, so the state is a value and not a
+   * class name. Applied on Save like everything else on this page — the chat page flips it
+   * immediately because it has no Save button; this page has one, and a switch that ignored
+   * it would be the only control here that did. */
+  var embeddingEnabled = true;
+
+  function paintToggle() {
+    window.MCAgents.paintToggle(toggleButton, embeddingEnabled);
+  }
 
   function note(message, kind) {
     noteEl.textContent = message || '';
@@ -57,7 +68,11 @@
     var M = window.MCAgents;
     try {
       var models = await M.api('/models');
-      defaults = { chat: models.defaultChatModel, embedding: models.defaultEmbeddingModel };
+      defaults = {
+        chat: models.defaultChatModel,
+        embedding: models.defaultEmbeddingModel,
+        enabled: true
+      };
 
       fillSuggestions('chat-options', 'chat-suggestions', models.suggestedChatModels, chatBox);
       fillSuggestions('embedding-options', 'embedding-suggestions',
@@ -67,6 +82,8 @@
       embeddingBox.value = models.embeddingModel;
       chatBox.placeholder = models.defaultChatModel;
       embeddingBox.placeholder = models.defaultEmbeddingModel;
+      embeddingEnabled = models.embeddingEnabled;
+      paintToggle();
       markActive();
     } catch (error) {
       note(error.message, 'error');
@@ -80,10 +97,16 @@
        * what was typed. */
       var stored = await window.MCAgents.api('/models', {
         method: 'PUT',
-        body: { chatModel: chatBox.value.trim(), embeddingModel: embeddingBox.value.trim() }
+        body: {
+          chatModel: chatBox.value.trim(),
+          embeddingModel: embeddingBox.value.trim(),
+          embeddingEnabled: embeddingEnabled
+        }
       });
       chatBox.value = stored.chatModel;
       embeddingBox.value = stored.embeddingModel;
+      embeddingEnabled = stored.embeddingEnabled;
+      paintToggle();
       markActive();
       note('Saved. The game uses this from the next question onward.', 'ok');
     } catch (error) {
@@ -94,12 +117,20 @@
   document.addEventListener('mcagents:ready', async function () {
     chatBox = document.getElementById('chat-model');
     embeddingBox = document.getElementById('embedding-model');
+    toggleButton = document.getElementById('embedding-toggle');
     noteEl = document.getElementById('save-note');
 
     document.getElementById('save').addEventListener('click', save);
+    toggleButton.addEventListener('click', function () {
+      embeddingEnabled = !embeddingEnabled;
+      paintToggle();
+      note('Press Save to apply.');
+    });
     document.getElementById('reset').addEventListener('click', function () {
       chatBox.value = defaults.chat;
       embeddingBox.value = defaults.embedding;
+      embeddingEnabled = defaults.enabled;
+      paintToggle();
       markActive();
       note('Defaults filled in. Press Save to keep them.');
     });

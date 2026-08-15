@@ -47,6 +47,15 @@
       <h2>Embedding model</h2>
       <p class="muted field-note">Turns questions and packs into vectors, so the mod can find
         the content that matches what you asked.</p>
+
+      <div class="toggle-row">
+        <button class="btn btn--state is-on" type="button" id="embedding-toggle"
+                aria-pressed="true">Embedding on</button>
+        <p class="muted field-note toggle-row__note">Off means questions are sent on their
+          own: no Knowledge Packs are used, and nothing is charged for embedding them. You
+          can still chat exactly as before.</p>
+      </div>
+
       <input class="field" id="embedding-model" list="embedding-options" autocomplete="off"
              spellcheck="false" placeholder="Loading…">
       <datalist id="embedding-options"></datalist>
