@@ -24,6 +24,22 @@ public final class MCAgents {
     /** Player-authored agent personas and instructions, read at runtime. */
     public static final String INSTRUCTIONS_FILE = "AGENTS.md";
 
+    /**
+     * The central Knowledge Pack service.
+     *
+     * <p>A content source and never a dependency: everything the mod does locally works
+     * with this unreachable. See {@code .agents/rules/repository.md}.
+     */
+    public static final String SERVICE_URL = "https://mcagents.mcrealms.space";
+
+    /**
+     * The pack describing the mod itself, fetched once at startup so the agent can answer
+     * questions about what it is running inside.
+     *
+     * <p>The id and the version are a contract with the service, not a detail.
+     */
+    public static final String BASE_KNOWLEDGE_ID = "mcagents-info";
+
     private MCAgents() {
         throw new AssertionError("No instances.");
     }

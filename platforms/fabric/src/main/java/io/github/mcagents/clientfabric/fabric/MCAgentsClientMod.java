@@ -5,6 +5,7 @@ import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
+import io.github.mcagents.clientfabric.fabric.client.KnowledgeSyncFactory;
 import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
 import io.github.mcagents.clientfabric.fabric.client.WebConsoleHolder;
 import net.fabricmc.api.ClientModInitializer;
@@ -104,8 +105,29 @@ public final class MCAgentsClientMod implements ClientModInitializer {
             DATABASE.set(database);
             STATE.set(StorageState.READY);
             LOGGER.info("{} is ready, storing data in {}", MCAgents.MOD_NAME, paths.dataDirectory());
+            fetchBaseKnowledge(database);
             return true;
         });
+    }
+
+    /**
+     * Fetches the pack describing the mod, once, in the background.
+     *
+     * <p>The only thing the mod asks the central service for without being told to, and the
+     * only reason it is worth an exception: without it the agent cannot answer "what are
+     * you", which is the first question a new player has.
+     *
+     * <p>Nothing waits on it. The future it returns never fails, so a service that is asleep
+     * — the normal state of a host that idles — costs a log line and nothing else. Every
+     * screen opens, and every stored pack still answers, whether this succeeds or not.
+     */
+    private static void fetchBaseKnowledge(LocalDatabase database) {
+        KnowledgeSyncFactory.create(database).ensureBaseKnowledge()
+                .thenAccept(updated -> {
+                    if (updated) {
+                        LOGGER.info("Fetched the base knowledge pack");
+                    }
+                });
     }
 
     private static void fail(String what, Throwable cause) {
@@ -128,6 +150,7 @@ public final class MCAgentsClientMod implements ClientModInitializer {
             // Then the model client: it may still be waiting on a backoff, and there is
             // no point letting that outlive the store it would write the answer to.
             AgentFactory.close();
+            KnowledgeSyncFactory.close();
             LocalDatabase database = DATABASE.getAndSet(null);
             if (database != null) {
                 database.close();

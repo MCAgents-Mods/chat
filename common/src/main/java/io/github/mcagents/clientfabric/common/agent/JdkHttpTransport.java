@@ -32,8 +32,13 @@ public final class JdkHttpTransport implements HttpTransport {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(call.url()))
                 // Generous, because a long answer legitimately takes a while to generate.
-                .timeout(REQUEST_TIMEOUT)
-                .POST(HttpRequest.BodyPublishers.ofString(call.body()));
+                .timeout(REQUEST_TIMEOUT);
+
+        if ("GET".equalsIgnoreCase(call.method())) {
+            builder.GET();
+        } else {
+            builder.method(call.method(), HttpRequest.BodyPublishers.ofString(call.body()));
+        }
 
         call.headers().forEach(builder::header);
 
