@@ -316,6 +316,9 @@ public final class LocalWebConsole implements WebConsole {
             sendError(exchange, 403, "Forbidden.");
             return false;
         }
+        if (isPublicAsset(exchange)) {
+            return true;
+        }
         String presented = exchange.getRequestHeaders().getFirst("X-MCAgents-Token");
         if (presented == null) {
             presented = parseQuery(exchange.getRequestURI().getRawQuery()).get("t");
@@ -325,6 +328,24 @@ public final class LocalWebConsole implements WebConsole {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Whether this is a stylesheet, a script, or a chrome partial.
+     *
+     * <p>These are served without a token, and they have to be: a {@code <link>} in a static
+     * page carries no query string, and the alternative is generating the markup in Java so
+     * a token can be substituted into every asset URL — which would turn three files anyone
+     * can edit into strings to escape.
+     *
+     * <p>Nothing is given away by it. Every asset is a file shipped inside the mod jar,
+     * identical for every player and carrying no data of theirs. Everything that reads the
+     * database is under {@code /api/}, and the pages themselves stay behind the token, so
+     * the only thing an unguarded request can obtain is a copy of the console's own CSS.
+     */
+    private static boolean isPublicAsset(HttpExchange exchange) {
+        return "GET".equalsIgnoreCase(exchange.getRequestMethod())
+                && exchange.getRequestURI().getPath().startsWith("/assets/");
     }
 
     private static boolean isLoopbackHost(String host) {
