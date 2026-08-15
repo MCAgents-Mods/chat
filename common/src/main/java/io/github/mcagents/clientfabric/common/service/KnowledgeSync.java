@@ -79,7 +79,7 @@ public final class KnowledgeSync {
         return service.categories()
                 .thenCompose(this::storeCategories)
                 .thenCompose(ignored -> service.content(id))
-                .thenCompose(pack -> database.contents().save(pack));
+                .thenCompose(this::store);
     }
 
     /**
@@ -150,6 +150,47 @@ public final class KnowledgeSync {
                 });
     }
 
+    /**
+     * Writes a downloaded pack, deciding what happens to any vector already stored for it.
+     *
+     * <h2>A new version drops the embedding</h2>
+     *
+     * <p>An embedding describes the text it was made from. A new version is new text, so the
+     * stored vector no longer describes the pack it is attached to — it would keep matching
+     * questions about wording that is no longer there, and would keep the pack out of results
+     * it now belongs in. Silently wrong, and invisible: the pack still looks embedded.
+     *
+     * <p>So the vector goes, the pack shows as needing one, and the next press of the embed
+     * button restores it. Losing an embedding costs one provider call; keeping a stale one
+     * costs every answer that pack takes part in.
+     *
+     * <h2>The same version keeps it</h2>
+     *
+     * <p>Re-downloading a pack at the version already stored — which the download button on a
+     * pack's own page will happily do — brings back byte-identical text. Throwing the vector
+     * away there would charge the player to compute the same numbers again for no reason.
+     *
+     * <p>Version is the protocol's word for "the text changed": the service publishes a new
+     * version rather than editing one in place, so comparing versions is comparing texts.
+     */
+    private CompletableFuture<KnowledgeContent> store(KnowledgeContent published) {
+        return database.contents().findById(published.id()).thenCompose(stored -> {
+            boolean sameText = stored.isPresent()
+                    && stored.get().version().equals(published.version())
+                    && stored.get().hasEmbedding();
+
+            return database.contents().save(sameText
+                    ? withEmbedding(published, stored.get().embeddedData())
+                    : published);
+        });
+    }
+
+    private static KnowledgeContent withEmbedding(KnowledgeContent pack, String embedding) {
+        return new KnowledgeContent(pack.id(), pack.categoryId(), pack.version(),
+                pack.premium(), pack.title(), pack.rawContent(), embedding,
+                pack.createdAt(), pack.updatedAt());
+    }
+
     private CompletableFuture<Void> storeCategories(List<ContentCategory> categories) {
         // Categories first, and one at a time: contents.category_id is a foreign key, so a
         // pack whose category has not been stored yet cannot be written at all.
@@ -190,7 +231,7 @@ public final class KnowledgeSync {
         List<String> rest = ids.subList(1, ids.size());
 
         return service.content(id)
-                .thenCompose(pack -> database.contents().save(pack))
+                .thenCompose(this::store)
                 .handle((saved, failure) -> failure == null
                         ? carried.withDownloaded()
                         : carried.withFailure(id))
