@@ -22,6 +22,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/openrouter-integration.md`](../memory/tasks/openrouter-integration.md) | The model client, prompt caching, model selection, and dependency scoping — decisions not to relitigate, and what is still unverified. |
 | [`../memory/tasks/gui-play-testing.md`](../memory/tasks/gui-play-testing.md) | What running the mod in a real client found, why the test suite could not, and the log-only-failure mistake made twice. |
 | [`../memory/tasks/wallet-binding.md`](../memory/tasks/wallet-binding.md) | MetaMask wallet binding: the shape chosen, the decisions not to relitigate, and exactly what is proven and what is not. |
+| [`../memory/tasks/central-service.md`](../memory/tasks/central-service.md) | Reaching mcagents.mcrealms.space: the cold-start design, the rate limit, the base pack, the model defaults, and what the live service actually answered. |
 | [`../memory/tasks/web-console.md`](../memory/tasks/web-console.md) | The local web console: why it is long-lived where the wallet bridge is not, how the two sides stay in step, and the three defects a browser found that the Java suite could not. |
 
 ## Maintenance
