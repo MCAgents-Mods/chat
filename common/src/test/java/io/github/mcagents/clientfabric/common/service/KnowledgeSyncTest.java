@@ -82,10 +82,14 @@ class KnowledgeSyncTest {
         assertFalse(await(new CentralService(transport, "https://example.invalid").health()).reachable());
     }
 
-    // ------------------------------------------------------------ refresh
+    // ------------------------------------------------------------- update
 
     @Test
-    void downloadsOnlyWhatIsMissingOrOutOfDate() {
+    void updatesWhatIsStoredAndTakesNothingNew() {
+        // The whole point of the update button. "brand-new" is published and not stored, and
+        // it must stay that way: a player asking for their packs to be brought up to date is
+        // not asking for a library they never chose, nor for the provider calls needed to
+        // embed one.
         await(database.contents().saveCategory(1, "Guides"));
         await(database.contents().save(pack("current", "1.0.0")));
         await(database.contents().save(pack("stale", "1.0.0")));
@@ -99,15 +103,31 @@ class KnowledgeSyncTest {
                           {"id":"brand-new","version":"1.0.0"}
                         ],"hasMore":false,"nextOffset":3}
                         """)
-                .reply(200, fullPack("brand-new", "1.0.0"))
                 .reply(200, fullPack("stale", "2.0.0"));
 
-        KnowledgeSync.SyncResult result = await(sync().refresh());
+        KnowledgeSync.SyncResult result = await(sync().updateStored());
 
-        assertEquals(2, result.downloaded(), "the up-to-date pack must not be fetched again");
+        assertEquals(1, result.downloaded(), "only the stale pack; the up-to-date one is left");
         assertEquals(0, result.failed());
         assertEquals(3, result.published());
         assertEquals("2.0.0", await(database.contents().findById("stale")).orElseThrow().version());
+        assertTrue(await(database.contents().findById("brand-new")).isEmpty(),
+                "a pack the player never chose must not arrive because they pressed update");
+    }
+
+    @Test
+    void leavesAPackTheServiceNoLongerPublishes() {
+        // Unpublishing is not deleting. The stored copy still answers questions, and removing
+        // somebody's pack because a catalog changed under them is not an update.
+        await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("retired", "1.0.0")));
+
+        transport
+                .reply(200, categories())
+                .reply(200, "{\"items\":[],\"hasMore\":false}");
+
+        assertEquals(0, await(sync().updateStored()).downloaded());
+        assertTrue(await(database.contents().findById("retired")).isPresent());
     }
 
     @Test
@@ -120,7 +140,7 @@ class KnowledgeSyncTest {
                 .reply(200, categories())
                 .reply(200, "{\"items\":[{\"id\":\"only\",\"version\":\"1.0.0\"}],\"hasMore\":false}");
 
-        KnowledgeSync.SyncResult result = await(sync().refresh());
+        KnowledgeSync.SyncResult result = await(sync().updateStored());
 
         assertEquals(0, result.downloaded());
         assertFalse(result.changedAnything());
@@ -129,8 +149,11 @@ class KnowledgeSyncTest {
     @Test
     void readsEveryPageOfTheCatalog() {
         // A catalog larger than one page would otherwise look like a catalog that had lost
-        // most of its packs, and everything after the first page would never be downloaded.
+        // most of its packs, and a stored pack listed on the second page would never be
+        // seen as out of date.
         await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("a", "0.9.0")));
+        await(database.contents().save(pack("b", "0.9.0")));
 
         transport
                 .reply(200, categories())
@@ -139,7 +162,7 @@ class KnowledgeSyncTest {
                 .reply(200, fullPack("a", "1.0.0"))
                 .reply(200, fullPack("b", "1.0.0"));
 
-        KnowledgeSync.SyncResult result = await(sync().refresh());
+        KnowledgeSync.SyncResult result = await(sync().updateStored());
 
         assertEquals(2, result.downloaded());
         assertEquals(2, result.published());
@@ -148,8 +171,10 @@ class KnowledgeSyncTest {
     @Test
     void keepsGoingWhenOnePackFails() {
         // One pack failing must not cost the others. Nothing half-written is stored: a pack
-        // that did not arrive is simply not saved.
+        // that did not arrive keeps the version it had.
         await(database.contents().saveCategory(1, "Guides"));
+        await(database.contents().save(pack("good", "0.9.0")));
+        await(database.contents().save(pack("broken", "0.9.0")));
 
         transport
                 .reply(200, categories())
@@ -160,13 +185,13 @@ class KnowledgeSyncTest {
                 .reply(200, fullPack("broken", "1.0.0").replace("{", "{{"))
                 .reply(200, fullPack("good", "1.0.0"));
 
-        KnowledgeSync.SyncResult result = await(sync().refresh());
+        KnowledgeSync.SyncResult result = await(sync().updateStored());
 
         assertEquals(1, result.downloaded());
         assertEquals(1, result.failed());
         assertEquals(java.util.List.of("broken"), result.failedIds());
-        assertTrue(await(database.contents().findById("good")).isPresent());
-        assertTrue(await(database.contents().findById("broken")).isEmpty());
+        assertEquals("1.0.0", await(database.contents().findById("good")).orElseThrow().version());
+        assertEquals("0.9.0", await(database.contents().findById("broken")).orElseThrow().version());
     }
 
     @Test
@@ -179,7 +204,7 @@ class KnowledgeSyncTest {
                 """);
 
         Exception failure = org.junit.jupiter.api.Assertions.assertThrows(
-                java.util.concurrent.CompletionException.class, () -> sync().refresh().join());
+                java.util.concurrent.CompletionException.class, () -> sync().updateStored().join());
 
         assertTrue(failure.getCause() instanceof CentralServiceException);
         assertTrue(failure.getCause().getMessage().contains("42"),
@@ -287,7 +312,7 @@ class KnowledgeSyncTest {
                 .reply(200, "{\"items\":[{\"id\":\"moving\",\"version\":\"2.0.0\"}],\"hasMore\":false}")
                 .reply(200, fullPack("moving", "2.0.0"));
 
-        await(sync().refresh());
+        await(sync().updateStored());
 
         KnowledgeContent after = await(database.contents().findById("moving")).orElseThrow();
         assertEquals("2.0.0", after.version());
@@ -393,7 +418,7 @@ class KnowledgeSyncTest {
                 .reply(200, categories())
                 .reply(200, "{\"items\":[],\"hasMore\":false}");
 
-        await(sync().refresh());
+        await(sync().updateStored());
 
         transport.calls().forEach(call -> {
             assertFalse(call.body().contains("sk-or-v1"), "no key leaves the mod this way");

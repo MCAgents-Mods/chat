@@ -11,6 +11,9 @@
 
   var PAGE_SIZE = 20;
 
+  /* Refresh on this page re-reads what is here and what is published. It downloads nothing —
+   * see the button's own comment. */
+
   var list;
   var scroller;
   var sentinel;
@@ -275,21 +278,35 @@
     M.showState(document.getElementById('available-list'), 'Loading…');
 
     var refreshButton = document.getElementById('refresh-knowledge');
-    M.wireSyncButton(refreshButton, document.getElementById('sync-note'), function (result) {
-      if (result.changed) {
-        loadCategories();
+    var note = document.getElementById('sync-note');
+
+    /* Re-reads both lists and downloads nothing.
+     *
+     * It used to fetch every pack the service published that this machine did not have,
+     * which is not what "refresh" means anywhere else and is not what a reader wants from a
+     * button next to a search box. Taking a pack is done from that pack's page, one at a
+     * time, where they can see what they are taking. */
+    refreshButton.addEventListener('click', async function () {
+      refreshButton.disabled = true;
+      note.textContent = 'Reloading…';
+      note.className = 'sync-note';
+      try {
+        await loadCategories();
         reset();
+        await loadAvailable();
+        note.textContent = 'Reloaded.';
+        note.className = 'sync-note is-ok';
+      } catch (error) {
+        note.textContent = error.message;
+        note.className = 'sync-note is-error';
+      } finally {
+        refreshButton.disabled = false;
       }
-      // Whether or not anything downloaded: what is left to download has changed if it did,
-      // and confirming it has not is the point of pressing refresh when it has not.
-      loadAvailable();
     });
-    // The button needs the service, so it follows the banner rather than sitting there
-    // looking pressable while nothing is answering.
-    window.MCAgentsService.onChange(function (reachable) {
-      refreshButton.disabled = !reachable;
-      // Reloaded either way. Unreachable is an answer this section can show, and showing it
-      // is what stops the page changing shape when the service goes to sleep.
+
+    /* Reachability changes what the second panel can show, not whether this button works:
+     * reloading the local library needs nothing but the local library. */
+    window.MCAgentsService.onChange(function () {
       loadAvailable();
     });
     window.MCAgentsService.start();

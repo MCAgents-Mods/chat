@@ -113,14 +113,14 @@ final class WebApi {
     }
 
     /**
-     * Downloads what the service publishes and the player does not have.
+     * Brings the packs already on this machine up to their published versions.
      *
-     * <p>Behind both the refresh button on the knowledge page and the update button on the
-     * chat page — they are the same operation, and the second exists only because that is
-     * where a player notices the agent is missing something.
+     * <p>Behind the update button on the chat page, and nothing else. It downloads no pack
+     * the player has not already chosen — taking a new one is done from that pack's page,
+     * where they can see what they are taking.
      */
-    JsonObject refreshKnowledge() {
-        KnowledgeSync.SyncResult result = await(sync.refresh(), SYNC_TIMEOUT);
+    JsonObject updateKnowledge() {
+        KnowledgeSync.SyncResult result = await(sync.updateStored(), SYNC_TIMEOUT);
 
         JsonObject body = new JsonObject();
         body.addProperty("downloaded", result.downloaded());

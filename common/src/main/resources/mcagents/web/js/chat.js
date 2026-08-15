@@ -384,7 +384,7 @@
     var noteEl = document.getElementById('sync-note');
     var updateButton = document.getElementById('update-knowledge');
     M.wireSyncButton(updateButton, noteEl, function () {
-      /* Both numbers moved: what was waiting has arrived, and it arrived without a vector.
+      /* Both numbers moved: an updated pack is current now, and it lost its vector doing it.
        * Re-read rather than adjusted, so the line cannot drift from the truth. */
       checkForUpdates();
       showEmbeddingStatus();
@@ -456,6 +456,23 @@
     }
 
     embedButton.addEventListener('click', async function () {
+      /* Asks first, because this one spends money. Embedding is a request to the player's
+       * model provider per pack, so a library of forty packs is forty billable calls from
+       * one click. */
+      var status = await showEmbeddingStatus();
+      var waiting = status ? status.needing : 0;
+      var confirmed = await M.confirm({
+        title: waiting === 1 ? 'Embed 1 pack?' : 'Embed ' + waiting + ' packs?',
+        message: waiting === 0
+          ? 'Nothing needs embedding right now. Running anyway costs nothing and will '
+            + 'confirm that.'
+          : 'Each one is a separate request to your model provider, charged to your API key. '
+            + 'They run one at a time and can take a while.',
+        confirmLabel: 'Embed now'
+      });
+      if (!confirmed) {
+        return;
+      }
       embedButton.disabled = true;
       noteEl.textContent = 'Embedding…';
       noteEl.className = 'sync-note';

@@ -254,8 +254,8 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.serviceHealth());
             return;
         }
-        if (path.equals("/api/service/refresh") && method.equals("POST")) {
-            sendJson(exchange, 200, api.refreshKnowledge());
+        if (path.equals("/api/service/update") && method.equals("POST")) {
+            sendJson(exchange, 200, api.updateKnowledge());
             return;
         }
         if (path.equals("/api/service/updates") && method.equals("GET")) {
