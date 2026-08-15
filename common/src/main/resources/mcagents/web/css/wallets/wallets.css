@@ -1,0 +1,174 @@
+/* Page-specific layout for the wallets page. Components live in shared/. */
+
+/*
+ * One column per account, side by side.
+ *
+ * A player with two accounts should see both without scrolling between them — that is the
+ * comparison the page exists to make. The minimum keeps a column readable and wraps the rest
+ * onto a second row rather than squeezing them.
+ *
+ * auto-fit rather than auto-fill: auto-fill lays out as many column tracks as would fit and
+ * leaves the empty ones standing, so two accounts on a wide screen were two narrow strips
+ * beside a third of blank page, with wallet names wrapping inside them for want of room.
+ * auto-fit collapses the tracks nobody is using and the accounts take the width.
+ *
+ * align-items: start so a panel is as tall as its own contents. Stretched, an account with
+ * two wallets was padded out to match one with eight.
+ */
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr));
+  align-items: start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.account {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+
+  background: var(--glass);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.account__head {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+}
+
+.account__name {
+  margin: 0;
+  font-size: 1.05rem;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Five wallets, then it scrolls.
+ *
+ * The number is the point: an account with forty wallets must not make its own column forty
+ * rows tall and push every other account off the bottom of the window.
+ *
+ * The exact height is set by wallets.js, which measures the first five rows. It cannot live
+ * here: a row is one line for a wallet with no address and four for one with three, so a
+ * height written in the stylesheet shows five rows in one account and two in the next. The
+ * value below is the fallback for the moment before that runs, and for scripting turned off.
+ */
+.wallet-scroller {
+  max-height: 22rem;
+  min-height: 4rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: .5rem;
+
+  background: var(--glass-faint);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.wallet-scroller:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.wallet {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .55rem .6rem;
+  border-radius: calc(var(--radius) - .35rem);
+}
+
+.wallet + .wallet {
+  border-top: 1px solid var(--hairline);
+}
+
+.wallet:hover {
+  background: var(--glass);
+}
+
+.wallet__head {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+/* One line, cut with an ellipsis rather than wrapped. A name long enough to wrap made the
+   row two lines tall and pushed the badge and the buttons out of line with every other row;
+   the whole name is in the title attribute and in the rename dialog. */
+.wallet__label {
+  font-weight: 600;
+  font-size: .92rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rename and delete sit on every row rather than appearing on hover: a control that is
+   only there under the cursor is a control a keyboard never reaches. */
+.wallet__controls {
+  display: flex;
+  gap: .3rem;
+  flex: none;
+}
+
+.wallet__addresses {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+/* An address is shortened because forty characters will not fit beside a chain name — a
+   layout decision, never secrecy. Copy hands over the whole value. */
+.addr {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  color: var(--ink-700);
+}
+
+.addr__chain {
+  flex: none;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.addr__value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+  flex: 1;
+}
+
+.account__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.account__note {
+  margin: 0;
+  font-size: .8rem;
+  min-height: 1.1rem;
+}
+
+.account__note.is-bad { color: var(--sponsor); }
+.account__note.is-ok { color: var(--ok); }
+
+@media (max-width: 900px) {
+  /* On a narrow window the columns are already stacked, and a fixed box would put its own
+     scrollbar inside the page's. The lists go back to flowing with the page. */
+  .wallet-scroller {
+    max-height: none !important;
+    overflow-y: visible;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+}
