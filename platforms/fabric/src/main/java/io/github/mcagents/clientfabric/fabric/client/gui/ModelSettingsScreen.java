@@ -3,8 +3,10 @@ package io.github.mcagents.clientfabric.fabric.client.gui;
 import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -40,6 +42,7 @@ public final class ModelSettingsScreen extends Screen {
 
     private EditableDropdown chatModel;
     private EditableDropdown embeddingModel;
+    private Button embeddingToggle;
     private Button saveButton;
 
     /**
@@ -52,6 +55,7 @@ public final class ModelSettingsScreen extends Screen {
     private int contentLeft;
     private int chatFieldTop;
     private int embeddingFieldTop;
+    private int toggleTop;
 
     /** Kept across a resize, which rebuilds every widget from scratch. */
     private ModelPreferences current = ModelPreferences.defaults();
@@ -84,8 +88,17 @@ public final class ModelSettingsScreen extends Screen {
         embeddingModel.setValue(current.embeddingModel());
         addRenderableWidget(embeddingModel.field());
 
+        // Directly under the embedding field, because it is that field's on/off switch and
+        // not a third setting. Full width for the same reason.
+        toggleTop = embeddingFieldTop + FIELD_HEIGHT + ROW_SPACING;
+        embeddingToggle = addRenderableWidget(Button.builder(
+                        embeddingToggleLabel(), button -> toggleEmbedding())
+                .bounds(left, toggleTop, FIELD_WIDTH, FIELD_HEIGHT)
+                .build());
+        applyEmbeddingToggle();
+
         int buttonWidth = 100;
-        int buttonTop = embeddingFieldTop + FIELD_HEIGHT + ROW_SPACING * 2;
+        int buttonTop = toggleTop + FIELD_HEIGHT + ROW_SPACING * 2;
 
         saveButton = addRenderableWidget(Button.builder(
                         Component.translatable("gui.mcagents.models.save"), button -> save())
@@ -114,7 +127,50 @@ public final class ModelSettingsScreen extends Screen {
             loaded = true;
             chatModel.setValue(preferences.chatModel());
             embeddingModel.setValue(preferences.embeddingModel());
+            applyEmbeddingToggle();
         }, "Could not read the model preferences");
+    }
+
+    /**
+     * Flips the switch in this screen's state.
+     *
+     * <p>Not written to storage here. Every other control on this screen takes effect on
+     * Save, and a switch that saved itself would be the one control that behaved
+     * differently — a player who flipped it to see what it said would have changed their
+     * settings by looking.
+     */
+    private void toggleEmbedding() {
+        current = current.withEmbeddingEnabled(!current.embeddingEnabled());
+        applyEmbeddingToggle();
+    }
+
+    /** Puts the switch's state on the button: its words, its colour, and its explanation. */
+    private void applyEmbeddingToggle() {
+        if (embeddingToggle == null) {
+            return;
+        }
+        boolean enabled = current.embeddingEnabled();
+        embeddingToggle.setMessage(embeddingToggleLabel());
+        embeddingToggle.setTooltip(Tooltip.create(Component.translatable(enabled
+                ? "gui.mcagents.models.embedding.tip.on"
+                : "gui.mcagents.models.embedding.tip.off")));
+        // The embedding model still matters when the switch is off — it is what retrieval
+        // will use when it comes back on — so the field stays editable rather than greyed.
+    }
+
+    /**
+     * The button's words.
+     *
+     * <p>They say which state the switch is <em>in</em>, not what pressing it would do. The
+     * colour repeats that rather than carrying it: a player who cannot separate the two
+     * colours still reads the word.
+     */
+    private Component embeddingToggleLabel() {
+        boolean enabled = current.embeddingEnabled();
+        return Component.translatable(enabled
+                        ? "gui.mcagents.models.embedding.on"
+                        : "gui.mcagents.models.embedding.off")
+                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED);
     }
 
     private void save() {
@@ -131,12 +187,15 @@ public final class ModelSettingsScreen extends Screen {
             // Show what was actually stored, which may differ from what was typed.
             chatModel.setValue(stored.chatModel());
             embeddingModel.setValue(stored.embeddingModel());
+            applyEmbeddingToggle();
         }, "Could not store the model preferences");
     }
 
     private void reset() {
         chatModel.setValue(ModelCatalog.DEFAULT_CHAT_MODEL);
         embeddingModel.setValue(ModelCatalog.DEFAULT_EMBEDDING_MODEL);
+        current = current.withEmbeddingEnabled(ModelPreferences.DEFAULT_EMBEDDING_ENABLED);
+        applyEmbeddingToggle();
         chatModel.close();
         embeddingModel.close();
     }
@@ -183,8 +242,9 @@ public final class ModelSettingsScreen extends Screen {
         embeddingModel.render(graphics, mouseX, mouseY);
 
         if (waiting.isWaiting()) {
+            // Below the toggle, which now occupies the line this used to sit on.
             graphics.centeredText(font, waiting.label(Component.translatable("gui.mcagents.waiting")),
-                    width / 2, embeddingFieldTop + FIELD_HEIGHT + ROW_SPACING, 0xFFFFFFFF);
+                    width / 2, toggleTop + FIELD_HEIGHT + ROW_SPACING, 0xFFFFFFFF);
         }
 
         // Last: an open list floats over everything, including the widgets above.
