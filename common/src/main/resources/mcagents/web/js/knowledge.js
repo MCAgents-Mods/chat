@@ -56,6 +56,57 @@
     return node;
   }
 
+  /**
+   * A pack the player does not have yet.
+   *
+   * Same card, one badge different, and it links to the same detail page — which is where
+   * the download button lives, because that is the only page about one pack.
+   */
+  function availableCard(item) {
+    var M = window.MCAgents;
+    var node = document.createElement('a');
+    node.className = 'card';
+    node.href = M.link('knowledge/' + encodeURIComponent(item.id));
+
+    node.appendChild(M.el('div', 'card__title', item.title || item.id));
+    node.appendChild(M.el('p', 'card__desc', item.id));
+
+    var more = M.el('div', 'card__more');
+    more.appendChild(M.el('span', 'badge badge--accent', 'v' + item.version));
+    more.appendChild(M.el('span', 'badge' + (item.premium ? ' badge--sponsor' : ''),
+      item.premium ? 'Premium' : 'Free'));
+    more.appendChild(M.el('span', 'badge badge--warn', 'Not downloaded'));
+    node.appendChild(more);
+
+    return node;
+  }
+
+  /**
+   * Asks the service what it publishes that is not here.
+   *
+   * Silent about failure on purpose: the library above is the page, and this section is an
+   * extra. A service that is asleep should make the section disappear, not put an error
+   * across a page that is working.
+   */
+  async function loadAvailable() {
+    var M = window.MCAgents;
+    var section = document.getElementById('available-section');
+    try {
+      var payload = await M.api('/catalog');
+      if (payload.items.length === 0) {
+        section.hidden = true;
+        return;
+      }
+      M.replace(document.getElementById('available-list'),
+        payload.items.map(availableCard));
+      document.getElementById('available-count').textContent =
+        payload.items.length + (payload.items.length === 1 ? ' pack' : ' packs');
+      section.hidden = false;
+    } catch (ignored) {
+      section.hidden = true;
+    }
+  }
+
   function describe() {
     if (state.total === 0) {
       countLabel.textContent = '';
@@ -214,11 +265,19 @@
         loadCategories();
         reset();
       }
+      // Whether or not anything downloaded: what is left to download has changed if it did,
+      // and confirming it has not is the point of pressing refresh when it has not.
+      loadAvailable();
     });
     // The button needs the service, so it follows the banner rather than sitting there
     // looking pressable while nothing is answering.
     window.MCAgentsService.onChange(function (reachable) {
       refreshButton.disabled = !reachable;
+      if (reachable) {
+        loadAvailable();
+      } else {
+        document.getElementById('available-section').hidden = true;
+      }
     });
     window.MCAgentsService.start();
     reset();
