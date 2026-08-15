@@ -39,6 +39,12 @@ public interface LocalDatabase extends AutoCloseable {
     WalletRepository wallets();
 
     /**
+     * A counter that moves when stored data changes, so a second view of the same store can
+     * tell it has gone stale.
+     */
+    ChangeFeed changes();
+
+    /**
      * Closes the store and stops the thread it runs its work on. Pending work is allowed
      * to finish first. Calling this twice is harmless.
      */
