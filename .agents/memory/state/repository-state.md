@@ -54,7 +54,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 265 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 273 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
@@ -126,11 +126,14 @@ answers with `RateLimit-*` headers.
 
 Two things are outstanding, and the second is the more interesting.
 
-1. Wallets, the web console, the console button, and now the embedding toggle on
+1. Wallets, the web console, the console button, and the embedding toggle on
    `ModelSettingsScreen` are compile-verified and unopened. `platforms/fabric` has no test
    source set, so nothing here can prove any of them. One session in a real client would
-   settle all four, plus a binding through the real MetaMask extension and a message typed
-   in game appearing in a browser tab.
+   settle them all, plus a binding through the real MetaMask extension and a message typed
+   in game appearing in a browser tab. **A screenshot found two collisions on
+   `WebConsoleScreen` that had survived several rounds** — the arithmetic behind that screen
+   is under test now, in `common/ui/StackedRows`, but what a screen *looks* like still is
+   not.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
    would settle it — and would be the first end-to-end proof that a downloaded pack can be

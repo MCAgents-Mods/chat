@@ -31,12 +31,19 @@ so the search box and the category filters stay where you left them however larg
 library grows. The search box filters as you type, across titles and pack text. The chips
 filter by category and by free or premium.
 
-Below it, **Available to download** lists what the service publishes that you do not have.
-It is deliberately a separate section rather than rows mixed into the list above: that list
-is a window over a local table and pages with an offset, while this comes from the network
+Below it, **Available to download** lists what the service publishes that you do not have,
+in a scrolling panel of its own. Both lists are boxed for the same reason: a library or a
+catalog of any size would otherwise push the search box, the filters, and the headings that
+tell the two lists apart off the top of the window.
+
+The two are deliberately separate sections rather than rows mixed together. The library is a
+window over a local table and pages with an offset, while the catalog comes from the network
 and disappears when the service is asleep. Merging them would mean paging a union of two
 sources with different costs and different failure modes, and the page would stop working
 whenever the service did.
+
+On a narrow window both go back to flowing with the page, where a fixed box would show three
+cards and put its own scrollbar inside the page's.
 
 The list deliberately does not carry pack bodies. An embedding is thousands of numbers, and
 reading twenty of them to render a list of titles would be slow for no benefit.
