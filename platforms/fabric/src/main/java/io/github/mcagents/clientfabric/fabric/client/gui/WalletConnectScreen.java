@@ -1,6 +1,5 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
-import io.github.mcagents.clientfabric.api.wallet.Wallet;
 import io.github.mcagents.clientfabric.api.wallet.WalletBinding;
 import io.github.mcagents.clientfabric.common.wallet.LocalWalletBridge;
 import io.github.mcagents.clientfabric.common.wallet.SystemBrowser;
@@ -12,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
@@ -22,9 +22,14 @@ import java.util.function.Consumer;
  *
  * <p>MetaMask is a browser extension: {@code window.ethereum} exists on a web page and
  * nowhere else. So opening this screen starts a small server on {@code 127.0.0.1}, opens
- * the player's browser at it, and waits. The page asks MetaMask to sign a one-off message,
- * the mod checks the signature, and <strong>the server stops the moment it verifies</strong>
- * — or when this screen closes, whichever comes first. There is no way to leave it running.
+ * the player's browser at it, and waits. The page asks MetaMask to sign a one-off message
+ * <strong>for every address it shares</strong>, the mod checks each signature, and
+ * <strong>the server stops when the page says it has finished</strong> — or when this
+ * screen closes, whichever comes first. There is no way to leave it running.
+ *
+ * <p>One trip, however many addresses. A player with five accounts in MetaMask used to make
+ * this journey five times, once per address, because the bridge stopped on the first
+ * signature that verified.
  *
  * <p>The address is shown on screen as well as opened, because the browser that opens by
  * default is often not the one MetaMask is installed in, and a link the player can copy is
@@ -42,9 +47,8 @@ public final class WalletConnectScreen extends Screen {
     private static final int CONTENT_WIDTH = 300;
 
     private final String accountId;
-    private final Wallet wallet;
     private final Screen parent;
-    private final Consumer<WalletBinding> onBound;
+    private final Consumer<List<WalletBinding>> onBound;
     private final WaitingIndicator waiting = new WaitingIndicator();
 
     private LocalWalletBridge bridge;
@@ -53,11 +57,10 @@ public final class WalletConnectScreen extends Screen {
     private Component state = Component.translatable("gui.mcagents.wallets.connect.starting");
     private boolean failed;
 
-    public WalletConnectScreen(String accountId, Wallet wallet, Screen parent,
-                               Consumer<WalletBinding> onBound) {
+    public WalletConnectScreen(String accountId, Screen parent,
+                               Consumer<List<WalletBinding>> onBound) {
         super(Component.translatable("gui.mcagents.wallets.connect"));
         this.accountId = accountId;
-        this.wallet = wallet;
         this.parent = parent;
         this.onBound = onBound;
     }
@@ -104,7 +107,7 @@ public final class WalletConnectScreen extends Screen {
         }
 
         state = Component.translatable("gui.mcagents.wallets.connect.waiting");
-        waiting.track(bridge.binding()).whenComplete((binding, failure) -> {
+        waiting.track(bridge.bindings()).whenComplete((bound, failure) -> {
             if (minecraft == null) {
                 return;
             }
@@ -120,7 +123,7 @@ public final class WalletConnectScreen extends Screen {
                     failed = true;
                     return;
                 }
-                onBound.accept(binding);
+                onBound.accept(bound);
                 onClose();
             });
         });
@@ -178,7 +181,7 @@ public final class WalletConnectScreen extends Screen {
 
         graphics.centeredText(font, title, width / 2, top, 0xFFFFFFFF);
         graphics.centeredText(font,
-                Component.translatable("gui.mcagents.wallets.connect.into", wallet.label()),
+                Component.translatable("gui.mcagents.wallets.connect.into", accountId),
                 width / 2, top + 12, 0xFF9A9AA4);
 
         // Said before the player reaches their wallet, not after: this is the moment a scam

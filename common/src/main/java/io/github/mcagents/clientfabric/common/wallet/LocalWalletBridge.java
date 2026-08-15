@@ -5,7 +5,6 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import io.github.mcagents.clientfabric.api.wallet.ChainPlatform;
 import io.github.mcagents.clientfabric.api.wallet.WalletBinding;
 import io.github.mcagents.clientfabric.api.wallet.WalletBridge;
 import io.github.mcagents.clientfabric.api.wallet.WalletBridgeException;
@@ -22,10 +21,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,6 +36,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The loopback web server that carries one MetaMask handshake, and then stops.
+ *
+ * <p>One handshake, and as many addresses as the browser holds: the page signs each account
+ * MetaMask exposes in turn, this class checks each signature, and the whole set comes back
+ * together. Making the player repeat the browser trip once per address was asking them to do
+ * by hand what a loop does.
  *
  * <h2>Why the mod serves a web page</h2>
  *
@@ -54,11 +61,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   <li><strong>Loopback {@code Host} required.</strong> A hostile site that points a
  *       domain of its own at {@code 127.0.0.1} arrives with that domain in the {@code Host}
  *       header and is refused, which is what closes DNS rebinding.</li>
- *   <li><strong>Stops on the first success.</strong> The listener is shut the moment a
- *       signature verifies, and also on cancel, on timeout, and on close. There is no state
- *       in which it outlives the screen that opened it, and the port is closed
- *       <em>before</em> {@link #binding()} completes rather than shortly after — see
- *       {@code stop}.</li>
+ *   <li><strong>Stops when the browser says it is finished.</strong> The listener is shut
+ *       the moment the page reports it has run out of addresses, and also on cancel, on
+ *       timeout, and on close. There is no state in which it outlives the screen that
+ *       opened it, and the port is closed <em>before</em> {@link #bindings()} completes
+ *       rather than shortly after — see {@code stop}.</li>
  * </ul>
  *
  * <h2>What is never asked for</h2>
@@ -79,7 +86,6 @@ public final class LocalWalletBridge implements WalletBridge {
 
     private static final String PAGE_RESOURCE = "/mcagents/wallet-bridge.html";
     private static final int TOKEN_BYTES = 32;
-    private static final int NONCE_BYTES = 16;
 
     /** Enough for a signature and an address; anything larger is not a reply we sent for. */
     private static final int MAX_BODY_BYTES = 8 * 1024;
@@ -89,17 +95,26 @@ public final class LocalWalletBridge implements WalletBridge {
     private final HttpServer server;
     private final ScheduledExecutorService scheduler;
     private final String token;
-    private final String message;
+    private final String accountId;
     private final URI url;
-    private final CompletableFuture<WalletBinding> binding = new CompletableFuture<>();
+    private final WalletChallenges challenges = new WalletChallenges();
+    private final CompletableFuture<List<WalletBinding>> bindings = new CompletableFuture<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
+    /**
+     * What has been proved so far, newest write last and keyed by address.
+     *
+     * <p>Keyed rather than appended so a page that retries one address does not report it
+     * twice, and ordered so the wallets land in the order the player signed them.
+     */
+    private final Map<String, WalletBinding> proved = new LinkedHashMap<>();
+
     private LocalWalletBridge(HttpServer server, ScheduledExecutorService scheduler,
-                              String token, String message, URI url) {
+                              String token, String accountId, URI url) {
         this.server = server;
         this.scheduler = scheduler;
         this.token = token;
-        this.message = message;
+        this.accountId = accountId;
         this.url = url;
     }
 
@@ -117,7 +132,6 @@ public final class LocalWalletBridge implements WalletBridge {
                 : timeout;
 
         String token = randomHex(TOKEN_BYTES);
-        String message = challengeMessage(accountId, randomHex(NONCE_BYTES));
 
         HttpServer server;
         try {
@@ -140,17 +154,18 @@ public final class LocalWalletBridge implements WalletBridge {
         server.setExecutor(scheduler);
 
         URI url = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/?t=" + token);
-        LocalWalletBridge bridge = new LocalWalletBridge(server, scheduler, token, message, url);
+        LocalWalletBridge bridge = new LocalWalletBridge(server, scheduler, token, accountId, url);
 
         server.createContext("/", bridge::handlePage);
         server.createContext("/challenge", bridge::handleChallenge);
         server.createContext("/callback", bridge::handleCallback);
+        server.createContext("/done", bridge::handleDone);
         server.createContext("/cancel", bridge::handleCancel);
         server.start();
 
         // Off the scheduler thread, because stopping shuts the scheduler down and doing
         // that from one of its own tasks means interrupting itself mid-shutdown.
-        scheduler.schedule(() -> bridge.stopLater(null,
+        scheduler.schedule(() -> bridge.stopLater(
                         "The wallet connection timed out. Try again when the browser is ready."),
                 limit.toMillis(), TimeUnit.MILLISECONDS);
 
@@ -170,19 +185,14 @@ public final class LocalWalletBridge implements WalletBridge {
     }
 
     @Override
-    public CompletableFuture<WalletBinding> binding() {
-        return binding;
-    }
-
-    /** The message the player is asked to sign, shown on screen as well as in the browser. */
-    public String message() {
-        return message;
+    public CompletableFuture<List<WalletBinding>> bindings() {
+        return bindings;
     }
 
     @Override
     public void close() {
         // A screen the player walked away from must not leave a future nobody will finish.
-        stop(null, "The wallet connection was closed before it finished");
+        stop("The wallet connection was closed before it finished");
     }
 
     /**
@@ -198,22 +208,33 @@ public final class LocalWalletBridge implements WalletBridge {
      * <p>Idempotent: the first caller wins and every later one returns at once, so a
      * success cannot be overwritten by the screen closing a moment later.
      *
-     * @param verified the address that was proved, or {@code null} if the attempt ended
-     *                 some other way
-     * @param reason   why it ended, used only when {@code verified} is {@code null}
+     * <p>Whatever was already proved settles the future, whichever way the attempt ended. A
+     * player who signed two of five addresses and then closed the tab proved two addresses,
+     * and throwing them away would only mean asking for them again. The failure is reserved
+     * for an attempt that proved nothing at all.
+     *
+     * @param reason why it ended, used only when nothing was proved
      */
-    private void stop(WalletBinding verified, String reason) {
+    private void stop(String reason) {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
         server.stop(0);
-        if (verified != null) {
-            binding.complete(verified);
+        List<WalletBinding> verified = snapshot();
+        if (verified.isEmpty()) {
+            bindings.completeExceptionally(new WalletBridgeException(reason));
         } else {
-            binding.completeExceptionally(new WalletBridgeException(reason));
+            bindings.complete(verified);
         }
         scheduler.shutdownNow();
-        LOGGER.log(Level.INFO, "Wallet bridge stopped");
+        LOGGER.log(Level.INFO, "Wallet bridge stopped with {0} address(es) proved",
+                verified.size());
+    }
+
+    private List<WalletBinding> snapshot() {
+        synchronized (proved) {
+            return List.copyOf(proved.values());
+        }
     }
 
     /**
@@ -223,8 +244,8 @@ public final class LocalWalletBridge implements WalletBridge {
      * off by the server it is travelling through; and {@code stop} shuts down the very
      * executor that runs the handlers, which from a handler means interrupting itself.
      */
-    private void stopLater(WalletBinding verified, String reason) {
-        Thread closer = new Thread(() -> stop(verified, reason), "MCAgents-wallet-bridge-stop");
+    private void stopLater(String reason) {
+        Thread closer = new Thread(() -> stop(reason), "MCAgents-wallet-bridge-stop");
         closer.setDaemon(true);
         closer.start();
     }
@@ -243,22 +264,40 @@ public final class LocalWalletBridge implements WalletBridge {
         send(exchange, 200, page);
     }
 
-    /** Hands the page the message to sign. The page holds no copy until it asks. */
+    /**
+     * Hands the page a message to sign for one address. The page holds no copy until it asks.
+     *
+     * <p>The address is required. A challenge that did not name the address it proves would
+     * let one signature stand for any address the caller went on to claim — which is exactly
+     * the hole that opens once a single trip carries more than one of them.
+     */
     private void handleChallenge(HttpExchange exchange) throws IOException {
         if (!guard(exchange, "GET")) {
             return;
         }
+        String address = decode(queryValue(exchange.getRequestURI().getRawQuery(), "address"));
+        if (address == null || address.isBlank()) {
+            sendError(exchange, 400, "A challenge has to name the address it proves.");
+            return;
+        }
+
+        WalletChallenges.Challenge challenge = challenges.issue(accountId, address);
         JsonObject body = new JsonObject();
-        body.addProperty("message", message);
+        body.addProperty("nonce", challenge.nonce());
+        body.addProperty("message", challenge.message());
         sendJson(exchange, 200, body);
     }
 
     /**
-     * Checks a signature and, if it holds, finishes the binding and stops the server.
+     * Checks one signature and, if it holds, adds the address to what has been proved.
      *
      * <p>The address the page claims is never taken at its word — it is compared against
      * the address recovered from the signature, and a mismatch is a failure rather than a
      * warning.
+     *
+     * <p><strong>This does not stop the bridge.</strong> The page is working through a list
+     * of accounts and says when it has reached the end; stopping on the first success is
+     * what limited the whole feature to one wallet.
      */
     private void handleCallback(HttpExchange exchange) throws IOException {
         if (!guard(exchange, "POST")) {
@@ -272,31 +311,51 @@ public final class LocalWalletBridge implements WalletBridge {
             return;
         }
 
-        String address = string(request, "address");
-        String signature = string(request, "signature");
-        long chainId = chainId(string(request, "chainId"));
+        Optional<WalletBinding> verified = challenges.redeem(
+                string(request, "nonce"),
+                string(request, "address"),
+                string(request, "signature"),
+                string(request, "chainId"));
 
-        if (!EvmSignatures.proves(message, signature, address)) {
-            // Deliberately not saying which of the two was wrong: to anyone probing this
+        if (verified.isEmpty()) {
+            // Deliberately not saying which of the three was wrong: to anyone probing this
             // endpoint the distinction is the only useful information it could give.
             sendError(exchange, 400,
                     "That signature does not match the address it arrived with.");
             return;
         }
 
-        ChainPlatform platform = ChainPlatform.fromEvmChainId(chainId)
-                .orElse(ChainPlatform.ETHEREUM);
-        WalletBinding verified = new WalletBinding(
-                EvmSignatures.toChecksumAddress(address), platform, chainId, Instant.now());
+        WalletBinding binding = verified.get();
+        int count;
+        synchronized (proved) {
+            proved.put(binding.address(), binding);
+            count = proved.size();
+        }
 
         JsonObject body = new JsonObject();
-        body.addProperty("address", verified.address());
-        body.addProperty("platform", platform.displayName());
+        body.addProperty("address", binding.address());
+        body.addProperty("platform", binding.platform().displayName());
+        body.addProperty("proved", count);
         sendJson(exchange, 200, body);
+    }
 
-        // Verified, answered, done. The listener closes before the binding is handed over —
+    /**
+     * The page has run out of addresses. Hand over what was proved and shut the listener.
+     *
+     * <p>The browser decides when the set is complete because only the browser knows how
+     * many accounts MetaMask exposed. The bridge stops either way — on the timeout, on
+     * cancel, or when the screen closes — so a page that never says so costs a wait rather
+     * than a listener left running.
+     */
+    private void handleDone(HttpExchange exchange) throws IOException {
+        if (!guard(exchange, "POST")) {
+            return;
+        }
+        send(exchange, 204, new byte[0]);
+
+        // Proved, answered, done. The listener closes before the bindings are handed over —
         // see stop() for why that order matters.
-        stopLater(verified, null);
+        stopLater("Nothing was signed, so nothing was bound.");
     }
 
     private void handleCancel(HttpExchange exchange) throws IOException {
@@ -304,7 +363,7 @@ public final class LocalWalletBridge implements WalletBridge {
             return;
         }
         send(exchange, 204, new byte[0]);
-        stopLater(null, "The wallet connection was cancelled in the browser.");
+        stopLater("The wallet connection was cancelled in the browser.");
     }
 
     // ------------------------------------------------------------ plumbing
@@ -377,17 +436,10 @@ public final class LocalWalletBridge implements WalletBridge {
                 : "";
     }
 
-    /** MetaMask reports the chain as hex ({@code 0x1}); some pages send a plain number. */
-    private static long chainId(String value) {
-        String text = value == null ? "" : value.trim();
-        try {
-            if (text.startsWith("0x") || text.startsWith("0X")) {
-                return Long.parseLong(text.substring(2), 16);
-            }
-            return text.isEmpty() ? 0 : Long.parseLong(text);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+    private static String decode(String value) {
+        return value == null
+                ? null
+                : java.net.URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     private static String queryValue(String rawQuery, String key) {
@@ -436,23 +488,4 @@ public final class LocalWalletBridge implements WalletBridge {
         return HexFormat.of().formatHex(value);
     }
 
-    /**
-     * The message the player signs.
-     *
-     * <p>Written to be read. Someone is about to approve this in a wallet, and a prompt they
-     * cannot understand is one they should not approve — so it says which account it binds,
-     * carries a nonce that makes it good exactly once, and states plainly that it authorises
-     * nothing.
-     */
-    private static String challengeMessage(String accountId, String nonce) {
-        return String.join("\n",
-                "MCAgents wallet binding",
-                "",
-                "Account: " + accountId,
-                "Nonce: " + nonce,
-                "Issued: " + Instant.now(),
-                "",
-                "Signing proves you control this address.",
-                "It authorises nothing, moves no funds, and never reaches a chain.");
-    }
 }
