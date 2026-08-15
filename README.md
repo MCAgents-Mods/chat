@@ -41,7 +41,8 @@ do not share your `data.db`.
 * **Conversations that continue** — every chat kept, titled, and searchable, by title and by
   what was said inside it.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
-  by keyword.
+  by keyword, with a switch to turn it off. Off means the question is sent on its own: no
+  packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
 * **Knowledge Packs**, free or paid, listed side by side. Packs are versioned; an update
   publishes a new version rather than editing one in place.
 * **A local web console** — the mod can serve your own data to your own browser on
@@ -99,6 +100,8 @@ not permitted, except where mandatory law says otherwise.
 * [`wiki/information/overview.md`](wiki/information/overview.md) — what it is, in full.
 * [`wiki/information/architecture.md`](wiki/information/architecture.md) — how the modules
   are split and why.
+* [`wiki/information/knowledge-retrieval.md`](wiki/information/knowledge-retrieval.md) —
+  retrieval, and the Embedding switch.
 * [`wiki/information/web-console.md`](wiki/information/web-console.md) — the browser view.
 * [`wiki/information/wallet-binding.md`](wiki/information/wallet-binding.md) — wallets.
 * [`wiki/environments/setup.md`](wiki/environments/setup.md) — building and running it.

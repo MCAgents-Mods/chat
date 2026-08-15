@@ -27,16 +27,17 @@ platforms/fabric/    mcagents-fabric
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
-`./gradlew :mcagents-fabric-common:test` runs the storage tests. Storage is implemented;
-the OpenRouter client, retrieval, and the interface are not. Do not assume a source file
-exists because the architecture mentions it — check.
+`./gradlew :mcagents-fabric-common:test` runs the suite. Storage, the OpenRouter client,
+retrieval, and the interface are all implemented. Do not assume a source file exists
+because the architecture mentions it — check. Retrieval in particular was described in
+three documents for a long time before any code called `ModelClient.embed`.
 
 ## The three modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.wallet` — the MetaMask bridge and the cryptography it needs — and `common.web` — the web console and the pages it serves from `resources/mcagents/web/`. | Embedding and retrieval. No Minecraft on the classpath. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever` and `Vectors` — `common.wallet` — the MetaMask bridge and the cryptography it needs — and `common.web` — the web console and the pages it serves from `resources/mcagents/web/`. | Streaming and context injection. No Minecraft on the classpath. |
 | `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, and `client.gui` — the chat screen, its panels, the model settings screen, the wallet screens, and the console screen. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
