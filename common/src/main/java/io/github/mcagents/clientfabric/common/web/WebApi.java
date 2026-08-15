@@ -389,22 +389,31 @@ final class WebApi {
         Map<String, String> stored = await(database.contents().findStoredVersions());
 
         JsonArray items = new JsonArray();
-        int outdated = 0;
+        JsonArray outdated = new JsonArray();
         for (var summary : published) {
             String have = stored.get(summary.id());
             if (have == null) {
                 items.add(WebJson.summary(summary));
             } else if (!have.equals(summary.version())) {
-                outdated++;
+                // Named, not just counted. The library list is where a stale pack lives, and
+                // a page that knows one is behind but cannot say which leaves the reader to
+                // open every pack in turn to find it.
+                JsonObject behind = new JsonObject();
+                behind.addProperty("id", summary.id());
+                behind.addProperty("storedVersion", have);
+                behind.addProperty("publishedVersion", summary.version());
+                outdated.add(behind);
             }
         }
 
         JsonObject body = new JsonObject();
         body.add("items", items);
         body.addProperty("total", items.size());
-        // Counted but not listed: an out-of-date pack is already in the library list, where
-        // the player will look for it. Showing it here too would be the same pack twice.
-        body.addProperty("outdated", outdated);
+        // Out-of-date packs are reported here but never listed as available: they are
+        // already in the library list, and showing one under both headings is one pack
+        // twice.
+        body.add("outdatedItems", outdated);
+        body.addProperty("outdated", outdated.size());
         body.addProperty("published", published.size());
         return body;
     }

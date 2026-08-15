@@ -32,7 +32,11 @@
     hasMore: true,
     loading: false,
     /* Bumped whenever the filter changes; a response from an older run is discarded. */
-    run: 0
+    run: 0,
+    /* id -> published version, for the stored packs the service has moved past. Filled by
+     * the catalog read; empty until then, and empty whenever the service cannot be asked,
+     * so a pack is never marked stale on a guess. */
+    behind: {}
   };
 
   function card(item) {
@@ -52,6 +56,13 @@
       more.appendChild(M.el('span', 'badge badge--ok', 'Embedded'));
     } else {
       more.appendChild(M.el('span', 'badge badge--warn', 'No embedding'));
+    }
+    /* Only ever from a version the service actually reported. The map is empty until the
+     * catalog has been read and empty again if it could not be, so an unreachable service
+     * shows no badge rather than a wrong one. */
+    if (state.behind[item.id]) {
+      more.appendChild(M.el('span', 'badge badge--sponsor',
+        'v' + state.behind[item.id] + ' published'));
     }
     more.appendChild(M.el('span', '', M.formatDate(item.updatedAt)));
     node.appendChild(more);
@@ -104,6 +115,20 @@
 
     try {
       var payload = await M.api('/catalog');
+
+      /* The same request answers both questions: what is published that is not here, and
+       * which of the packs that *are* here the service has moved past. Asking twice would
+       * be two listings of the same catalog. */
+      var behind = {};
+      (payload.outdatedItems || []).forEach(function (row) {
+        behind[row.id] = row.publishedVersion;
+      });
+      var changed = JSON.stringify(behind) !== JSON.stringify(state.behind);
+      state.behind = behind;
+      if (changed && typeof onBehindChanged === 'function') {
+        onBehindChanged();
+      }
+
       if (payload.items.length === 0) {
         count.textContent = '';
         M.showState(list, payload.published > 0
@@ -116,9 +141,27 @@
         payload.items.length + (payload.items.length === 1 ? ' pack' : ' packs');
     } catch (ignored) {
       count.textContent = '';
+      /* Forget what was known rather than keep showing it. A badge saying "v2 published"
+       * is a claim about the service, and this is the moment the service stopped
+       * answering. */
+      var hadBadges = Object.keys(state.behind).length > 0;
+      state.behind = {};
+      if (hadBadges && typeof onBehindChanged === 'function') {
+        onBehindChanged();
+      }
       M.showState(list, 'The knowledge service is not answering, so there is nothing to '
         + 'show here yet.');
     }
+  }
+
+  /* Set once the list exists; re-renders the library so the badges match what was just
+   * learned. Declared here rather than inlined so loadAvailable does not need to know what
+   * a library list is. */
+  var onBehindChanged = null;
+
+  /** How many stored packs the service has moved past. */
+  function behindCount() {
+    return Object.keys(state.behind).length;
   }
 
   function describe() {
@@ -277,6 +320,31 @@
     // service is being woken up.
     M.showState(document.getElementById('available-list'), 'Loading…');
 
+    /* A catalog read can change which cards need a badge, and the cards may already be on
+     * screen — the two lists load independently and the local one is always faster. */
+    onBehindChanged = reset;
+
+    /* The catalog gets its own button. It is the half of this page that depends on the
+     * service, so it is the half a reader will want to try again after the banner clears —
+     * and making them reload the library to do it would re-read a table that had not
+     * changed. */
+    var availableButton = document.getElementById('refresh-available');
+    var availableNote = document.getElementById('available-note');
+    availableButton.addEventListener('click', async function () {
+      availableButton.disabled = true;
+      availableNote.textContent = 'Checking…';
+      availableNote.className = 'sync-note';
+      try {
+        await loadAvailable();
+        availableNote.textContent = '';
+      } catch (error) {
+        availableNote.textContent = error.message;
+        availableNote.className = 'sync-note is-error';
+      } finally {
+        availableButton.disabled = false;
+      }
+    });
+
     var refreshButton = document.getElementById('refresh-knowledge');
     var note = document.getElementById('sync-note');
 
@@ -292,10 +360,16 @@
       note.className = 'sync-note';
       try {
         await loadCategories();
-        reset();
+        /* The catalog first: it is what says which stored packs are behind, and the list
+         * below has to be rendered knowing that or every card would be drawn twice. */
         await loadAvailable();
-        note.textContent = 'Reloaded.';
-        note.className = 'sync-note is-ok';
+        reset();
+        var stale = behindCount();
+        note.textContent = stale === 0
+          ? 'Reloaded. Every pack you have is the published version.'
+          : 'Reloaded. ' + stale + (stale === 1 ? ' pack has' : ' packs have')
+            + ' a newer version published.';
+        note.className = 'sync-note' + (stale === 0 ? ' is-ok' : '');
       } catch (error) {
         note.textContent = error.message;
         note.className = 'sync-note is-error';
