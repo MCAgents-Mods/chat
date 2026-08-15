@@ -39,6 +39,17 @@ public final class AgentFactory {
         return new OpenRouterAgent(database, sharedClient(database), paths.instructions());
     }
 
+    /**
+     * The one model client this game session uses.
+     *
+     * <p>Exposed so the web console embeds packs through the same client the agent asks
+     * questions with: same connection pool, same retry scheduler, same embedding cache. A
+     * second stack beside it would double all three and share none of them.
+     */
+    public static ModelClient modelClient(LocalDatabase database) {
+        return sharedClient(database);
+    }
+
     private static ModelClient sharedClient(LocalDatabase database) {
         ModelClient existing = modelClient;
         if (existing != null) {

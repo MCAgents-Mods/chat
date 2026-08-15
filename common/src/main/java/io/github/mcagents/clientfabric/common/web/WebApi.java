@@ -14,6 +14,7 @@ import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.common.agent.EmbeddingBackfill;
 import io.github.mcagents.clientfabric.common.service.CentralService;
 import io.github.mcagents.clientfabric.common.service.ContentNotPublishedException;
 import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
@@ -70,16 +71,27 @@ final class WebApi {
     /** Long: a sync downloads pack bodies one at a time over somebody's home connection. */
     private static final Duration SYNC_TIMEOUT = Duration.ofMinutes(5);
 
+    /**
+     * Long: embedding a library is one provider call per pack, sequentially.
+     *
+     * <p>A player with a hundred packs is asking for a hundred round trips, and the honest
+     * bound on that is minutes rather than seconds.
+     */
+    private static final Duration EMBED_TIMEOUT = Duration.ofMinutes(10);
+
     private final LocalDatabase database;
     private final Agent agent;
     private final CentralService service;
     private final KnowledgeSync sync;
+    private final EmbeddingBackfill backfill;
 
-    WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync) {
+    WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync,
+           EmbeddingBackfill backfill) {
         this.database = database;
         this.agent = agent;
         this.service = service;
         this.sync = sync;
+        this.backfill = backfill;
     }
 
     /**
@@ -155,6 +167,42 @@ final class WebApi {
         body.addProperty("version", stored.version());
         body.addProperty("title", stored.title());
         body.addProperty("hasEmbedding", stored.hasEmbedding());
+        return body;
+    }
+
+    /**
+     * How much of the library can be retrieved against.
+     *
+     * <p>Free — it reads the local table and compares vector widths — so the chat page can
+     * show "4 packs need embedding" on load without spending a provider call to find out.
+     */
+    JsonObject embeddingStatus() {
+        ModelPreferences preferences = await(database.settings().loadModelPreferences());
+        EmbeddingBackfill.Status status = await(backfill.status(preferences), STORAGE_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("packs", status.packs());
+        body.addProperty("needing", status.needing());
+        body.addProperty("model", preferences.embeddingModel());
+        return body;
+    }
+
+    /**
+     * Embeds every stored pack that cannot take part in retrieval.
+     *
+     * <p>Uses the player's embedding model, because that is the only space their questions
+     * will be embedded into. It runs whether or not the embedding switch is on: the switch
+     * governs whether retrieval happens, and a player may reasonably prepare a library
+     * before turning it back on.
+     */
+    JsonObject embedKnowledge() {
+        ModelPreferences preferences = await(database.settings().loadModelPreferences());
+        EmbeddingBackfill.Result result = await(backfill.run(preferences), EMBED_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("embedded", result.embedded());
+        body.addProperty("failed", result.failed());
+        body.addProperty("model", preferences.embeddingModel());
         return body;
     }
 

@@ -370,7 +370,11 @@
 
     var noteEl = document.getElementById('sync-note');
     var updateButton = document.getElementById('update-knowledge');
-    M.wireSyncButton(updateButton, noteEl);
+    M.wireSyncButton(updateButton, noteEl, function () {
+      /* A download leaves packs without vectors, and the very next thing the player needs
+       * is to be told so. */
+      showEmbeddingStatus();
+    });
     window.MCAgentsService.onChange(function (reachable) {
       updateButton.disabled = !reachable;
     });
@@ -399,6 +403,55 @@
     } catch (ignored) {
       /* The chat page works without it; the button keeps its markup state. */
     }
+
+    /* Embedding is a local job — the provider is asked, the service is not — so this works
+     * whether or not the knowledge service is awake, and is never disabled with the buttons
+     * that do need it. */
+    var embedButton = document.getElementById('embed-knowledge');
+
+    async function showEmbeddingStatus() {
+      try {
+        var status = await M.api('/embeddings');
+        if (status.needing > 0) {
+          noteEl.textContent = status.needing
+            + (status.needing === 1 ? ' pack needs embedding.' : ' packs need embedding.');
+          noteEl.className = 'sync-note';
+        }
+        return status;
+      } catch (ignored) {
+        return null;
+      }
+    }
+
+    embedButton.addEventListener('click', async function () {
+      embedButton.disabled = true;
+      noteEl.textContent = 'Embedding…';
+      noteEl.className = 'sync-note';
+      try {
+        var result = await M.api('/embeddings', { method: 'POST' });
+        if (result.embedded === 0 && result.failed === 0) {
+          noteEl.textContent = 'Every pack is already embedded.';
+          noteEl.className = 'sync-note is-ok';
+        } else if (result.failed > 0) {
+          noteEl.textContent = 'Embedded ' + result.embedded + ', ' + result.failed
+            + ' failed. Check your API key.';
+          noteEl.className = 'sync-note is-error';
+        } else {
+          noteEl.textContent = 'Embedded ' + result.embedded
+            + (result.embedded === 1 ? ' pack.' : ' packs.');
+          noteEl.className = 'sync-note is-ok';
+        }
+      } catch (error) {
+        noteEl.textContent = error.message;
+        noteEl.className = 'sync-note is-error';
+      } finally {
+        embedButton.disabled = false;
+      }
+    });
+
+    /* Counting is free — it reads the local table and one setting — so the page can say so
+     * on load rather than waiting for the player to wonder why the agent knows nothing. */
+    await showEmbeddingStatus();
 
     await syncRevision();
     await resetList();

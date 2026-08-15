@@ -50,9 +50,14 @@ public final class WebConsoleHolder {
     public static synchronized LocalWebConsole start(LocalDatabase database, ClientPaths paths) {
         return current().orElseGet(() -> {
             // The same agent the in-game screen uses, so a question asked in the browser is
-            // answered exactly as one asked in the game.
-            LocalWebConsole started =
-                    LocalWebConsole.start(database, AgentFactory.create(database, paths));
+            // answered exactly as one asked in the game — and the same model client, so
+            // embedding a pack from the console reuses the connection pool and the embedding
+            // cache the game already has rather than opening a second stack beside it.
+            LocalWebConsole started = LocalWebConsole.start(
+                    database,
+                    AgentFactory.create(database, paths),
+                    KnowledgeSyncFactory.service(),
+                    AgentFactory.modelClient(database));
             console = started;
             return started;
         });
