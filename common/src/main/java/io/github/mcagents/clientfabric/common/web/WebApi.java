@@ -33,11 +33,16 @@ import java.util.concurrent.CompletionException;
  * <p>Every wait is bounded. A request that hangs forever would hold a worker thread for the
  * lifetime of the game.
  *
- * <h2>What has no endpoint</h2>
+ * <h2>Keys, and the line drawn around them</h2>
  *
- * <p>API keys. Not to read, not to write, not to count. The console shows conversations and
- * Knowledge Packs, and a route that touched {@code apiKeys()} would put a provider key one
- * request away from any page the browser happened to be showing.
+ * <p>The console manages API keys, because a player who can read their conversations in a
+ * browser can reasonably expect to add a key there too. What it never does is hand one
+ * back: {@link #keys} returns masks and handles, and there is no route, parameter, or flag
+ * that returns a key's value. Adding one travels inward over loopback, exactly as typing it
+ * into the game does; nothing travels outward.
+ *
+ * <p>See {@code .agents/security/api-keys.md}, which allows a key in the interface as a
+ * mask and nowhere else.
  */
 final class WebApi {
 
@@ -65,6 +70,43 @@ final class WebApi {
         JsonObject body = new JsonObject();
         body.addProperty("chat", database.changes().chatRevision());
         return body;
+    }
+
+    /** One window of the stored keys, as masks and handles. Never as values. */
+    JsonObject keys(Map<String, String> query) {
+        return WebJson.page(
+                await(database.apiKeys().findPage(window(query, PageRequest.DEFAULT_CHAT_LIMIT))),
+                WebJson::apiKey);
+    }
+
+    /**
+     * Stores a key the player pasted into the browser.
+     *
+     * <p>The value arrives in a request body over loopback and goes straight into storage.
+     * It is not echoed back, not logged, and not included in the response — the page is told
+     * the mask and the handle, the same as every other key.
+     */
+    JsonObject addKey(String body) {
+        String value = string(body, "value").trim();
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("Paste a key first.");
+        }
+        // Deliberately not validated against a provider's format. OpenRouter has changed its
+        // prefix before, and a mod that refuses a working key because it looks unfamiliar is
+        // worse than one that lets the provider reject it.
+        return WebJson.apiKey(await(database.apiKeys().add(value)));
+    }
+
+    /**
+     * Removes the key a handle names.
+     *
+     * <p>The handle is resolved against storage here, inside the mod. The browser never
+     * learns which value it named — only that the row it was showing has gone.
+     */
+    boolean deleteKey(String handle) {
+        return ApiKeyHandles.resolve(await(database.apiKeys().findAll()), handle)
+                .map(key -> await(database.apiKeys().remove(key.value())))
+                .orElse(false);
     }
 
     JsonObject categories() {

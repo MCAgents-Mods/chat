@@ -1,6 +1,8 @@
 package io.github.mcagents.clientfabric.api.storage;
 
 import io.github.mcagents.clientfabric.api.model.ApiKey;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,15 @@ public interface ApiKeyRepository {
 
     /** Every stored key, active or not, oldest first. */
     CompletableFuture<List<ApiKey>> findAll();
+
+    /**
+     * One window of the stored keys, oldest first.
+     *
+     * <p>A player with a handful of keys never needs this; a player who has been topping up
+     * for a year does. The ordering is total — {@code created_at} then the key itself, which
+     * is the primary key — so a window taken from it is stable.
+     */
+    CompletableFuture<Page<ApiKey>> findPage(PageRequest page);
 
     /** The key the mod should use next, or empty if the player has none active. */
     CompletableFuture<Optional<ApiKey>> findNextActive();

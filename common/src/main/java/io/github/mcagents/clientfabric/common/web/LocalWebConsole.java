@@ -53,7 +53,8 @@ import java.util.HexFormat;
  *       {@code X-MCAgents-Token}.</li>
  *   <li>A loopback {@code Host} header, which is what closes DNS rebinding.</li>
  *   <li>No CORS headers, so another origin cannot read a reply even if it could send one.</li>
- *   <li>No route reads {@code apiKeys()}.</li>
+ *   <li>Keys are listed as masks and handles. No route returns a key's value — see
+ *       {@code ApiKeyHandles} for how one is named without being one.</li>
  * </ul>
  *
  * <h2>Threads</h2>
@@ -211,6 +212,22 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.revision());
             return;
         }
+        if (path.equals("/api/keys")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.keys(query));
+                return;
+            }
+            if (method.equals("POST")) {
+                sendJson(exchange, 201, api.addKey(readBody(exchange)));
+                return;
+            }
+        }
+        if (path.startsWith("/api/keys/") && method.equals("DELETE")) {
+            // A handle, never a key. See ApiKeyHandles.
+            sendChanged(exchange, api.deleteKey(decode(path.substring("/api/keys/".length()))),
+                    "No such key.");
+            return;
+        }
         if (path.equals("/api/categories") && method.equals("GET")) {
             sendJson(exchange, 200, api.categories());
             return;
@@ -275,6 +292,7 @@ public final class LocalWebConsole implements WebConsole {
             case "/", "" -> null;
             case "/knowledge", "/knowledge/" -> "pages/knowledge.html";
             case "/chat", "/chat/" -> "pages/chat.html";
+            case "/keys", "/keys/" -> "pages/keys.html";
             default -> path.startsWith("/assets/")
                     ? path.substring("/assets/".length())
                     // Anything else under /knowledge/ is a pack id, and the detail page

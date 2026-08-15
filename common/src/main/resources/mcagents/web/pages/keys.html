@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--
+  API keys. Served at /keys/.
+
+  Keys are shown masked and never in full — the page is given a mask to recognise one by and
+  an opaque handle to act on it with. Adding one sends the value inward over loopback, the
+  same direction it travels when typed into the game; nothing sends one back out.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>API keys · MCAgents Console</title>
+  <script>
+    window.SITE_ROOT = '../';
+    window.PAGE_SECTION = 'keys';
+  </script>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/shared/layout.css">
+  <link rel="stylesheet" href="../assets/css/shared/components.css">
+  <link rel="stylesheet" href="../assets/css/keys/keys.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+  <div class="container narrow">
+    <section class="hero">
+      <p class="eyebrow">OpenRouter</p>
+      <h1>API keys</h1>
+      <p class="lead">The keys this mod uses to answer your questions. Stored on this
+        machine only.</p>
+    </section>
+
+    <div class="callout callout--warn">
+      <span class="callout__icon" aria-hidden="true">&#128273;</span>
+      <span>A stored key is only ever shown shortened, here and in the game. Keep the full
+        value to yourself — anyone who has it can spend your OpenRouter credit.</span>
+    </div>
+
+    <section class="panel">
+      <h2>Add a key</h2>
+      <form class="key-form" id="add-form" autocomplete="off">
+        <label class="visually-hidden" for="key-value">Paste an OpenRouter key</label>
+        <input class="field" id="key-value" type="password" autocomplete="off"
+               spellcheck="false" placeholder="Paste an OpenRouter key…">
+        <button class="btn btn--primary" type="submit" id="add-key" disabled>Add</button>
+      </form>
+      <p class="muted key-note" id="add-note">The mod uses the oldest working key and moves
+        on to the next when one is rejected.</p>
+    </section>
+
+    <div class="toolbar">
+      <h2 style="margin:0;flex:1">Stored keys</h2>
+      <span class="count" id="key-count"></span>
+    </div>
+
+    <div class="key-scroller" id="key-scroller" tabindex="0" role="region"
+         aria-label="Stored keys">
+      <div id="key-list"></div>
+      <div id="scroll-sentinel" aria-hidden="true"></div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<script src="../assets/js/site.js"></script>
+<script src="../assets/js/keys.js"></script>
+</body>
+</html>

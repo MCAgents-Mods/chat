@@ -97,13 +97,90 @@ class LocalWebConsoleTest {
     }
 
     @Test
-    void hasNoRouteThatCouldReachAnApiKey() {
-        // The console shows conversations and Knowledge Packs. A key is neither, and the
-        // absence of a route is the whole defence — so it is worth a test that would fail
-        // the moment somebody adds one.
-        assertEquals(404, statusOf(url("/api/keys")));
+    void neverHandsBackAKeyItStores() {
+        // The console manages keys now, so "there is no route" is no longer the defence.
+        // This is: whatever a key route returns, the value is not in it. The test uses an
+        // obviously fake key, per .agents/security/api-keys.md.
+        String secret = "sk-or-v1-neverleavesthemod";
+        await(database.apiKeys().add(secret));
+
+        String listing = body(url("/api/keys"));
+        assertFalse(listing.contains(secret), "a key's value must never reach the browser");
+        assertTrue(listing.contains("sk-o"), "but its mask must, so the player recognises it");
+
+        JsonObject key = JsonParser.parseString(listing).getAsJsonObject()
+                .getAsJsonArray("items").get(0).getAsJsonObject();
+        assertFalse(key.has("value"));
+        assertTrue(key.get("handle").getAsString().length() >= 16,
+                "a handle names the key without being it");
+        assertNotEquals(secret, key.get("handle").getAsString());
+    }
+
+    @Test
+    void stillHasNoRouteForAnythingItDoesNotManage() {
         assertEquals(404, statusOf(url("/api/apikeys")));
         assertEquals(404, statusOf(url("/api/settings")));
+        assertEquals(404, statusOf(url("/api/wallets")));
+    }
+
+    @Test
+    void addsAndRemovesAKeyThroughTheHandle() {
+        JsonObject added = json(post(url("/api/keys"), "{\"value\":\"sk-or-v1-added-here\"}"));
+        assertEquals(1, await(database.apiKeys().findAll()).size());
+        assertFalse(added.toString().contains("added-here"),
+                "not even the reply to adding one echoes it back");
+
+        assertEquals(200, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/keys/" + added.get("handle").getAsString())))
+                .DELETE()).statusCode());
+        assertTrue(await(database.apiKeys().findAll()).isEmpty());
+    }
+
+    @Test
+    void refusesAHandleThatNamesNothing() {
+        assertEquals(404, send(HttpRequest.newBuilder()
+                .uri(URI.create(url("/api/keys/" + "0".repeat(32))))
+                .DELETE()).statusCode());
+    }
+
+    @Test
+    void refusesAnEmptyKey() {
+        assertEquals(400, post(url("/api/keys"), "{\"value\":\"   \"}").statusCode());
+        assertTrue(await(database.apiKeys().findAll()).isEmpty());
+    }
+
+    @Test
+    void servesKeysAWindowAtATime() {
+        for (int i = 0; i < 23; i++) {
+            await(database.apiKeys().add("sk-or-v1-fake-" + i));
+        }
+
+        JsonObject page = json(url("/api/keys?limit=10"));
+
+        assertEquals(10, page.getAsJsonArray("items").size());
+        assertEquals(23, page.get("total").getAsInt());
+        assertTrue(page.get("hasMore").getAsBoolean());
+    }
+
+    @Test
+    void showsEveryKeyExactlyOnceAcrossWindows() {
+        for (int i = 0; i < 25; i++) {
+            await(database.apiKeys().add("sk-or-v1-fake-" + i));
+        }
+
+        java.util.Set<String> handles = new java.util.HashSet<>();
+        int offset = 0;
+        while (true) {
+            JsonObject page = json(url("/api/keys?limit=10&offset=" + offset));
+            page.getAsJsonArray("items").forEach(item ->
+                    handles.add(item.getAsJsonObject().get("handle").getAsString()));
+            if (!page.get("hasMore").getAsBoolean()) {
+                break;
+            }
+            offset = page.get("nextOffset").getAsInt();
+        }
+
+        assertEquals(25, handles.size(), "every key appeared, and none of them twice");
     }
 
     @Test
@@ -405,6 +482,10 @@ class LocalWebConsoleTest {
 
     private int statusOf(String uri) {
         return send(HttpRequest.newBuilder().uri(URI.create(uri)).GET()).statusCode();
+    }
+
+    private String body(String uri) {
+        return send(HttpRequest.newBuilder().uri(URI.create(uri)).GET()).body();
     }
 
     private HttpResponse<String> send(HttpRequest.Builder request) {
