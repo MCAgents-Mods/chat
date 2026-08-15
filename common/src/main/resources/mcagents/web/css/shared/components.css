@@ -376,3 +376,69 @@ tr:last-child td { border-bottom: 0; }
 
 .sync-note.is-ok { color: var(--ok); }
 .sync-note.is-error { color: var(--sponsor); }
+
+/*
+ * The console's own dialog, in place of window.confirm and window.prompt.
+ *
+ * Those are not usable here for three reasons that matter more than looks: the browser
+ * decides their wording and their button order, a page cannot say what "OK" is about to do,
+ * and some browsers let a reader suppress them for the rest of the session — which turns
+ * "delete this pack?" into "deleted".
+ *
+ * Opaque, and no backdrop-filter, per .agents/design/web-design-system.md: an overlay that
+ * covers content must not depend on a filter for legibility, because inside a blurred parent
+ * its background paint is suppressed and the page shows through the thing hiding it.
+ */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(27, 36, 48, .38);
+}
+
+.scrim[hidden] { display: none; }
+
+.dialog {
+  width: 100%;
+  max-width: 27rem;
+  padding: 1.4rem 1.5rem 1.2rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: var(--surface-solid);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog__title {
+  margin: 0 0 .5rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--ink-900);
+}
+
+.dialog__body {
+  margin: 0 0 1rem;
+  color: var(--ink-700);
+  font-size: .92rem;
+  line-height: 1.55;
+}
+
+.dialog__field { margin-bottom: 1rem; }
+
+/* Confirm last, so the destructive choice is not the one under a reader's cursor when the
+   dialog opens on top of wherever they were already clicking. */
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .6rem;
+}
+
+@media (max-width: 480px) {
+  .dialog__actions { flex-direction: column-reverse; }
+  .dialog__actions .btn { width: 100%; }
+}

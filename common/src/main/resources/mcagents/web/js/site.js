@@ -270,6 +270,170 @@
       : 'Questions are sent on their own. Knowledge Packs are not used, and no embedding is charged for.';
   }
 
+
+  /* ---------------------------------------------------------------- dialog */
+
+  /*
+   * The console's own confirm and prompt.
+   *
+   * window.confirm and window.prompt are not usable here, for reasons that outlast taste:
+   * the browser owns the wording and the button order, so a page cannot label the button
+   * with what it is about to do; and every major browser lets a reader tick "prevent this
+   * page from creating more dialogs", after which confirm() returns false and prompt()
+   * returns null forever. A destructive action guarded by a suppressed confirm is an action
+   * that silently stops working — or worse, one whose guard is gone.
+   *
+   * One element, built once and reused. Two dialogs cannot be open at a time, so there is no
+   * reason for two to exist.
+   */
+  var dialogParts = null;
+
+  function buildDialog() {
+    if (dialogParts) {
+      return dialogParts;
+    }
+    var scrim = el('div', 'scrim');
+    scrim.hidden = true;
+
+    var box = el('div', 'dialog');
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+
+    var title = el('h2', 'dialog__title');
+    title.id = 'dialog-title';
+    box.setAttribute('aria-labelledby', title.id);
+
+    var body = el('p', 'dialog__body');
+    var fieldWrap = el('div', 'dialog__field');
+    var field = el('input', 'field');
+    field.type = 'text';
+    field.autocomplete = 'off';
+    fieldWrap.appendChild(field);
+
+    var actions = el('div', 'dialog__actions');
+    var cancel = el('button', 'btn', 'Cancel');
+    cancel.type = 'button';
+    var confirm = el('button', 'btn btn--primary', 'Confirm');
+    confirm.type = 'button';
+    actions.appendChild(cancel);
+    actions.appendChild(confirm);
+
+    box.appendChild(title);
+    box.appendChild(body);
+    box.appendChild(fieldWrap);
+    box.appendChild(actions);
+    scrim.appendChild(box);
+    document.body.appendChild(scrim);
+
+    dialogParts = {
+      scrim: scrim, box: box, title: title, body: body,
+      fieldWrap: fieldWrap, field: field, cancel: cancel, confirm: confirm
+    };
+    return dialogParts;
+  }
+
+  /**
+   * Opens the dialog and resolves with what the reader chose.
+   *
+   * Resolves rather than rejects on cancel: cancelling is an ordinary answer, and a caller
+   * that had to catch it would treat "no" as a failure.
+   *
+   * @param options title, message, confirmLabel, danger, and prompt/value for a text answer
+   * @returns false or null when cancelled; true, or the typed string, when confirmed
+   */
+  function openDialog(options) {
+    var parts = buildDialog();
+    var settings = options || {};
+    var wantsText = Object.prototype.hasOwnProperty.call(settings, 'value');
+    var returning = document.activeElement;
+
+    parts.title.textContent = settings.title || 'Are you sure?';
+    parts.body.textContent = settings.message || '';
+    parts.body.hidden = !settings.message;
+    parts.fieldWrap.hidden = !wantsText;
+    parts.field.value = wantsText ? (settings.value || '') : '';
+    parts.confirm.textContent = settings.confirmLabel || 'Confirm';
+    parts.confirm.className = 'btn ' + (settings.danger ? 'btn--danger' : 'btn--primary');
+    parts.cancel.textContent = settings.cancelLabel || 'Cancel';
+    parts.scrim.hidden = false;
+
+    /* The text box if there is one, otherwise Cancel — never the confirming button. The
+     * dialog opens under wherever the reader was already clicking, and a stray second click
+     * must not be able to land on the destructive choice. */
+    (wantsText ? parts.field : parts.cancel).focus();
+    if (wantsText) {
+      parts.field.select();
+    }
+
+    return new Promise(function (resolve) {
+      function close(answer) {
+        parts.scrim.hidden = true;
+        parts.cancel.removeEventListener('click', onCancel);
+        parts.confirm.removeEventListener('click', onConfirm);
+        parts.scrim.removeEventListener('mousedown', onScrim);
+        document.removeEventListener('keydown', onKey, true);
+        if (returning && returning.focus) {
+          returning.focus();
+        }
+        resolve(answer);
+      }
+      function onCancel() { close(wantsText ? null : false); }
+      function onConfirm() { close(wantsText ? parts.field.value : true); }
+      function onScrim(event) {
+        /* Only the backdrop itself. A drag that started inside the box and ended out here
+         * is a text selection, not a dismissal. */
+        if (event.target === parts.scrim) {
+          onCancel();
+        }
+      }
+      function onKey(event) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          onCancel();
+          return;
+        }
+        if (event.key === 'Enter' && (wantsText || document.activeElement !== parts.cancel)) {
+          event.preventDefault();
+          onConfirm();
+          return;
+        }
+        if (event.key !== 'Tab') {
+          return;
+        }
+        /* Focus stays inside while this is open, which is what "modal" means to anyone
+         * navigating by keyboard. */
+        var focusable = wantsText
+          ? [parts.field, parts.cancel, parts.confirm]
+          : [parts.cancel, parts.confirm];
+        var index = focusable.indexOf(document.activeElement);
+        var next = event.shiftKey ? index - 1 : index + 1;
+        if (index === -1 || next < 0 || next >= focusable.length) {
+          event.preventDefault();
+          focusable[event.shiftKey ? focusable.length - 1 : 0].focus();
+        }
+      }
+
+      parts.cancel.addEventListener('click', onCancel);
+      parts.confirm.addEventListener('click', onConfirm);
+      parts.scrim.addEventListener('mousedown', onScrim);
+      document.addEventListener('keydown', onKey, true);
+    });
+  }
+
+  /** Asks a yes/no question. Resolves true only if the reader confirmed. */
+  function confirmDialog(options) {
+    var settings = options || {};
+    delete settings.value;
+    return openDialog(settings);
+  }
+
+  /** Asks for a line of text. Resolves null if the reader cancelled. */
+  function promptDialog(options) {
+    var settings = options || {};
+    settings.value = settings.value || '';
+    return openDialog(settings);
+  }
+
   window.MCAgents = {
     token: token,
     root: root,
@@ -279,6 +443,8 @@
     el: el,
     replace: replace,
     showState: showState,
+    confirm: confirmDialog,
+    prompt: promptDialog,
     onVisible: onVisible,
     wireSyncButton: wireSyncButton,
     paintToggle: paintToggle,

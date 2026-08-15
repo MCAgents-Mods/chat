@@ -133,7 +133,14 @@
   }
 
   async function removeKey(handle, row) {
-    if (!window.confirm('Remove this key? The mod will stop using it.')) {
+    var confirmed = await window.MCAgents.confirm({
+      title: 'Remove this key?',
+      message: 'The mod stops using it immediately. Nothing here can show you the key '
+        + 'again, so make sure you have it somewhere else if you still want it.',
+      confirmLabel: 'Remove key',
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
     try {

@@ -293,7 +293,13 @@
       return;
     }
     var current = titleEl.textContent;
-    var next = window.prompt('Rename this chat', current);
+    var next = await window.MCAgents.prompt({
+      title: 'Rename this chat',
+      message: 'The name is only for finding it again; it changes nothing about the '
+        + 'conversation.',
+      value: current,
+      confirmLabel: 'Rename'
+    });
     if (next === null) {
       return;
     }
@@ -310,7 +316,14 @@
     if (!state.activeId) {
       return;
     }
-    if (!window.confirm('Delete this chat and every message in it? This cannot be undone.')) {
+    var confirmed = await window.MCAgents.confirm({
+      title: 'Delete this chat?',
+      message: 'Every message in it goes too, on this machine and in the game. There is no '
+        + 'undo.',
+      confirmLabel: 'Delete chat',
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
     await window.MCAgents.api('/chats/' + encodeURIComponent(state.activeId), { method: 'DELETE' });
