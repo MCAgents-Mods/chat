@@ -32,6 +32,12 @@ description: Index of MCAgentsClient's local instruction folders — the rules t
 |---|---|
 | [`../api/openrouter.md`](../api/openrouter.md) | Request shape, model selection, retry and timeout policy, and what is never sent to the model provider. |
 
+## design
+
+| File | Purpose |
+|---|---|
+| [`../design/web-design-system.md`](../design/web-design-system.md) | Silver Glass — the tokens, components, and layout every page the mod serves in a browser is built from, and why those pages must stay self-contained. |
+
 ## Maintenance
 
 Any instruction file added to or removed from `.agents/` is reflected here **in the same

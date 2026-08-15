@@ -92,6 +92,7 @@ rows for this repository's own instructions are appended after them.
 | Touch the local database — a table, a query, or a schema change | [`.agents/database/schema.md`](.agents/database/schema.md) |
 | Store, display, log, or send an OpenRouter API key | [`.agents/security/api-keys.md`](.agents/security/api-keys.md) |
 | Call a model provider, or choose a chat or embedding model | [`.agents/api/openrouter.md`](.agents/api/openrouter.md) |
+| Build or change **anything the mod serves in a browser** — a page, a stylesheet, a partial | [`.agents/design/web-design-system.md`](.agents/design/web-design-system.md) |
 
 ## Reading Order
 
