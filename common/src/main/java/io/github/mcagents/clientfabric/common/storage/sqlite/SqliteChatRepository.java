@@ -3,6 +3,8 @@ package io.github.mcagents.clientfabric.common.storage.sqlite;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 
@@ -68,6 +70,65 @@ final class SqliteChatRepository implements ChatRepository {
                 statement.setString(2, pattern);
                 try (ResultSet rows = statement.executeQuery()) {
                     return readSessions(rows);
+                }
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Page<ChatSession>> findSessionPage(String search, PageRequest page) {
+        java.util.Objects.requireNonNull(page, "page");
+        boolean filtered = search != null && !search.isBlank();
+        String pattern = filtered ? SqlValues.containsPattern(search.trim()) : null;
+
+        return worker.submit("Reading a page of the chat sessions", connection -> {
+            // A session matches on its title or on anything said in it, so a remembered
+            // phrase finds the conversation it was said in. DISTINCT because the join
+            // against messages would otherwise return a session once per matching message.
+            String from = filtered
+                    ? "FROM chat_sessions s LEFT JOIN chat_messages m ON m.session_id = s.id "
+                            + "WHERE s.title LIKE ? ESCAPE '\\' OR m.content LIKE ? ESCAPE '\\'"
+                    : "FROM chat_sessions s";
+
+            long total;
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT COUNT(DISTINCT s.id) " + from)) {
+                if (filtered) {
+                    statement.setString(1, pattern);
+                    statement.setString(2, pattern);
+                }
+                try (ResultSet rows = statement.executeQuery()) {
+                    total = rows.next() ? rows.getLong(1) : 0;
+                }
+            }
+            if (total == 0) {
+                return Page.empty(page);
+            }
+
+            // s.rowid last, and it has to be: CURRENT_TIMESTAMP resolves to the second, so
+            // two conversations touched in the same breath carry identical timestamps.
+            // Paging an ambiguous ordering shows the reader some rows twice and never shows
+            // them others — the failure looks like data loss rather than a sort bug.
+            String sql = "SELECT DISTINCT s.id, s.title, s.created_at, s.updated_at, s.rowid "
+                    + from
+                    + " ORDER BY s.updated_at DESC, s.created_at DESC, s.rowid DESC "
+                    + "LIMIT ? OFFSET ?";
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                int index = 1;
+                if (filtered) {
+                    statement.setString(index++, pattern);
+                    statement.setString(index++, pattern);
+                }
+                statement.setInt(index++, page.limit());
+                statement.setInt(index, page.offset());
+
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<ChatSession> sessions = new ArrayList<>();
+                    while (rows.next()) {
+                        sessions.add(readSession(rows));
+                    }
+                    return new Page<>(sessions, page.offset(), page.limit(), total);
                 }
             }
         });

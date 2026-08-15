@@ -4,6 +4,9 @@ import io.github.mcagents.clientfabric.api.model.ContentAvailability;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
+import io.github.mcagents.clientfabric.api.model.KnowledgeSummary;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.ContentRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 
@@ -115,6 +118,96 @@ final class SqliteContentRepository implements ContentRepository {
                 }
             }
         });
+    }
+
+    @Override
+    public CompletableFuture<Page<KnowledgeSummary>> findSummaryPage(
+            ContentQuery query, PageRequest page) {
+        Objects.requireNonNull(query, "query");
+        Objects.requireNonNull(page, "page");
+
+        return worker.submit("Reading a page of the downloaded content", connection -> {
+            StringBuilder where = new StringBuilder(" WHERE 1 = 1");
+            List<Object> parameters = new ArrayList<>();
+
+            if (query.hasText()) {
+                where.append(" AND (title LIKE ? ESCAPE '\\' OR raw_content LIKE ? ESCAPE '\\')");
+                String pattern = SqlValues.containsPattern(query.text());
+                parameters.add(pattern);
+                parameters.add(pattern);
+            }
+            if (query.availability() != ContentAvailability.ANY) {
+                where.append(" AND is_premium = ?");
+                parameters.add(query.availability() == ContentAvailability.PREMIUM ? 1 : 0);
+            }
+            query.category().ifPresent(categoryId -> {
+                where.append(" AND category_id = ?");
+                parameters.add(categoryId);
+            });
+
+            long total = countMatching(connection, where.toString(), parameters);
+            if (total == 0) {
+                return Page.empty(page);
+            }
+
+            // The body columns are read as a boolean and never selected. A window of twenty
+            // rows that carried raw_content and embedded_data would pull megabytes off disk
+            // to render a list of titles.
+            //
+            // ORDER BY title, id: id is the primary key, so this is a total order. A window
+            // taken from anything less is not stable between requests, and the reader sees
+            // rows twice while others never appear.
+            String sql = "SELECT id, category_id, version, is_premium, title, "
+                    + "(embedded_data IS NOT NULL AND TRIM(embedded_data) <> '') AS has_embedding, "
+                    + "created_at, updated_at FROM contents" + where
+                    + " ORDER BY title ASC, id ASC LIMIT ? OFFSET ?";
+
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                int index = bind(statement, parameters);
+                statement.setInt(index++, page.limit());
+                statement.setInt(index, page.offset());
+
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<KnowledgeSummary> summaries = new ArrayList<>();
+                    while (rows.next()) {
+                        summaries.add(readSummary(rows));
+                    }
+                    return new Page<>(summaries, page.offset(), page.limit(), total);
+                }
+            }
+        });
+    }
+
+    private static long countMatching(Connection connection, String where, List<Object> parameters)
+            throws SQLException {
+        try (PreparedStatement statement =
+                     connection.prepareStatement("SELECT COUNT(*) FROM contents" + where)) {
+            bind(statement, parameters);
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() ? rows.getLong(1) : 0;
+            }
+        }
+    }
+
+    /** Binds the filter parameters and returns the next free index. */
+    private static int bind(PreparedStatement statement, List<Object> parameters)
+            throws SQLException {
+        for (int i = 0; i < parameters.size(); i++) {
+            statement.setObject(i + 1, parameters.get(i));
+        }
+        return parameters.size() + 1;
+    }
+
+    private static KnowledgeSummary readSummary(ResultSet rows) throws SQLException {
+        return new KnowledgeSummary(
+                rows.getString("id"),
+                rows.getLong("category_id"),
+                rows.getString("version"),
+                rows.getBoolean("is_premium"),
+                rows.getString("title"),
+                rows.getBoolean("has_embedding"),
+                SqlValues.readInstant(rows.getString("created_at")),
+                SqlValues.readInstant(rows.getString("updated_at")));
     }
 
     @Override
