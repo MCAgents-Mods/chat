@@ -439,6 +439,7 @@ public final class LocalWebConsole implements WebConsole {
             case "/chat", "/chat/" -> "pages/chat.html";
             case "/keys", "/keys/" -> "pages/keys.html";
             case "/model", "/model/" -> "pages/model.html";
+            case "/wallets", "/wallets/" -> "pages/wallets.html";
             default -> path.startsWith("/assets/")
                     ? path.substring("/assets/".length())
                     // Anything else under /knowledge/ is a pack id, and the detail page

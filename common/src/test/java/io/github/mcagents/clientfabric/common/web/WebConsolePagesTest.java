@@ -76,12 +76,13 @@ class WebConsolePagesTest {
         assertEquals(200, statusOf(url("/knowledge/some-pack-id")));
         assertEquals(200, statusOf(url("/keys/")));
         assertEquals(200, statusOf(url("/model/")));
+        assertEquals(200, statusOf(url("/wallets/")));
     }
 
     @Test
     void everyAssetEachPageReferencesActuallyExists() {
         for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
-                "/keys/", "/model/")) {
+                "/keys/", "/model/", "/wallets/")) {
             String markup = body(url(page));
             Matcher matcher = ASSET_REFERENCE.matcher(markup);
             int checked = 0;
@@ -125,7 +126,7 @@ class WebConsolePagesTest {
         // The design system's hard rule. A page that reaches for a CDN renders unstyled on
         // the machine that needed it most.
         for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
-                "/keys/", "/model/")) {
+                "/keys/", "/model/", "/wallets/")) {
             String markup = body(url(page));
             assertFalse(markup.contains("http://") || markup.contains("https://"),
                     page + " must not reference anything off this machine");
