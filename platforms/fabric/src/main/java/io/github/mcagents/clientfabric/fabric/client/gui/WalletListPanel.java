@@ -9,11 +9,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * The left panel of the wallet screen: every wallet in the selected account.
+ * One account's column on the wallet screen: every wallet in it.
  *
  * <p>Drawn by hand rather than built from widgets, for the same reason
  * {@link SessionListPanel} is — the rows are replaced wholesale whenever the account
  * changes, and a list of registered widgets would have to be rebuilt every time.
+ *
+ * <p>There is one of these per account now rather than one on the screen, which is what
+ * lets every account be visible at once. Each carries the name of the account it draws, so
+ * a column says which account it is without the screen having to label it from outside.
  */
 final class WalletListPanel extends ScrollablePanel {
 
@@ -29,6 +33,7 @@ final class WalletListPanel extends ScrollablePanel {
 
     private List<Wallet> wallets = List.of();
     private String selectedId;
+    private String caption = "";
     private boolean loading = true;
 
     WalletListPanel(Font font, Consumer<Wallet> onSelect,
@@ -52,12 +57,30 @@ final class WalletListPanel extends ScrollablePanel {
         this.loading = true;
     }
 
-    void select(String walletId) {
-        this.selectedId = walletId;
+    /** The account name written above the box. */
+    void setCaption(String caption) {
+        this.caption = caption == null ? "" : caption;
     }
 
-    String selectedId() {
-        return selectedId;
+    /**
+     * Draws the caption, then the box.
+     *
+     * <p>Above the frame rather than inside it, because a heading that scrolled away with
+     * the rows would leave a column of wallets belonging to nobody in particular. Drawn
+     * after {@code super} so it is outside the scissor the panel clips its rows with.
+     */
+    @Override
+    void render(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        super.render(graphics, mouseX, mouseY);
+        if (!caption.isEmpty()) {
+            graphics.text(font, Component.literal(
+                            font.plainSubstrByWidth(caption, width - PADDING * 2)),
+                    x + PADDING, y - ROW_HEIGHT, TEXT);
+        }
+    }
+
+    void select(String walletId) {
+        this.selectedId = walletId;
     }
 
     @Override
