@@ -11,15 +11,16 @@ import net.minecraft.network.chat.Component;
 import java.util.function.Consumer;
 
 /**
- * Renames one thing: a conversation, or a wallet.
+ * Names one thing: a conversation, a wallet, or a new account.
  *
  * <p>A whole screen for one text field, because the field is easier to find here than as an
  * edit box that appears in place: the pencil beside a row says what it does before it is
  * clicked, and a row that quietly turns editable does not.
  *
- * <p>Nothing here knows what it is renaming — it is handed a title, the current name, and
- * somewhere to send the new one. That is why one screen serves both lists rather than each
- * growing its own copy.
+ * <p>Nothing here knows what it is naming — it is handed a title, the current name, and
+ * somewhere to send the new one. That is why one screen serves every list rather than each
+ * growing its own copy, and why naming something that does not exist yet needed no new
+ * screen at all: an empty current name is still a current name.
  */
 public final class RenameScreen extends Screen {
 
@@ -51,6 +52,20 @@ public final class RenameScreen extends Screen {
                 Component.translatable("gui.mcagents.session.rename"),
                 Component.translatable("gui.mcagents.session.rename.save"),
                 session.title(), parent, onRename);
+    }
+
+    /**
+     * Names an account that does not exist yet.
+     *
+     * <p>Accounts have no table: one exists exactly as long as a wallet names it. So this
+     * asks for a name and the caller makes the first wallet under it — there is nothing else
+     * to create.
+     */
+    public static RenameScreen forNewAccount(Screen parent, Consumer<String> onNamed) {
+        return new RenameScreen(
+                Component.translatable("gui.mcagents.wallets.account.add"),
+                Component.translatable("gui.mcagents.wallets.account.add.save"),
+                "", parent, onNamed);
     }
 
     /** Renames a wallet. */
