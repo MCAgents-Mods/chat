@@ -74,6 +74,16 @@ public final class AgentChatScreen extends Screen {
     private String pendingSearch = "";
     private String pendingPrompt = "";
 
+    /**
+     * The store's revision as of the last time this screen read it.
+     *
+     * <p>The player may be typing into a browser tab as well as into this screen. Comparing
+     * two longs on each tick is what lets this one notice — cheaper than re-reading the
+     * conversation, and it costs nothing at all when the console is not running, because
+     * nothing else moves the counter.
+     */
+    private long seenRevision;
+
     public AgentChatScreen() {
         super(Component.translatable("gui.mcagents.title"));
         bindStorage();
@@ -123,6 +133,14 @@ public final class AgentChatScreen extends Screen {
                 .bounds(MARGIN + sidebarWidth - LINE, MARGIN, LINE, LINE)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
                         Component.translatable("gui.mcagents.session.new")))
+                .build());
+
+        addRenderableWidget(Button.builder(
+                        Component.literal("🌐"),
+                        button -> openWebConsole())
+                .bounds(width - MARGIN - LINE * 3 - 8, MARGIN, LINE, LINE)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
+                        Component.translatable("gui.mcagents.console.title")))
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -191,6 +209,9 @@ public final class AgentChatScreen extends Screen {
 
         setInitialFocus(promptBox);
         updateSendState();
+        // Read once here so the first tick does not treat everything that happened before
+        // the screen opened as a change worth reloading for.
+        seenRevision = hasStorage() ? database.changes().chatRevision() : 0;
 
         loadSessions(pendingSearch);
         if (activeSessionId != null) {
@@ -316,6 +337,12 @@ public final class AgentChatScreen extends Screen {
     private void openKeySettings() {
         if (minecraft != null && hasStorage()) {
             minecraft.setScreenAndShow(new ApiKeyScreen(database, this));
+        }
+    }
+
+    private void openWebConsole() {
+        if (minecraft != null && hasStorage()) {
+            minecraft.setScreenAndShow(new WebConsoleScreen(database, this));
         }
     }
 
@@ -480,6 +507,32 @@ public final class AgentChatScreen extends Screen {
         super.tick();
         waiting.tick();
         updateSendState();
+        refreshIfChangedElsewhere();
+    }
+
+    /**
+     * Reloads when something outside this screen changed a conversation.
+     *
+     * <p>A message sent from the web console lands in the same database this screen is
+     * showing, so without this the player would be looking at a conversation that is
+     * missing its last two messages and has no way to know it.
+     *
+     * <p>Skipped while a request of this screen's own is in flight: its result is about to
+     * refresh everything anyway, and reloading underneath it would only fight with it.
+     */
+    private void refreshIfChangedElsewhere() {
+        if (!hasStorage() || waiting.isWaiting()) {
+            return;
+        }
+        long current = database.changes().chatRevision();
+        if (current == seenRevision) {
+            return;
+        }
+        seenRevision = current;
+        loadSessions(pendingSearch);
+        if (activeSessionId != null) {
+            loadMessages(activeSessionId);
+        }
     }
 
     @Override
