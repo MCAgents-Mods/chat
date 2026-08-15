@@ -37,17 +37,44 @@
  * first. Keeping the list in a fixed box leaves the search box and the chips where the
  * reader left them.
  */
+/* Both pack lists scroll inside their own box: the library above, and what is available to
+ * download below it. One recipe, because two boxes on one page that scrolled differently
+ * would look like a mistake rather than a decision.
+ *
+ * --pack-rows is how many rows of cards a box shows before it scrolls. It is a ceiling and
+ * not a target: whichever of the two is smaller wins, so on a short window the box shrinks
+ * to what the window has rather than pushing the page into a second scrollbar. */
 .pack-scroller {
+  --pack-row: 8.5rem;
+  --pack-rows: 3.5;
+
   margin-top: 1rem;
   padding: .85rem;
-  max-height: calc(100vh - var(--header-h) - 21.5rem);
-  min-height: 18rem;
+  max-height: min(
+    calc(var(--pack-row) * var(--pack-rows)),
+    calc(100vh - var(--header-h) - 21.5rem)
+  );
+  min-height: 12rem;
   overflow-y: auto;
   overscroll-behavior: contain;
 
   background: var(--glass-faint);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
+}
+
+/* The library is what the page is for, so it gets the taller box. */
+.pack-scroller--library { --pack-rows: 4; }
+
+/* What is available is secondary — it is a shelf to pick from, not the thing being read —
+ * and it sits below a list that already scrolls, so it is kept shorter. */
+.pack-scroller--available {
+  --pack-rows: 3;
+  max-height: min(
+    calc(var(--pack-row) * var(--pack-rows)),
+    calc(100vh - var(--header-h) - 26rem)
+  );
+  min-height: 10rem;
 }
 
 .pack-scroller:focus-visible {
@@ -57,9 +84,11 @@
 
 @media (max-width: 900px) {
   /* On a short window a fixed box would show three cards and its own scrollbar inside the
-   * page's. Below this width the list goes back to flowing with the page. */
-  .pack-scroller {
+   * page's. Below this width the lists go back to flowing with the page. */
+  .pack-scroller,
+  .pack-scroller--available {
     max-height: none;
+    min-height: 0;
     overflow-y: visible;
     padding: 0;
     background: none;
