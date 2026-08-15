@@ -69,6 +69,34 @@ project is developed under.
   invalidate in the same call, so a downloaded pack is visible immediately rather than when
   a timer expires. The database stays the record: everything cached can be dropped at any
   moment without changing what the mod knows.
+* **The local web console.** A loopback server the player starts from the chat screen, so
+  their own data can be read in a browser — the jobs a Minecraft screen is bad at:
+  * `api/` — `WebConsole`, `ChangeFeed`, and `Page`/`PageRequest`/`KnowledgeSummary`.
+  * `common/` — `LocalWebConsole` on `127.0.0.1`, behind a 256-bit per-run token, a loopback
+    `Host` check that closes DNS rebinding, no CORS headers, and bounded request bodies.
+    **Long-lived on purpose, unlike the wallet bridge**, which stops the instant a signature
+    verifies; a browser tab whose server vanished is a page that stops working while it is
+    being read.
+  * Three pages on the Silver Glass system — the knowledge library, a read-only pack detail,
+    and chat — plus `/keys/`. Each list reads a window at a time inside its own scrolling
+    panel, so the toolbar stays put however large the library grows.
+  * Chat writes as well as reads, through the same store, agent, and key the game uses. A
+    counter in `RevisionedChatRepository` moves on any conversation write from **either**
+    side, so the game and the browser stay in step; the counter lives in the repository
+    rather than the console precisely so it sees both.
+  * `/keys/` lists keys as masks and opaque SHA-256 handles. `key_value` is the primary key,
+    so a naive delete button would have sent the player's OpenRouter key to the browser and
+    back; the handle names a key without being one and is resolved inside the mod.
+  * `platforms/fabric/` — a globe button beside the key button, a screen that starts, opens,
+    copies, and stops the console, and a live refresh so a message sent from the browser is
+    not silently missing from the conversation on screen.
+  * Paged reads throughout, with the total counted rather than inferred and every paged
+    ordering made total — `LIMIT`/`OFFSET` over an ambiguous sort shows some rows twice and
+    never shows others.
+  * 51 tests in `common/`, taking the suite to 197.
+* **Silver Glass**, the design system for anything this mod serves in a browser, in
+  `.agents/design/web-design-system.md` and routed to from the AGENTS.md trigger table.
+
 * **Wallet binding.** MetaMask wallets, client-side, with the shape MetaMask's own
   multichain address list has — several accounts, several wallets per account, one address
   per chain in each:
@@ -141,6 +169,12 @@ project is developed under.
   `KeyEvent`/`MouseButtonEvent` records. The full list is in the repository map.
 * The chat screen and the model settings screen are compile-verified. Neither has been run
   in a real client, because the environment they were built in has no display.
+* The console's pages were driven in Chromium against a seeded store — paging, live search,
+  filters, a chat message round-tripping, keys added and removed, no JavaScript errors. That
+  found three defects the Java suite could not: an observer watching the wrong box so chat
+  scrolling was dead, two panels missing `min-height: 0` so they could not scroll at all, and
+  a chat layout that scrolled its own composer off-screen. **The in-game half of the console —
+  the button, the screen, and the live refresh — has never been run in a real client.**
 * The wallet screens are compile-verified against Minecraft 26.2 and nothing more. **No
   signature from the real MetaMask extension has ever been checked** — the tests sign with
   their own secp256k1 signer, so the arithmetic is pinned to published vectors but the round

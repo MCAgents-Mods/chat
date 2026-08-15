@@ -25,6 +25,11 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## What is built but unproven in a real client
 
 * Renaming a conversation, and deleting one behind its confirmation.
+* **The whole web console.** A loopback server the player starts from the chat screen,
+  serving the knowledge library, the chat, and the API keys as Silver Glass pages. Driven in
+  Chromium against a seeded store — paging, live search, filters, sending a message, adding
+  and removing keys — but no screen of it has been opened in a real client. See
+  `.agents/memory/tasks/web-console.md`.
 * **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by 55
   tests in `common/`, but no screen has been opened in a real client and no signature from
   the real MetaMask extension has ever been checked — the tests sign with their own
@@ -49,11 +54,19 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 146 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 197 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
   `CachingModelClient` (embeddings cached, completions deliberately not).
+* Reading: long lists come back a window at a time through `Page` and `PageRequest`, with
+  the total counted rather than inferred. Any ordering a window is taken from is total, or
+  the reader sees rows twice and never sees others.
+* The web console: `LocalWebConsole` on loopback, guarded by a per-run token and a loopback
+  `Host` check, serving pages from `mcagents/web/` inside the jar. **Long-lived on purpose,
+  unlike the wallet bridge** — do not change either to match the other. A chat write from
+  either side moves one counter in `RevisionedChatRepository`, which is what keeps the game
+  and the browser in step.
 * Wallets: `player_wallets` and `wallet_platform_addresses` in the same store;
   `LocalWalletBridge` serves one page on `127.0.0.1` and stops the moment a signature
   verifies. Keccak-256 and secp256k1 recovery are written out in `common.wallet` — the
@@ -83,7 +96,11 @@ the override table in `.agents/index/root-index.md` is empty.
 
 ## Next step
 
-Open the wallet screens in a real client and run one binding through the real MetaMask
-extension — the one thing about that feature nothing here can prove. Then wire retrieval, so
-downloaded Knowledge Packs actually reach the prompt, and after that the content browser and
-its download path against `MCAgents/server-fabric-expressjs`.
+**Play-test what has accumulated.** Three features — wallets, the web console, and the
+console button on the chat screen — are compile-verified and unopened. One session in a real
+client would settle all of them, and would run the one thing nothing here can prove: a
+binding through the real MetaMask extension, and a message typed in game appearing in a
+browser tab.
+
+Then wire retrieval, so downloaded Knowledge Packs actually reach the prompt, and after that
+the content browser and its download path against `MCAgents/server-fabric-expressjs`.
