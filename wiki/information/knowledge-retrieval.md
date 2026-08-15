@@ -14,6 +14,7 @@ three ways to get them there, and they exist for different moments.
 | **Download** | One pack | That pack's page, `/knowledge/<id>` |
 | **Update knowledge** / **Refresh** | Everything missing or out of date | The chat page, and `/knowledge/` |
 | **Check for update** | Tells you about one pack; downloads nothing | That pack's page |
+| **Refresh** | Checks your whole library against the service and badges what is behind; downloads nothing | `/knowledge/` |
 
 **Only one pack is fetched without being asked for**, and only at startup: the pack
 describing the mod, so the agent can answer "what are you". A game that stalled on somebody
