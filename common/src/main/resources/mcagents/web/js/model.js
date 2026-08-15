@@ -30,20 +30,23 @@
     noteEl.className = 'save-note' + (kind ? ' is-' + kind : '');
   }
 
-  function fillSuggestions(listId, chipsId, ids, target) {
+  /**
+   * Offers the suggested ids as chips.
+   *
+   * Chips only. There was a <datalist> on the field as well, which is worse in every way
+   * that matters here: it is invisible until you start typing, so a player who has never
+   * seen a model id has nothing to type to reveal it; browsers render and filter it
+   * differently from each other; and it looked like a closed dropdown on a field that
+   * deliberately accepts anything the provider serves.
+   *
+   * The chips say the same thing while being visible, and the field stays plain text.
+   */
+  function fillSuggestions(chipsId, ids, target) {
     var M = window.MCAgents;
-    var list = document.getElementById(listId);
     var chips = document.getElementById(chipsId);
-    list.textContent = '';
     chips.textContent = '';
 
     ids.forEach(function (id) {
-      var option = document.createElement('option');
-      option.value = id;
-      list.appendChild(option);
-
-      /* A chip as well as a datalist entry: the datalist is discoverable only once you
-       * start typing, and a player who has never seen a model id has nothing to type. */
       var chip = M.el('button', 'chip', id);
       chip.type = 'button';
       chip.addEventListener('click', function () {
@@ -74,9 +77,8 @@
         enabled: true
       };
 
-      fillSuggestions('chat-options', 'chat-suggestions', models.suggestedChatModels, chatBox);
-      fillSuggestions('embedding-options', 'embedding-suggestions',
-        models.suggestedEmbeddingModels, embeddingBox);
+      fillSuggestions('chat-suggestions', models.suggestedChatModels, chatBox);
+      fillSuggestions('embedding-suggestions', models.suggestedEmbeddingModels, embeddingBox);
 
       chatBox.value = models.chatModel;
       embeddingBox.value = models.embeddingModel;
