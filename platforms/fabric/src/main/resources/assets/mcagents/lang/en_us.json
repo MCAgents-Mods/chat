@@ -1,13 +1,11 @@
 {
   "key.categories.mcagents.main": "MCAgents",
   "key.mcagents.open_chat": "Open agent chat",
-
   "gui.mcagents.title": "MCAgents",
   "gui.mcagents.search": "Search chats",
   "gui.mcagents.prompt": "Ask the agent",
   "gui.mcagents.send": "Send",
   "gui.mcagents.waiting": "Waiting",
-
   "gui.mcagents.session.new": "New chat",
   "gui.mcagents.session.rename": "Rename chat",
   "gui.mcagents.session.rename.save": "Rename",
@@ -16,31 +14,25 @@
   "gui.mcagents.session.delete.confirm": "Delete",
   "gui.mcagents.sessions.loading": "Loading chats",
   "gui.mcagents.sessions.empty": "No chats yet",
-
   "gui.mcagents.conversation.loading": "Loading messages",
   "gui.mcagents.conversation.empty": "Ask something to start",
-
   "gui.mcagents.role.user": "You",
   "gui.mcagents.role.assistant": "Agent",
   "gui.mcagents.role.system": "Context",
-
   "gui.mcagents.storage.opening": "Opening local storage…",
   "gui.mcagents.storage.failed": "Local storage unavailable",
   "gui.mcagents.storage.retry": "Retry",
-
   "gui.mcagents.keys.title": "OpenRouter API keys",
   "gui.mcagents.keys.add": "Paste an OpenRouter key",
   "gui.mcagents.keys.save": "Add",
   "gui.mcagents.keys.remove": "Remove",
   "gui.mcagents.keys.empty": "No keys yet. Add one to let the agent answer.",
   "gui.mcagents.keys.inactive": "rejected",
-
   "gui.mcagents.models.title": "Models",
   "gui.mcagents.models.chat": "Chat model",
   "gui.mcagents.models.embedding": "Embedding model",
   "gui.mcagents.models.save": "Save",
   "gui.mcagents.models.reset": "Use defaults",
-
   "gui.mcagents.wallets.open": "Wallets",
   "gui.mcagents.wallets.open.tip": "Wallets bound to this account",
   "gui.mcagents.wallets.title": "Wallets",
@@ -59,7 +51,6 @@
   "gui.mcagents.wallets.copied": "%s address copied to the clipboard.",
   "gui.mcagents.wallets.bound.verified": "%s address bound and verified.",
   "gui.mcagents.wallets.bound.recorded": "%s address recorded. It was typed in, not proved.",
-
   "gui.mcagents.wallets.address.add": "Add address",
   "gui.mcagents.wallets.address.empty": "No addresses in this wallet yet",
   "gui.mcagents.wallets.address.chain": "Chain",
@@ -69,7 +60,6 @@
   "gui.mcagents.wallets.address.save": "Add",
   "gui.mcagents.wallets.address.looks_right": "Looks right for this chain.",
   "gui.mcagents.wallets.address.public_only": "Public addresses only. Never paste a private key or recovery phrase — here or anywhere else.",
-
   "gui.mcagents.wallets.connect": "Connect MetaMask",
   "gui.mcagents.wallets.connect.tip": "Prove an address by signing in MetaMask",
   "gui.mcagents.wallets.connect.into": "Into %s",
@@ -81,5 +71,19 @@
   "gui.mcagents.wallets.connect.no_browser": "Could not open a browser. Copy the link below instead.",
   "gui.mcagents.wallets.connect.failed": "Could not start the connection: %s",
   "gui.mcagents.wallets.connect.never_asks": "MCAgents never asks for your recovery phrase or private key.",
-  "gui.mcagents.wallets.connect.signing_is_free": "You will be asked to sign a message. It proves you control the address — it costs nothing, moves nothing, and never reaches a chain."
+  "gui.mcagents.wallets.connect.signing_is_free": "You will be asked to sign a message. It proves you control the address — it costs nothing, moves nothing, and never reaches a chain.",
+  "gui.mcagents.console.title": "Web console",
+  "gui.mcagents.console.subtitle": "Read your packs and chats in a browser",
+  "gui.mcagents.console.start": "Start console",
+  "gui.mcagents.console.open": "Open in browser",
+  "gui.mcagents.console.copy": "Copy link",
+  "gui.mcagents.console.stop": "Stop console",
+  "gui.mcagents.console.running": "Running",
+  "gui.mcagents.console.not_running": "Not running",
+  "gui.mcagents.console.started": "Console started.",
+  "gui.mcagents.console.stopped": "Console stopped.",
+  "gui.mcagents.console.copied": "Address copied. Paste it into the browser you want to read in.",
+  "gui.mcagents.console.no_browser": "Could not open a browser. Copy the address instead.",
+  "gui.mcagents.console.failed": "Could not start the console: %s",
+  "gui.mcagents.console.local_only": "Served from this machine only. It keeps running when you close this screen, so you can read while you play."
 }

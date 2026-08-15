@@ -6,6 +6,7 @@ import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
 import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
+import io.github.mcagents.clientfabric.fabric.client.WebConsoleHolder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
@@ -121,7 +122,10 @@ public final class MCAgentsClientMod implements ClientModInitializer {
      */
     private void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // The model client first: it may still be waiting on a backoff, and there is
+            // The console first: it holds a listening socket and worker threads, and a
+            // request it is serving would otherwise reach for a store that is closing.
+            WebConsoleHolder.stop();
+            // Then the model client: it may still be waiting on a backoff, and there is
             // no point letting that outlive the store it would write the answer to.
             AgentFactory.close();
             LocalDatabase database = DATABASE.getAndSet(null);
