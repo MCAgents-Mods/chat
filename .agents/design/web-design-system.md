@@ -155,9 +155,27 @@ bleeds through. Blurring content you are deliberately hiding buys nothing anyway
 | Definition list | `.deflist` > `.deflist__row` (`.deflist__term`) | Two-column term and description |
 | Eyebrow / lead | `.eyebrow`, `.lead` | Section kicker and intro paragraph |
 | Breadcrumbs | `.breadcrumbs` (`a`, `.sep`) | Page context trail |
+| Dialog | `.scrim` > `.dialog` (`__title`/`__body`/`__field`/`__actions`) | Confirm and prompt; opaque per the overlay rule; **never `window.confirm` or `window.prompt`** |
 
 Compose from these before writing new CSS. A per-section stylesheet is for genuinely
 page-specific layout, not for restyling a component.
+
+### Ask with the dialog, never with the browser
+
+`window.confirm`, `window.prompt` and `window.alert` are not used anywhere in a page this
+project serves. Three reasons, in the order they bite:
+
+1. **The browser owns the wording and the button order.** "OK" is the same word for renaming
+   a chat and for deleting one, so the control cannot say what it is about to do.
+2. **They can be switched off.** Every major browser offers "prevent this page from creating
+   more dialogs" after the second one; from then on `confirm()` returns false and `prompt()`
+   returns null for the rest of the session. A destructive action guarded by a suppressed
+   confirm is an action that has silently lost its guard.
+3. **They cannot be styled, tested, or driven** the way the rest of the console can.
+
+The dialog resolves rather than rejects when cancelled — cancelling is an ordinary answer,
+not a failure — and focus lands on the text box, or on Cancel when there is none. Never on
+the confirming button: the dialog opens under wherever the reader was already clicking.
 
 ## Layout and chrome
 
