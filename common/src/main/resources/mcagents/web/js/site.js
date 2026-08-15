@@ -206,6 +206,51 @@
     document.dispatchEvent(new CustomEvent('mcagents:ready'));
   }
 
+  /**
+   * Wires a "download what I do not have" button.
+   *
+   * The refresh button on the knowledge page and the update button on the chat page are the
+   * same operation — the second exists only because the chat page is where a player notices
+   * the agent is missing something. One implementation, so they cannot behave differently.
+   *
+   * Disabled while it runs and while the service is unreachable, which is most of what stops
+   * a player producing the flood the service rate-limits.
+   */
+  function wireSyncButton(button, note, onDone) {
+    if (!button) {
+      return;
+    }
+    function say(message, kind) {
+      if (note) {
+        note.textContent = message || '';
+        note.className = 'sync-note' + (kind ? ' is-' + kind : '');
+      }
+    }
+
+    button.addEventListener('click', async function () {
+      button.disabled = true;
+      say('Checking…');
+      try {
+        var result = await api('/service/refresh', { method: 'POST' });
+        if (result.downloaded > 0) {
+          say('Downloaded ' + result.downloaded
+            + (result.downloaded === 1 ? ' pack.' : ' packs.'), 'ok');
+        } else if (result.failed > 0) {
+          say(result.failed + ' could not be downloaded.', 'error');
+        } else {
+          say('Already up to date.', 'ok');
+        }
+        if (onDone) {
+          onDone(result);
+        }
+      } catch (error) {
+        say(error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
   window.MCAgents = {
     token: token,
     root: root,
@@ -216,6 +261,7 @@
     replace: replace,
     showState: showState,
     onVisible: onVisible,
+    wireSyncButton: wireSyncButton,
     formatDate: formatDate
   };
 

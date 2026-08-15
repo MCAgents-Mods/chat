@@ -153,6 +153,11 @@
     var M = window.MCAgents;
     try {
       var payload = await M.api('/categories');
+      // Cleared first: a refresh calls this again, and appending would show every category
+      // twice. Only the category chips go — the free and premium ones live in the markup.
+      chips.querySelectorAll('.chip[data-category-id]').forEach(function (chip) {
+        chip.remove();
+      });
       payload.items.forEach(function (category) {
         var chip = M.el('button', 'chip', category.displayName);
         chip.type = 'button';
@@ -188,6 +193,7 @@
   }
 
   document.addEventListener('mcagents:ready', async function () {
+    var M = window.MCAgents;
     list = document.getElementById('knowledge-list');
     scroller = document.getElementById('pack-scroller');
     sentinel = document.getElementById('scroll-sentinel');
@@ -201,6 +207,20 @@
     // it would read as permanently visible and the list would load every pack at once —
     // the same failure the chat sidebar had.
     sentinelVisible = window.MCAgents.onVisible(sentinel, loadMore, scrollRoot());
+
+    var refreshButton = document.getElementById('refresh-knowledge');
+    M.wireSyncButton(refreshButton, document.getElementById('sync-note'), function (result) {
+      if (result.changed) {
+        loadCategories();
+        reset();
+      }
+    });
+    // The button needs the service, so it follows the banner rather than sitting there
+    // looking pressable while nothing is answering.
+    window.MCAgentsService.onChange(function (reachable) {
+      refreshButton.disabled = !reachable;
+    });
+    window.MCAgentsService.start();
     reset();
     searchBox.focus();
   });

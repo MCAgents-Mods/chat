@@ -7,6 +7,9 @@ import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.web.WebConsole;
 import io.github.mcagents.clientfabric.api.web.WebConsoleException;
+import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
+import io.github.mcagents.clientfabric.common.service.CentralService;
+import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,8 +110,14 @@ public final class LocalWebConsole implements WebConsole {
      * @throws WebConsoleException if no loopback port can be opened
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent) {
+        return start(database, agent, new CentralService(new JdkHttpTransport()));
+    }
+
+    /** @param service the central catalog, pointed elsewhere by a test */
+    public static LocalWebConsole start(LocalDatabase database, Agent agent, CentralService service) {
         Objects.requireNonNull(database, "database");
         Objects.requireNonNull(agent, "agent");
+        Objects.requireNonNull(service, "service");
 
         HttpServer server;
         try {
@@ -130,8 +139,9 @@ public final class LocalWebConsole implements WebConsole {
         URI url = URI.create("http://127.0.0.1:" + server.getAddress().getPort()
                 + "/knowledge/?t=" + token);
 
-        LocalWebConsole console = new LocalWebConsole(
-                server, workers, new WebApi(database, agent), token, url);
+        LocalWebConsole console = new LocalWebConsole(server, workers,
+                new WebApi(database, agent, service, new KnowledgeSync(service, database)),
+                token, url);
 
         server.createContext("/", console::route);
         server.start();
@@ -210,6 +220,14 @@ public final class LocalWebConsole implements WebConsole {
 
         if (path.equals("/api/revision") && method.equals("GET")) {
             sendJson(exchange, 200, api.revision());
+            return;
+        }
+        if (path.equals("/api/service/health") && method.equals("GET")) {
+            sendJson(exchange, 200, api.serviceHealth());
+            return;
+        }
+        if (path.equals("/api/service/refresh") && method.equals("POST")) {
+            sendJson(exchange, 200, api.refreshKnowledge());
             return;
         }
         if (path.equals("/api/models")) {

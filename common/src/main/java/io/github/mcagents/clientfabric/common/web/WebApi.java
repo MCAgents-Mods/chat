@@ -13,6 +13,9 @@ import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.common.service.CentralService;
+import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
+import io.github.mcagents.clientfabric.common.service.ServiceHealth;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -59,12 +62,58 @@ final class WebApi {
      */
     private static final Duration ANSWER_TIMEOUT = Duration.ofMinutes(3);
 
+    /** Short: a health check exists to answer quickly or not at all. */
+    private static final Duration SERVICE_TIMEOUT = Duration.ofSeconds(15);
+
+    /** Long: a sync downloads pack bodies one at a time over somebody's home connection. */
+    private static final Duration SYNC_TIMEOUT = Duration.ofMinutes(5);
+
     private final LocalDatabase database;
     private final Agent agent;
+    private final CentralService service;
+    private final KnowledgeSync sync;
 
-    WebApi(LocalDatabase database, Agent agent) {
+    WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync) {
         this.database = database;
         this.agent = agent;
+        this.service = service;
+        this.sync = sync;
+    }
+
+    /**
+     * Whether the central service is awake.
+     *
+     * <p>The page asks this on load and then once a minute while it is asleep. Never an
+     * error: the host idles, so "not reachable" is an ordinary state and the page shows a
+     * banner rather than a failure.
+     */
+    JsonObject serviceHealth() {
+        ServiceHealth health = await(service.health(), SERVICE_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("reachable", health.reachable());
+        body.addProperty("version", health.version());
+        body.addProperty("detail", health.detail());
+        body.addProperty("url", service.baseUrl());
+        return body;
+    }
+
+    /**
+     * Downloads what the service publishes and the player does not have.
+     *
+     * <p>Behind both the refresh button on the knowledge page and the update button on the
+     * chat page — they are the same operation, and the second exists only because that is
+     * where a player notices the agent is missing something.
+     */
+    JsonObject refreshKnowledge() {
+        KnowledgeSync.SyncResult result = await(sync.refresh(), SYNC_TIMEOUT);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("downloaded", result.downloaded());
+        body.addProperty("failed", result.failed());
+        body.addProperty("published", result.published());
+        body.addProperty("changed", result.changedAnything());
+        return body;
     }
 
     /** The counter the pages poll to notice what the game changed. */
