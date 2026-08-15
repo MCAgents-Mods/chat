@@ -54,7 +54,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 273 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 280 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
@@ -63,7 +63,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   difference, or one pack by id — and `EmbeddingBackfill` gives stored packs a vector using
   the player's own embedding model, because a vector is only comparable inside the space of
   the model that made it. Startup fetches and version-checks `mcagents-info` and nothing
-  else; everything else is checked when `/chat/` opens.
+  else; the whole library is checked when `/chat/` opens, and one pack from its own page.
+  **An update drops that pack's embedding** — new version, new text, so the old vector
+  describes something that is no longer there — while re-downloading the same version keeps
+  it.
 * Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
   cosine similarity, and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
