@@ -36,6 +36,11 @@ in a scrolling panel of its own. Both lists are boxed for the same reason: a lib
 catalog of any size would otherwise push the search box, the filters, and the headings that
 tell the two lists apart off the top of the window.
 
+**The second panel stays on the page even when it is empty**, saying so — everything
+downloaded, nothing published yet, or the service not answering. It used to hide itself, so
+pressing Refresh, the one action guaranteed to empty it, collapsed the page from two panels
+to one while you were looking at it.
+
 The two are deliberately separate sections rather than rows mixed together. The library is a
 window over a local table and pages with an offset, while the catalog comes from the network
 and disappears when the service is asleep. Merging them would mean paging a union of two
@@ -62,6 +67,15 @@ where the **Download** button lives — it is the only page that is about exactl
 downloaded pack shows its embedding instead; one you do not have has none, because nothing
 has embedded it yet.
 
+A pack you *do* have also gets two buttons of its own:
+
+* **Check for update** asks about this pack alone. The chat page checks the whole library;
+  neither replaces the other, because a reader looking at one pack did not ask about every
+  other one.
+* **Delete** removes this machine's copy. It does not unpublish anything — the pack goes
+  straight back into *Available to download*, which is exactly what has happened. Downloading
+  it again means embedding it again, so the button asks first.
+
 ### `/chat/`
 
 Your conversations, ten at a time, with a search box that matches titles *and* what was said
@@ -83,14 +97,15 @@ are suggestions — type any id your provider serves. Changing the embedding mod
 which vector space new embeddings live in, so it really means re-embedding your library, and
 the page says so.
 
-**The Embedding switch** is here too, and again in the chat header. Green is on, red is off,
+**The Embedding switch** lives here, and here only in the browser. Green is on, red is off,
 and the label says which in words — colour is never the only signal. Off means questions are
 sent without Knowledge Packs and no embedding is charged for; chatting is otherwise
 unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
 
-The switch applies on **Save** here, because everything else on this page does. In the chat
-header it applies at once, because that page has no Save button to wait for. Either way it
-is one stored setting, shared with the in-game screen.
+It applies on **Save**, like everything else on this page. It was in the chat header too, and
+one setting with two homes is one setting that can be shown two ways — the chat copy even had
+to behave differently, applying at once because that page has no Save button. The in-game
+model screen keeps its own copy, for a player who never opens a browser.
 
 ### `/keys/`
 

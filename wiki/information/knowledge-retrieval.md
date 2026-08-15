@@ -13,6 +13,7 @@ three ways to get them there, and they exist for different moments.
 | **Automatic, at startup** | `mcagents-info` only | Every time the game loads |
 | **Download** | One pack | That pack's page, `/knowledge/<id>` |
 | **Update knowledge** / **Refresh** | Everything missing or out of date | The chat page, and `/knowledge/` |
+| **Check for update** | Tells you about one pack; downloads nothing | That pack's page |
 
 **Only one pack is fetched without being asked for**, and only at startup: the pack
 describing the mod, so the agent can answer "what are you". A game that stalled on somebody
@@ -45,6 +46,12 @@ you to wonder why the agent knows nothing about a pack you can plainly see.
 It also re-embeds the whole library when you change your embedding model, because that is
 exactly what changing it means. The mod records which model embedded the library, so it
 knows; it does not guess from the vectors.
+
+**Updating a pack drops its embedding.** A new version is new text, and the old vector
+describes text that is no longer there — it would keep matching questions about wording that
+has gone and keep the pack out of results it now belongs in, while still showing as
+*Embedded*. So the vector goes and the pack asks to be embedded again. Re-downloading a pack
+at the version you already have keeps its embedding, because that text is identical.
 
 The button asks your model provider, not the knowledge service, so it works while the
 service is asleep — and it works with the Embedding switch off, because the switch governs
