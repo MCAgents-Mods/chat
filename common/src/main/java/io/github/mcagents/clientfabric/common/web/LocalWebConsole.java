@@ -275,6 +275,10 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.knowledge(query));
             return;
         }
+        if (path.equals("/api/catalog") && method.equals("GET")) {
+            sendJson(exchange, 200, api.catalog());
+            return;
+        }
         if (path.startsWith("/api/knowledge/") && method.equals("GET")) {
             String id = decode(path.substring("/api/knowledge/".length()));
             sendOrNotFound(exchange, api.knowledgeById(id), "No such Knowledge Pack.");

@@ -15,6 +15,7 @@ import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.service.CentralService;
+import io.github.mcagents.clientfabric.common.service.ContentNotPublishedException;
 import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
 import io.github.mcagents.clientfabric.common.service.ServiceHealth;
 
@@ -282,9 +283,78 @@ final class WebApi {
                 WebJson::summary);
     }
 
-    /** One pack in full, for the detail page. */
+    /**
+     * Packs the service publishes that this machine does not have.
+     *
+     * <p>Kept apart from {@link #knowledge} rather than merged into it. That list is a
+     * window over a local table and pages with an offset; this one comes from the network
+     * and is only as large as the catalog. Interleaving the two would mean paging a union of
+     * two sources with different costs and different failure modes, and the page would stop
+     * working entirely whenever the service was asleep.
+     *
+     * <p>Returned whole, because a catalog is a published list of titles rather than a
+     * player's accumulated library — and because the alternative is holding a cursor into
+     * somebody else's paging.
+     */
+    JsonObject catalog() {
+        java.util.List<io.github.mcagents.clientfabric.api.model.KnowledgeSummary> published =
+                await(service.catalog(), SERVICE_TIMEOUT);
+        Map<String, String> stored = await(database.contents().findStoredVersions());
+
+        JsonArray items = new JsonArray();
+        int outdated = 0;
+        for (var summary : published) {
+            String have = stored.get(summary.id());
+            if (have == null) {
+                items.add(WebJson.summary(summary));
+            } else if (!have.equals(summary.version())) {
+                outdated++;
+            }
+        }
+
+        JsonObject body = new JsonObject();
+        body.add("items", items);
+        body.addProperty("total", items.size());
+        // Counted but not listed: an out-of-date pack is already in the library list, where
+        // the player will look for it. Showing it here too would be the same pack twice.
+        body.addProperty("outdated", outdated);
+        body.addProperty("published", published.size());
+        return body;
+    }
+
+    /**
+     * One pack in full, for the detail page.
+     *
+     * <p>Falls back to the service when the pack is not stored, so a pack the player has not
+     * downloaded still has a page — which is the only place a download button could sensibly
+     * live. The reply says which of the two it came from; the page shows an embedding for one
+     * and a download button for the other.
+     */
     Optional<JsonObject> knowledgeById(String id) {
-        return await(database.contents().findById(id)).map(WebJson::content);
+        Optional<JsonObject> local = await(database.contents().findById(id))
+                .map(WebJson::content);
+        if (local.isPresent()) {
+            local.get().addProperty("stored", true);
+            return local;
+        }
+
+        KnowledgeContent published;
+        try {
+            published = await(service.content(id), SERVICE_TIMEOUT);
+        } catch (ContentNotPublishedException e) {
+            // The service answered and there is no such pack. That is a fact, and 404 is
+            // what it means.
+            return Optional.empty();
+        } catch (RuntimeException e) {
+            // Not stored, and the service could not say. "No such pack" would be a lie —
+            // it may exist perfectly well on a host that is merely asleep — so say what
+            // actually happened instead of guessing.
+            throw new IllegalArgumentException(
+                    "That pack is not downloaded, and the knowledge service is not answering.");
+        }
+        JsonObject body = WebJson.content(published);
+        body.addProperty("stored", false);
+        return Optional.of(body);
     }
 
     JsonObject chats(Map<String, String> query) {

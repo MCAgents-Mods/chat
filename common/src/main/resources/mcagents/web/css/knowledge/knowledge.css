@@ -66,3 +66,23 @@
     border: 0;
   }
 }
+
+/* Packs the service publishes that this machine does not have. Below the library rather
+   than inside it: it is a different question ("what could I have?") from the one the
+   scroller answers ("what do I have?"). */
+.available {
+  margin-top: 1.5rem;
+}
+
+.available__title {
+  font-size: 1.05rem;
+  margin: 0;
+  flex: 1;
+}
+
+.available[hidden] { display: none; }
+
+/* The download offer on a pack's own page. */
+.download-note__body { flex: 1; }
+.download-note__text { margin: 0 0 .7rem; line-height: 1.5; }
+.download-note[hidden] { display: none; }

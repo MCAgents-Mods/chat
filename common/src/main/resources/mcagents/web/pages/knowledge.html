@@ -54,6 +54,18 @@
       <div class="card-grid" id="knowledge-list"></div>
       <div id="scroll-sentinel" aria-hidden="true"></div>
     </div>
+
+    <!-- Kept out of the list above rather than merged into it. That list is a window over a
+         local table and pages with an offset; this comes from the network and disappears
+         when the service is asleep. Interleaving them would page a union of two sources with
+         different costs and different failure modes. -->
+    <section class="available" id="available-section" hidden>
+      <div class="toolbar">
+        <h2 class="available__title">Available to download</h2>
+        <span class="count" id="available-count"></span>
+      </div>
+      <div class="card-grid" id="available-list"></div>
+    </section>
   </div>
 </main>
 

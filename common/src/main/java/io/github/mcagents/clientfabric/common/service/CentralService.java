@@ -173,6 +173,12 @@ public final class CentralService {
     private CompletableFuture<JsonObject> get(String path) {
         return transport.send(HttpCall.get(baseUrl + path, Map.of())).thenApply(reply -> {
             if (!reply.isSuccess()) {
+                // 404 gets its own type, because "there is no such pack" and "the service
+                // could not tell me" call for different answers from a caller: one is a
+                // fact worth reporting as a fact, the other is a reason to try later.
+                if (reply.status() == 404) {
+                    throw new ContentNotPublishedException(explain(reply));
+                }
                 throw new CentralServiceException(explain(reply));
             }
             return parseObject(reply).orElseThrow(() ->
