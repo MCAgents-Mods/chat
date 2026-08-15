@@ -1,6 +1,8 @@
 package io.github.mcagents.clientfabric.common.storage.sqlite;
 
 import io.github.mcagents.clientfabric.api.model.ApiKey;
+import io.github.mcagents.clientfabric.api.model.Page;
+import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.ApiKeyRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 
@@ -39,6 +41,39 @@ final class SqliteApiKeyRepository implements ApiKeyRepository {
                     keys.add(read(rows));
                 }
                 return List.copyOf(keys);
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Page<ApiKey>> findPage(PageRequest page) {
+        java.util.Objects.requireNonNull(page, "page");
+
+        return worker.submit("Reading a page of the stored API keys", connection -> {
+            long total;
+            try (PreparedStatement statement =
+                         connection.prepareStatement("SELECT COUNT(*) FROM api_keys");
+                 ResultSet rows = statement.executeQuery()) {
+                total = rows.next() ? rows.getLong(1) : 0;
+            }
+            if (total == 0) {
+                return Page.empty(page);
+            }
+
+            // key_value is the primary key, so this ordering is already total and a window
+            // taken from it cannot show a key twice or skip one.
+            String sql = "SELECT " + COLUMNS + " FROM api_keys "
+                    + "ORDER BY created_at ASC, key_value ASC LIMIT ? OFFSET ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, page.limit());
+                statement.setInt(2, page.offset());
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<ApiKey> keys = new ArrayList<>();
+                    while (rows.next()) {
+                        keys.add(read(rows));
+                    }
+                    return new Page<>(keys, page.offset(), page.limit(), total);
+                }
             }
         });
     }

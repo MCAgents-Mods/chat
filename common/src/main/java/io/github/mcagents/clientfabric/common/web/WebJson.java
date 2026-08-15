@@ -2,6 +2,7 @@ package io.github.mcagents.clientfabric.common.web;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.github.mcagents.clientfabric.api.model.ApiKey;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
 import io.github.mcagents.clientfabric.api.model.ContentCategory;
@@ -14,12 +15,12 @@ import java.util.function.Function;
 /**
  * Turns the model records into the JSON the console's pages read.
  *
- * <h2>What is deliberately absent</h2>
+ * <h2>The one rule this file must never break</h2>
  *
- * <p>There is no writer here for an {@code ApiKey}, and that is not an oversight. The
- * console shows conversations and Knowledge Packs; a provider key is neither. Keeping the
- * conversion out of this file means a future route cannot serialise one by reaching for a
- * helper that already exists.
+ * <p>{@link #apiKey} writes a key's mask and a handle, and <strong>never its value</strong>.
+ * There is deliberately no branch, no flag, and no second method that would emit the whole
+ * thing — see {@code .agents/security/api-keys.md}. If a future route needs to identify a
+ * key, it uses the handle; if it needs to show one, it shows the mask.
  *
  * <p>Timestamps go out as ISO-8601 strings rather than epoch numbers, because the pages
  * render them with {@code Intl.DateTimeFormat} and a string that says what it means is
@@ -107,6 +108,21 @@ final class WebJson {
         body.addProperty("role", message.role().wireName());
         body.addProperty("content", message.content());
         body.addProperty("createdAt", message.createdAt().toString());
+        return body;
+    }
+
+    /**
+     * A stored key, as the console is allowed to describe one.
+     *
+     * <p>The mask for the player to recognise it by, the handle for the page to act on it
+     * with, and nothing that could be sent to OpenRouter.
+     */
+    static JsonObject apiKey(ApiKey key) {
+        JsonObject body = new JsonObject();
+        body.addProperty("handle", ApiKeyHandles.of(key));
+        body.addProperty("masked", key.masked());
+        body.addProperty("active", key.active());
+        body.addProperty("createdAt", key.createdAt().toString());
         return body;
     }
 

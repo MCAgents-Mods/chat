@@ -1,0 +1,69 @@
+/* Page-specific layout for the API key page. */
+
+.key-form {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+}
+
+.key-form .field { flex: 1; }
+
+.key-note {
+  font-size: .82rem;
+  margin: .6rem 0 0;
+}
+
+.key-note.is-error { color: var(--sponsor); }
+.key-note.is-ok { color: var(--ok); }
+
+/* Ten rows at a time, in a box of their own, so a long-lived account does not turn this
+ * page into an endless scroll. */
+.key-scroller {
+  max-height: 26rem;
+  min-height: 8rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: .5rem;
+  background: var(--glass-faint);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.key-scroller:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .6rem .7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.key-row + .key-row { border-top: 1px solid var(--hairline); border-radius: 0; }
+.key-row:hover { background: var(--glass-strong); }
+
+.key-row__value {
+  font-family: var(--mono);
+  font-size: .88rem;
+  color: var(--ink-900);
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.key-row__when {
+  font-size: .76rem;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+#scroll-sentinel { height: 1px; }
+
+@media (max-width: 620px) {
+  .key-form { flex-direction: column; align-items: stretch; }
+  .key-row { flex-wrap: wrap; }
+  .key-row__when { width: 100%; }
+}

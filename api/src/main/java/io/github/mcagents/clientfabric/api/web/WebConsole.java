@@ -34,9 +34,11 @@ import java.util.concurrent.CompletableFuture;
  *       Another program on the machine cannot guess it; another web page cannot read it.</li>
  *   <li><strong>A loopback {@code Host} header</strong>, which is what closes DNS
  *       rebinding.</li>
- *   <li><strong>No API keys, ever.</strong> No route reads {@code apiKeys()}. The console
- *       shows conversations and Knowledge Packs; a key is neither, and there is no endpoint
- *       through which one could be read or written.</li>
+ *   <li><strong>A key is never handed back.</strong> The console can list, add, and remove
+ *       API keys, because a player reading their conversations in a browser can reasonably
+ *       expect to manage a key there too. What it cannot do is return one: keys are listed
+ *       as masks and opaque handles, and no route, parameter, or flag yields a value. Adding
+ *       one travels inward over loopback, exactly as typing it into the game does.</li>
  * </ul>
  *
  * <p>It also never reaches the network. Serving pages, listing packs, and reading history
