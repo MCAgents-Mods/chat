@@ -74,9 +74,11 @@ class CatalogRoutesTest {
     }
 
     @Test
-    void countsAnOutOfDatePackWithoutListingItAsAvailable() {
+    void namesAnOutOfDatePackWithoutListingItAsAvailable() {
         // It is already in the library list, where the player will look for it. Listing it
-        // here as well would show one pack twice under two different headings.
+        // here as well would show one pack twice under two different headings — but the
+        // library needs to know *which* pack, or a page that knows one is behind leaves the
+        // reader to open every pack in turn to find it.
         store("stale", "1.0.0");
         transport.reply(200, catalogOf(entry("stale", "2.0.0")));
 
@@ -84,6 +86,22 @@ class CatalogRoutesTest {
 
         assertEquals(0, body.get("total").getAsInt());
         assertEquals(1, body.get("outdated").getAsInt());
+
+        JsonObject behind = body.getAsJsonArray("outdatedItems").get(0).getAsJsonObject();
+        assertEquals("stale", behind.get("id").getAsString());
+        assertEquals("1.0.0", behind.get("storedVersion").getAsString());
+        assertEquals("2.0.0", behind.get("publishedVersion").getAsString());
+    }
+
+    @Test
+    void namesNothingWhenEveryStoredPackIsCurrent() {
+        store("current", "1.0.0");
+        transport.reply(200, catalogOf(entry("current", "1.0.0")));
+
+        JsonObject body = json("/api/catalog");
+
+        assertEquals(0, body.getAsJsonArray("outdatedItems").size());
+        assertEquals(0, body.get("outdated").getAsInt());
     }
 
     @Test
