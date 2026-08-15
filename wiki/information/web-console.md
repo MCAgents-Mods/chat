@@ -57,6 +57,13 @@ conversation changes, from either side. The browser polls it; the game checks it
 A message typed in Minecraft appears in the browser within a few seconds, and one typed in
 the browser appears in the game the same way.
 
+### `/model/`
+
+The chat model and the embedding model, with the suggested ids and the defaults. The lists
+are suggestions — type any id your provider serves. Changing the embedding model changes
+which vector space new embeddings live in, so it really means re-embedding your library, and
+the page says so.
+
 ### `/keys/`
 
 Your OpenRouter keys, ten at a time, with add and remove.
@@ -67,6 +74,23 @@ The handle is a hash: it names a key without being one, cannot be used to spend 
 and the mod resolves it back to a key internally. Adding a key sends it *inward* over
 loopback, the same direction it travels when you type it into the game. Nothing sends one
 outward.
+
+## When the service is asleep
+
+The central service is hosted somewhere that idles, so the first request after a quiet
+period is often a refused connection. The console treats that as ordinary: a banner appears,
+it checks again once a minute for ten minutes, and then stops — a page that retried forever
+would poll a host that is not coming back until you closed the tab. **Reconnect** restarts
+that budget, and the banner disappears entirely once the service answers.
+
+Nothing on any page depends on it. The lists, the conversations, and the keys all work while
+it is unreachable; only the refresh and update buttons are disabled, because they are the
+only things that need it.
+
+**Refresh** on the knowledge page and **Update knowledge** on the chat page are the same
+operation: download whatever the service publishes that this machine does not have. The
+service rate-limits those reads, so pressing repeatedly earns a short wait rather than a
+faster answer.
 
 ## What keeps it safe
 

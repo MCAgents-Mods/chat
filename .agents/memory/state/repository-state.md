@@ -54,7 +54,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 197 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 217 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
@@ -94,10 +94,26 @@ Facts that cost time to establish, and will again if forgotten:
 Resolved through the `lxagents-agents-base` MCP connector. Nothing from it is copied here;
 the override table in `.agents/index/root-index.md` is empty.
 
+## Reaching the central service
+
+`CentralService` is the one class that talks to `mcagents.mcrealms.space`, which is what
+makes "the mod works offline" checkable. `KnowledgeSync` compares published versions against
+stored ones and downloads only the difference, on the refresh button, the update button, or
+the one startup fetch of `mcagents-info`. A sleeping service is a state, not an error: the
+console shows a banner, retries once a minute, and stops after ten.
+
+**The live deployment answers, and a refresh from the console really downloads its catalog.**
+It does not yet publish `mcagents-info` — the server branch adding it is pushed and not
+deployed.
+
 ## Next step
 
-**Play-test what has accumulated.** Three features — wallets, the web console, and the
-console button on the chat screen — are compile-verified and unopened. One session in a real
+**Deploy the server branches, then play-test what has accumulated.** `feat/rate-limit` and
+`feat/base-knowledge` are pushed and unmerged; until the second is deployed, every client
+asks for `mcagents-info` and is correctly told it does not exist.
+
+Three features — wallets, the web console, and the console button on the chat screen — are
+compile-verified and unopened. One session in a real
 client would settle all of them, and would run the one thing nothing here can prove: a
 binding through the real MetaMask extension, and a message typed in game appearing in a
 browser tab.
