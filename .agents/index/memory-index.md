@@ -25,7 +25,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/central-service.md`](../memory/tasks/central-service.md) | Reaching mcagents.mcrealms.space: the cold-start design, the rate limit, the base pack, the model defaults, and what the live service actually answered. |
 | [`../memory/tasks/web-console.md`](../memory/tasks/web-console.md) | The local web console: why it is long-lived where the wallet bridge is not, how the two sides stay in step, and the three defects a browser found that the Java suite could not. |
 | [`../memory/tasks/embedding-switch.md`](../memory/tasks/embedding-switch.md) | Knowledge retrieval and its on/off switch: that retrieval did not exist, the absent-versus-blank rule, and what is proven versus only compiled. |
-| [`../memory/tasks/knowledge-downloads.md`](../memory/tasks/knowledge-downloads.md) | Per-pack download, where each update check happens, and why embedding is the client's job rather than the service's. |
+| [`../memory/tasks/knowledge-downloads.md`](../memory/tasks/knowledge-downloads.md) | Per-pack download, where each update check happens, and why embedding is the client's job rather than the service's. |\n| [`../memory/tasks/screen-layout.md`](../memory/tasks/screen-layout.md) | The console screen's colliding text, why constants caused it, and how a screen's arithmetic got under test without Minecraft. |
 
 ## Maintenance
 
