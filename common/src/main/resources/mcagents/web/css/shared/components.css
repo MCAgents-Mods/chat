@@ -179,6 +179,26 @@ a.card:hover {
 
 .btn--small { padding: .32rem .7rem; font-size: .8rem; }
 
+/*
+ * A button that reports a state rather than offering an action: filled green when the
+ * thing is on, red when it is off.
+ *
+ * The colour is the second signal, never the only one — the label says "on" or "off" in
+ * words, and aria-pressed says it again to anything not looking at pixels. A control whose
+ * whole meaning is a hue is unreadable to a good fraction of players and to every
+ * screen reader.
+ *
+ * White on both fills clears WCAG AA for body text (5.3:1 on --ok, 4.6:1 on --sponsor).
+ */
+.btn--state {
+  border-color: transparent;
+  color: var(--white);
+}
+
+.btn--state.is-on { background: var(--ok); }
+.btn--state.is-off { background: var(--sponsor); }
+.btn--state:hover:not(:disabled) { color: var(--white); }
+
 /* Form controls */
 
 .field {

@@ -196,14 +196,20 @@ final class WebApi {
      * default, which is how a player gets back to it by hand.
      */
     JsonObject saveModels(String body) {
-        // An absent switch means "leave it as it is", not "use the default". A page that
-        // only edits the two model ids must not reset a player's retrieval setting, and a
-        // future page that omits the field by accident should do nothing rather than harm.
-        boolean enabled = flag(body, "embeddingEnabled")
-                .orElseGet(() -> await(database.settings().loadModelPreferences()).embeddingEnabled());
+        // Absent and blank are different requests, for every field here.
+        //
+        //   absent — this request is not about that setting; leave it as it is
+        //   blank  — the player cleared the box, which is how they ask for the default
+        //
+        // Collapsing the two would make a partial update destructive: the chat page sends
+        // only the switch, and a handler that read the missing model ids as blanks would
+        // reset both models to the defaults every time somebody flipped it.
+        ModelPreferences current = await(database.settings().loadModelPreferences());
 
         ModelPreferences requested = ModelPreferences.of(
-                string(body, "chatModel"), string(body, "embeddingModel"), enabled);
+                member(body, "chatModel").orElse(current.chatModel()),
+                member(body, "embeddingModel").orElse(current.embeddingModel()),
+                flag(body, "embeddingEnabled").orElse(current.embeddingEnabled()));
         ModelPreferences stored = await(database.settings().saveModelPreferences(requested));
 
         JsonObject result = new JsonObject();
@@ -361,6 +367,27 @@ final class WebApi {
                 return Optional.empty();
             }
             return Optional.of(root.get(member).getAsBoolean());
+        } catch (JsonSyntaxException | IllegalStateException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * A string member, or empty if the body does not carry one.
+     *
+     * <p>A present but blank value comes back as a blank string, not as empty — the caller
+     * needs to tell "the player cleared this box" from "this request said nothing about it".
+     */
+    private static Optional<String> member(String body, String name) {
+        if (body == null || body.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            JsonObject root = JsonParser.parseString(body).getAsJsonObject();
+            if (!root.has(name) || !root.get(name).isJsonPrimitive()) {
+                return Optional.empty();
+            }
+            return Optional.of(root.get(name).getAsString());
         } catch (JsonSyntaxException | IllegalStateException e) {
             return Optional.empty();
         }
