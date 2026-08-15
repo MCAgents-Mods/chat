@@ -63,6 +63,53 @@ public final class KnowledgeSync {
     }
 
     /**
+     * Downloads one pack, whether or not it is already stored.
+     *
+     * <p>This is the download button on a pack's own page. Unlike {@link #refresh()} it does
+     * not compare versions first: the player pressed the button for this pack, and a button
+     * that decided the pack was already current and did nothing would be a button that
+     * appears broken.
+     *
+     * <p>The categories are stored first for the same reason they are in
+     * {@link #ensureBaseKnowledge()} — {@code contents.category_id} is a foreign key, and a
+     * player downloading their first pack has no categories yet.
+     */
+    public CompletableFuture<KnowledgeContent> download(String id) {
+        Objects.requireNonNull(id, "id");
+        return service.categories()
+                .thenCompose(this::storeCategories)
+                .thenCompose(ignored -> service.content(id))
+                .thenCompose(pack -> database.contents().save(pack));
+    }
+
+    /**
+     * What the service publishes that is not stored here, and what is out of date.
+     *
+     * <p>The check without the download. The chat page runs this when it opens, so the
+     * player is told there is something to fetch rather than having to press a button to
+     * find out — and pressing the button remains the only thing that actually spends
+     * bandwidth.
+     */
+    public CompletableFuture<UpdateStatus> checkForUpdates() {
+        return service.publishedVersions().thenCompose(published ->
+                database.contents().findStoredVersions().thenApply(stored -> {
+                    List<String> missing = new ArrayList<>();
+                    List<String> outdated = new ArrayList<>();
+                    published.forEach((id, version) -> {
+                        String have = stored.get(id);
+                        if (have == null) {
+                            missing.add(id);
+                        } else if (!have.equals(version)) {
+                            outdated.add(id);
+                        }
+                    });
+                    missing.sort(String::compareTo);
+                    outdated.sort(String::compareTo);
+                    return new UpdateStatus(missing, outdated, published.size());
+                }));
+    }
+
+    /**
      * Fetches the pack describing the mod, if it is missing or behind.
      *
      * <p>Called once at startup. It is the one thing the mod fetches without being asked,
@@ -148,6 +195,31 @@ public final class KnowledgeSync {
                         ? carried.withDownloaded()
                         : carried.withFailure(id))
                 .thenCompose(next -> downloadEach(rest, next));
+    }
+
+    /**
+     * What a check found, without downloading any of it.
+     *
+     * @param missingIds  published packs this machine does not have
+     * @param outdatedIds packs stored here at a version the service has replaced
+     * @param published   how many packs the service publishes in total
+     */
+    public record UpdateStatus(List<String> missingIds, List<String> outdatedIds, int published) {
+
+        public UpdateStatus {
+            missingIds = List.copyOf(missingIds);
+            outdatedIds = List.copyOf(outdatedIds);
+        }
+
+        /** How many packs a refresh would fetch. */
+        public int available() {
+            return missingIds.size() + outdatedIds.size();
+        }
+
+        /** Whether there is anything worth telling the player about. */
+        public boolean hasUpdates() {
+            return available() > 0;
+        }
     }
 
     /**
