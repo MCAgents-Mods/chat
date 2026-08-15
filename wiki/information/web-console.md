@@ -31,6 +31,13 @@ so the search box and the category filters stay where you left them however larg
 library grows. The search box filters as you type, across titles and pack text. The chips
 filter by category and by free or premium.
 
+Below it, **Available to download** lists what the service publishes that you do not have.
+It is deliberately a separate section rather than rows mixed into the list above: that list
+is a window over a local table and pages with an offset, while this comes from the network
+and disappears when the service is asleep. Merging them would mean paging a union of two
+sources with different costs and different failure modes, and the page would stop working
+whenever the service did.
+
 The list deliberately does not carry pack bodies. An embedding is thousands of numbers, and
 reading twenty of them to render a list of titles would be slow for no benefit.
 
@@ -39,9 +46,14 @@ reading twenty of them to render a list of titles would be slow for no benefit.
 One pack in full: its identifier, version, category, availability, dates, its text, and its
 embedding.
 
-**Read-only, on purpose.** There is no form and no endpoint behind this page that could
-change a pack. Packs are published by version and replaced whole, so editing a stored copy
-would only put you out of step with the next update.
+**The pack's content is read-only, on purpose.** There is no form and no endpoint behind
+this page that could change one. Packs are published by version and replaced whole, so
+editing a stored copy would only put you out of step with the next update.
+
+**This page opens for a pack you have not downloaded**, shown from the service, and that is
+where the **Download** button lives — it is the only page that is about exactly one pack. A
+downloaded pack shows its embedding instead; one you do not have has none, because nothing
+has embedded it yet.
 
 ### `/chat/`
 
@@ -100,6 +112,15 @@ only things that need it.
 operation: download whatever the service publishes that this machine does not have. The
 service rate-limits those reads, so pressing repeatedly earns a short wait rather than a
 faster answer.
+
+The chat page also **checks** when it opens, and says how many updates are waiting. That
+check is one request and downloads nothing — pressing the button is still the only thing
+that spends bandwidth. Startup checks one pack and one pack only, `mcagents-info`; see
+[`knowledge-retrieval.md`](knowledge-retrieval.md).
+
+**Check embeddings** beside it is not a service operation at all. It asks your model
+provider to embed the packs that have no usable vector, so it keeps working while the
+service is asleep and is never disabled with the buttons that need it.
 
 ## What keeps it safe
 

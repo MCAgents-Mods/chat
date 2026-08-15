@@ -24,7 +24,9 @@ what is already downloaded. Only browsing the catalog and downloading new packs 
 
 Built-in knowledge grows over time, and **it updates only when you press the update button.**
 Nothing is fetched behind your back, with one exception: a small pack describing the mod
-itself is fetched once at startup so the assistant can answer questions about what it is.
+itself is fetched at startup — and version-checked on every start — so the assistant can
+answer questions about what it is. Every other pack is checked when you open the chat page
+in the web console, and downloaded only when you ask.
 
 ## Your API key
 
@@ -43,8 +45,12 @@ do not share your `data.db`.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
-* **Knowledge Packs**, free or paid, listed side by side. Packs are versioned; an update
-  publishes a new version rather than editing one in place.
+* **Knowledge Packs**, free or paid, listed side by side — both the ones you have and the
+  ones you could download, with a button to fetch a single pack. Packs are versioned; an
+  update publishes a new version rather than editing one in place.
+* **Embedding on your own machine.** Packs are published as text and embedded by your
+  client with your embedding model, so your library lives in the same vector space as your
+  questions rather than in whichever one a server chose.
 * **A local web console** — the mod can serve your own data to your own browser on
   `127.0.0.1`: your packs, your chats, your API keys, and your model choice. It is for the
   jobs a Minecraft screen is bad at. Chat works both ways, so a message typed in the browser
