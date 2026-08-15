@@ -219,7 +219,7 @@ css/
 A page links them in order: `main.css` → `shared/layout.css` → `shared/components.css` →
 `<section>/<section>.css`.
 
-In this repository these live under `common/src/main/resources/mcagents/web/` and are
+In this repository these live under `website/src/main/resources/mcagents/web/` and are
 served from the jar. Adding a file there means it ships; the resource path is the URL path.
 
 ## Rebranding

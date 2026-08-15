@@ -83,7 +83,9 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   the total counted rather than inferred. Any ordering a window is taken from is total, or
   the reader sees rows twice and never sees others.
 * The web console: `LocalWebConsole` on loopback, guarded by a per-run token and a loopback
-  `Host` check, serving pages from `mcagents/web/` inside the jar. **Long-lived on purpose,
+  `Host` check, serving pages from `mcagents/web/` inside the jar. **It is its own module,
+  `website/`**, holding everything a browser sees and nothing else; it sits above `common/`
+  and nothing in `common/` may depend back on it. **Long-lived on purpose,
   unlike the wallet bridge** — do not change either to match the other. A chat write from
   either side moves one counter in `RevisionedChatRepository`, which is what keeps the game
   and the browser in step.

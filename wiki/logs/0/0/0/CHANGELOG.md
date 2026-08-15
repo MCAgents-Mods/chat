@@ -6,10 +6,11 @@ project is developed under.
 ## Added
 
 * **Multi-module Gradle build.** `mcagents-fabric-api` (`api/`),
-  `mcagents-fabric-common` (`common/`), and `mcagents-fabric` (`platforms/fabric/`), wired
-  by `settings.gradle` and built with Fabric Loom 1.17.19 on Gradle 9.7.0 and a Java 25
-  toolchain. `./gradlew build` produces a loadable mod jar carrying all three modules'
-  classes, `fabric.mod.json`, and the license.
+  `mcagents-fabric-common` (`common/`), `mcagents-fabric-website` (`website/`), and
+  `mcagents-fabric` (`platforms/fabric/`), wired by `settings.gradle` and built with Fabric
+  Loom 1.17.19 on Gradle 9.7.0 and a Java 25 toolchain. `./gradlew build` produces a
+  loadable mod jar carrying every module's classes and resources, `fabric.mod.json`, and
+  the license.
 * **Version catalog.** `gradle/libs.versions.toml` pins Minecraft 26.2, Fabric Loader
   0.19.3, Fabric API 0.157.0+26.2, Fabric Loom 1.17.19, sqlite-jdbc 3.53.2.1, and Java 25.
   `gradle.properties` carries the project's identity only.
