@@ -4,10 +4,15 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.github.mcagents.clientfabric.api.agent.Agent;
+import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.web.WebConsole;
 import io.github.mcagents.clientfabric.api.web.WebConsoleException;
 import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
+import io.github.mcagents.clientfabric.common.agent.CachingModelClient;
+import io.github.mcagents.clientfabric.common.agent.EmbeddingBackfill;
+import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
+import io.github.mcagents.clientfabric.common.agent.openrouter.OpenRouterClient;
 import io.github.mcagents.clientfabric.common.service.CentralService;
 import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
 
@@ -115,9 +120,19 @@ public final class LocalWebConsole implements WebConsole {
 
     /** @param service the central catalog, pointed elsewhere by a test */
     public static LocalWebConsole start(LocalDatabase database, Agent agent, CentralService service) {
+        return start(database, agent, service, defaultModelClient(database));
+    }
+
+    /**
+     * @param modelClient used only to embed stored packs; the console never completes a chat
+     *                    with it, because that is what {@code agent} is for
+     */
+    public static LocalWebConsole start(LocalDatabase database, Agent agent,
+                                        CentralService service, ModelClient modelClient) {
         Objects.requireNonNull(database, "database");
         Objects.requireNonNull(agent, "agent");
         Objects.requireNonNull(service, "service");
+        Objects.requireNonNull(modelClient, "modelClient");
 
         HttpServer server;
         try {
@@ -140,7 +155,8 @@ public final class LocalWebConsole implements WebConsole {
                 + "/knowledge/?t=" + token);
 
         LocalWebConsole console = new LocalWebConsole(server, workers,
-                new WebApi(database, agent, service, new KnowledgeSync(service, database)),
+                new WebApi(database, agent, service, new KnowledgeSync(service, database),
+                        new EmbeddingBackfill(database, modelClient)),
                 token, url);
 
         server.createContext("/", console::route);
@@ -149,6 +165,18 @@ public final class LocalWebConsole implements WebConsole {
         LOGGER.log(Level.INFO, "Web console listening on 127.0.0.1:{0}",
                 server.getAddress().getPort());
         return console;
+    }
+
+    /**
+     * The same stack the game's agent uses, built here for a console started without one.
+     *
+     * <p>Constructed rather than shared because {@code common} has no way to reach the
+     * client the mod keeps. In the game the real client is passed in, so this is only ever
+     * built by a caller that had none to give.
+     */
+    private static ModelClient defaultModelClient(LocalDatabase database) {
+        return new CachingModelClient(new OpenRouterClient(
+                new JdkHttpTransport(), new RepositoryApiKeySource(database.apiKeys())));
     }
 
     @Override
@@ -233,6 +261,16 @@ public final class LocalWebConsole implements WebConsole {
         if (path.equals("/api/service/updates") && method.equals("GET")) {
             sendJson(exchange, 200, api.knowledgeUpdates());
             return;
+        }
+        if (path.equals("/api/embeddings")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.embeddingStatus());
+                return;
+            }
+            if (method.equals("POST")) {
+                sendJson(exchange, 200, api.embedKnowledge());
+                return;
+            }
         }
         if (path.startsWith("/api/knowledge/") && path.endsWith("/download")
                 && method.equals("POST")) {

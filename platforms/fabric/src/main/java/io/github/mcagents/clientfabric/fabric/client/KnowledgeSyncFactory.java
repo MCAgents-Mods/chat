@@ -21,7 +21,17 @@ public final class KnowledgeSyncFactory {
     }
 
     public static KnowledgeSync create(LocalDatabase database) {
-        return new KnowledgeSync(new CentralService(sharedTransport()), database);
+        return new KnowledgeSync(service(), database);
+    }
+
+    /**
+     * The catalog, on the shared transport.
+     *
+     * <p>Exposed so the console reaches the service through the same connection pool the
+     * startup fetch uses rather than opening a second one for the life of the game.
+     */
+    public static CentralService service() {
+        return new CentralService(sharedTransport());
     }
 
     private static JdkHttpTransport sharedTransport() {
