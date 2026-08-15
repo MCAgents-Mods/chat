@@ -84,26 +84,37 @@
   /**
    * Asks the service what it publishes that is not here.
    *
-   * Silent about failure on purpose: the library above is the page, and this section is an
-   * extra. A service that is asleep should make the section disappear, not put an error
-   * across a page that is working.
+   * The section stays on the page whatever the answer is. It used to hide itself when there
+   * was nothing to download, which meant pressing Refresh — the one action guaranteed to
+   * empty it — collapsed the page from two panels to one under the reader's cursor. A panel
+   * that says "nothing here" is information; a panel that vanishes is a page rearranging
+   * itself.
+   *
+   * Failure is reported in the same place rather than thrown at the page: the library above
+   * is the page, and this section is an extra. A service that is asleep should say so here,
+   * not put an error across a view that is working.
    */
   async function loadAvailable() {
     var M = window.MCAgents;
-    var section = document.getElementById('available-section');
+    var list = document.getElementById('available-list');
+    var count = document.getElementById('available-count');
+
     try {
       var payload = await M.api('/catalog');
       if (payload.items.length === 0) {
-        section.hidden = true;
+        count.textContent = '';
+        M.showState(list, payload.published > 0
+          ? 'Everything published is already downloaded.'
+          : 'The service publishes nothing yet.');
         return;
       }
-      M.replace(document.getElementById('available-list'),
-        payload.items.map(availableCard));
-      document.getElementById('available-count').textContent =
+      M.replace(list, payload.items.map(availableCard));
+      count.textContent =
         payload.items.length + (payload.items.length === 1 ? ' pack' : ' packs');
-      section.hidden = false;
     } catch (ignored) {
-      section.hidden = true;
+      count.textContent = '';
+      M.showState(list, 'The knowledge service is not answering, so there is nothing to '
+        + 'show here yet.');
     }
   }
 
@@ -259,6 +270,10 @@
     // the same failure the chat sidebar had.
     sentinelVisible = window.MCAgents.onVisible(sentinel, loadMore, scrollRoot());
 
+    // Said before the health check answers, so the panel is never a blank box while the
+    // service is being woken up.
+    M.showState(document.getElementById('available-list'), 'Loading…');
+
     var refreshButton = document.getElementById('refresh-knowledge');
     M.wireSyncButton(refreshButton, document.getElementById('sync-note'), function (result) {
       if (result.changed) {
@@ -273,11 +288,9 @@
     // looking pressable while nothing is answering.
     window.MCAgentsService.onChange(function (reachable) {
       refreshButton.disabled = !reachable;
-      if (reachable) {
-        loadAvailable();
-      } else {
-        document.getElementById('available-section').hidden = true;
-      }
+      // Reloaded either way. Unreachable is an answer this section can show, and showing it
+      // is what stops the page changing shape when the service goes to sleep.
+      loadAvailable();
     });
     window.MCAgentsService.start();
     reset();
