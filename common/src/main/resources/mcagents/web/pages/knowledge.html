@@ -49,7 +49,7 @@
       <button class="chip" type="button" data-availability="premium">Premium</button>
     </div>
 
-    <div class="pack-scroller" id="pack-scroller" tabindex="0"
+    <div class="pack-scroller pack-scroller--library" id="pack-scroller" tabindex="0"
          role="region" aria-label="Knowledge Packs">
       <div class="card-grid" id="knowledge-list"></div>
       <div id="scroll-sentinel" aria-hidden="true"></div>
@@ -64,7 +64,13 @@
         <h2 class="available__title">Available to download</h2>
         <span class="count" id="available-count"></span>
       </div>
-      <div class="card-grid" id="available-list"></div>
+      <!-- Its own scroller, like the library above. A catalog that grew would otherwise
+           push the page down indefinitely, and the heading a reader is using to tell the
+           two lists apart would scroll away with it. -->
+      <div class="pack-scroller pack-scroller--available" id="available-scroller" tabindex="0"
+           role="region" aria-label="Packs available to download">
+        <div class="card-grid" id="available-list"></div>
+      </div>
     </section>
   </div>
 </main>
