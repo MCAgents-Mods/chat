@@ -35,6 +35,10 @@ never receives the whole library.
 
 Packs are versioned. An update replaces only the packs that actually changed.
 
+Retrieval can be switched off, in the game or in the browser. Off means the question is sent
+on its own: no embedding call, no packs attached, nothing charged for it — and chatting is
+otherwise unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
+
 ### The marketplace
 
 Players can author packs, publish them, and sell them. Free and premium packs are listed
@@ -109,7 +113,8 @@ The key button opens API key management — add your OpenRouter key there; store
 only ever shown masked. The gear button opens the model settings: pick a chat model and an
 embedding model from the suggested lists, or type any OpenRouter model id you like. The
 lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
-ships.
+ships. The **Embedding** button on that screen turns retrieval on and off — green for on,
+red for off.
 
 The globe button beside the key button starts the web console and opens your browser at it.
 It keeps running when you close the screen, so you can read in a browser while you play.
@@ -123,14 +128,15 @@ It never simply fails to appear.
 
 ## What is planned but not built
 
-Retrieval is not wired up yet, so the agent answers from your conversation rather than from
-downloaded Knowledge Packs. The content browser is still to come, as is streaming, and so is
-context injection — inventory, the block you are looking at, chat logs and scoreboard. See
-[`architecture.md`](architecture.md) for where each will live.
+Streaming is still to come, and so is context injection — inventory, the block you are
+looking at, chat logs and scoreboard. See [`architecture.md`](architecture.md) for where
+each will live.
 
 ## Related
 
 * [`architecture.md`](architecture.md) — how the modules are split and why.
+* [`knowledge-retrieval.md`](knowledge-retrieval.md) — how packs reach a prompt, and the
+  switch that stops them.
 * [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.
 * [`web-console.md`](web-console.md) — the browser view of your own data.
 * [`../environments/setup.md`](../environments/setup.md) — building and running it.

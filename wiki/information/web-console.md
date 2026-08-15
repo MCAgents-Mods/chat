@@ -64,6 +64,15 @@ are suggestions — type any id your provider serves. Changing the embedding mod
 which vector space new embeddings live in, so it really means re-embedding your library, and
 the page says so.
 
+**The Embedding switch** is here too, and again in the chat header. Green is on, red is off,
+and the label says which in words — colour is never the only signal. Off means questions are
+sent without Knowledge Packs and no embedding is charged for; chatting is otherwise
+unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
+
+The switch applies on **Save** here, because everything else on this page does. In the chat
+header it applies at once, because that page has no Save button to wait for. Either way it
+is one stored setting, shared with the in-game screen.
+
 ### `/keys/`
 
 Your OpenRouter keys, ten at a time, with add and remove.
@@ -134,5 +143,6 @@ fetched from anywhere, so the console looks the same with no internet at all.
 ## Related
 
 * [`architecture.md`](architecture.md) — the module split these layers follow.
+* [`knowledge-retrieval.md`](knowledge-retrieval.md) — what the Embedding switch governs.
 * [`wallet-binding.md`](wallet-binding.md) — the other thing the mod serves in a browser,
   and why its server works the opposite way.

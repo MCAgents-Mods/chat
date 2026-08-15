@@ -24,6 +24,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/wallet-binding.md`](../memory/tasks/wallet-binding.md) | MetaMask wallet binding: the shape chosen, the decisions not to relitigate, and exactly what is proven and what is not. |
 | [`../memory/tasks/central-service.md`](../memory/tasks/central-service.md) | Reaching mcagents.mcrealms.space: the cold-start design, the rate limit, the base pack, the model defaults, and what the live service actually answered. |
 | [`../memory/tasks/web-console.md`](../memory/tasks/web-console.md) | The local web console: why it is long-lived where the wallet bridge is not, how the two sides stay in step, and the three defects a browser found that the Java suite could not. |
+| [`../memory/tasks/embedding-switch.md`](../memory/tasks/embedding-switch.md) | Knowledge retrieval and its on/off switch: that retrieval did not exist, the absent-versus-blank rule, and what is proven versus only compiled. |
 
 ## Maintenance
 

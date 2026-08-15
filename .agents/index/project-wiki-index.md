@@ -16,6 +16,7 @@ description: Index of wiki/ — the human-facing documentation for MCAgentsClien
 | [`../../wiki/information/architecture.md`](../../wiki/information/architecture.md) | The module split, the offline-first boundary, and the async rule for anything touching I/O. |
 | [`../../wiki/information/wallet-binding.md`](../../wiki/information/wallet-binding.md) | How wallets are held and how an EVM address is proved through MetaMask over a loopback bridge that stops itself. |
 | [`../../wiki/information/web-console.md`](../../wiki/information/web-console.md) | The local console: what each page shows, how the game and the browser stay in step, and what keeps a server on loopback safe. |
+| [`../../wiki/information/knowledge-retrieval.md`](../../wiki/information/knowledge-retrieval.md) | How a question reaches the right Knowledge Packs, the limits on what is attached, and the Embedding switch that turns the whole path off. |
 
 ## environments
 

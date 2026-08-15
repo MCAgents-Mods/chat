@@ -54,11 +54,17 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 217 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 239 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
   `CachingModelClient` (embeddings cached, completions deliberately not).
+* Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
+  cosine similarity, and `PromptAssembler` places the best few after the last cache
+  breakpoint and before the question. Governed by one setting,
+  `model.embedding.enabled`, carried on `ModelPreferences` and shared by the in-game
+  screen and the console. Off does no work at all rather than filtering afterwards, and
+  a failed embedding call yields an ordinary answer rather than an error.
 * Reading: long lists come back a window at a time through `Page` and `PageRequest`, with
   the total counted rather than inferred. Any ordering a window is taken from is total, or
   the reader sees rows twice and never sees others.
@@ -108,15 +114,22 @@ deployed.
 
 ## Next step
 
-**Deploy the server branches, then play-test what has accumulated.** `feat/rate-limit` and
-`feat/base-knowledge` are pushed and unmerged; until the second is deployed, every client
-asks for `mcagents-info` and is correctly told it does not exist.
+**Play-test in a real client, and publish real embeddings.**
 
-Three features — wallets, the web console, and the console button on the chat screen — are
-compile-verified and unopened. One session in a real
-client would settle all of them, and would run the one thing nothing here can prove: a
-binding through the real MetaMask extension, and a message typed in game appearing in a
-browser tab.
+The server side is deployed: `mcagents-info` is served at version `0.0.0` and the catalog
+answers with `RateLimit-*` headers.
+
+Two things are outstanding, and the second is the more interesting.
+
+1. Wallets, the web console, the console button, and now the embedding toggle on
+   `ModelSettingsScreen` are compile-verified and unopened. `platforms/fabric` has no test
+   source set, so nothing here can prove any of them. One session in a real client would
+   settle all four, plus a binding through the real MetaMask extension and a message typed
+   in game appearing in a browser tab.
+2. **Every pack the live service publishes carries `embeddedData` of `"[]"`.** Retrieval
+   is built, tested, and correct, and it currently selects nothing from real content
+   because there are no vectors to match. Until the catalog publishes embeddings, the
+   feature is only demonstrable against seeded data.
 
 Then wire retrieval, so downloaded Knowledge Packs actually reach the prompt, and after that
 the content browser and its download path against `MCAgents/server-fabric-expressjs`.
