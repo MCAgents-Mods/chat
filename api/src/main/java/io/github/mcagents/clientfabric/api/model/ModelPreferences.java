@@ -27,10 +27,13 @@ public record ModelPreferences(String chatModel, String embeddingModel) {
     }
 
     /**
-     * Trims both ids and substitutes the catalog default for anything blank.
+     * Trims both ids, substitutes the catalog default for anything blank, and replaces an
+     * id the provider has retired.
      *
      * <p>Applied on the way in and on the way out of storage, so a stray space from a paste
-     * cannot become a model id that OpenRouter rejects for a reason the player cannot see.
+     * cannot become a model id that OpenRouter rejects for a reason the player cannot see —
+     * and so a player who saved a model id that has since stopped working is moved off it
+     * rather than left with a mod that fails every request until they think to look.
      */
     public static ModelPreferences of(String chatModel, String embeddingModel) {
         return new ModelPreferences(
@@ -42,7 +45,7 @@ public record ModelPreferences(String chatModel, String embeddingModel) {
         if (value == null || value.isBlank()) {
             return fallback;
         }
-        return value.trim();
+        return ModelCatalog.resolve(value);
     }
 
     /** This selection with a different chat model. */
