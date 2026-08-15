@@ -150,6 +150,57 @@ class CatalogRoutesTest {
         assertEquals(0, body.get("outdated").getAsInt());
     }
 
+    @Test
+    void deletesAStoredPack() {
+        store("unwanted", "1.0.0");
+
+        HttpResponse<String> response = send(HttpRequest.newBuilder()
+                .uri(URI.create(base() + "/api/knowledge/unwanted"))
+                .header("X-MCAgents-Token", token())
+                .DELETE());
+
+        assertEquals(200, response.statusCode(), response.body());
+        assertTrue(await(database.contents().findById("unwanted")).isEmpty());
+        assertEquals(0, transport.callCount(),
+                "deleting is local; nothing is unpublished and the service is not told");
+    }
+
+    @Test
+    void reportsAPackThatCannotBeDeletedBecauseItIsNotThere() {
+        HttpResponse<String> response = send(HttpRequest.newBuilder()
+                .uri(URI.create(base() + "/api/knowledge/never-had-it"))
+                .header("X-MCAgents-Token", token())
+                .DELETE());
+
+        assertEquals(404, response.statusCode());
+    }
+
+    @Test
+    void checksOnePackForAnUpdateWithoutListingTheRest() {
+        store("watched", "1.0.0");
+        transport.reply(200, fullPack("watched", "2.0.0"));
+
+        JsonObject body = json("/api/knowledge/watched/update");
+
+        assertTrue(body.get("updateAvailable").getAsBoolean());
+        assertEquals("1.0.0", body.get("storedVersion").getAsString());
+        assertEquals("2.0.0", body.get("publishedVersion").getAsString());
+        assertEquals(1, transport.callCount(),
+                "one request, for one pack — a reader looking at one pack did not ask about "
+                        + "every other one");
+    }
+
+    @Test
+    void saysWhenOnePackIsAlreadyCurrent() {
+        store("watched", "1.0.0");
+        transport.reply(200, fullPack("watched", "1.0.0"));
+
+        JsonObject body = json("/api/knowledge/watched/update");
+
+        assertFalse(body.get("updateAvailable").getAsBoolean());
+        assertTrue(body.get("stored").getAsBoolean());
+    }
+
     // ------------------------------------------------------------- plumbing
 
     private void store(String id, String version) {

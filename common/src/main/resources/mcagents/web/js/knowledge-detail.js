@@ -59,6 +59,7 @@
     ]);
 
     document.getElementById('download-panel').hidden = pack.stored;
+    document.getElementById('stored-actions').hidden = !pack.stored;
     /* The embedding section is about a stored pack's vector. There is nothing truthful to
      * put in it for a pack that has not been downloaded. */
     document.getElementById('embedding-panel').hidden = !pack.stored;
@@ -118,6 +119,57 @@
         note.className = 'sync-note is-error';
       } finally {
         button.disabled = false;
+      }
+    });
+
+    var storedNote = document.getElementById('stored-note');
+    function say(message, kind) {
+      storedNote.textContent = message || '';
+      storedNote.className = 'sync-note' + (kind ? ' is-' + kind : '');
+    }
+
+    var checkButton = document.getElementById('check-update');
+    checkButton.addEventListener('click', async function () {
+      checkButton.disabled = true;
+      say('Checking…');
+      try {
+        /* This pack only. The chat page is where the whole library is checked; asking about
+         * every other pack from here would cost a listing the reader did not ask for. */
+        var status = await M.api('/knowledge/' + encodeURIComponent(id) + '/update');
+        say(status.updateAvailable
+          ? 'Version ' + status.publishedVersion + ' is published. Download it to update — '
+            + 'the current embedding is dropped, because the new version is new text.'
+          : 'This is the published version.', status.updateAvailable ? '' : 'ok');
+        /* An update turns the page back into a download offer, so the button that applies it
+         * is on screen rather than a page reload away. */
+        document.getElementById('download-panel').hidden = !status.updateAvailable;
+      } catch (error) {
+        say(error.message, 'error');
+      } finally {
+        checkButton.disabled = false;
+      }
+    });
+
+    var deleteButton = document.getElementById('delete-pack');
+    deleteButton.addEventListener('click', async function () {
+      /* Confirmed, because it is not undoable from here — the pack has to be downloaded
+       * again, and its embedding recomputed and paid for. */
+      if (!window.confirm('Delete this pack from this machine? '
+          + 'You can download it again, but it will need embedding again too.')) {
+        return;
+      }
+      deleteButton.disabled = true;
+      say('Deleting…');
+      try {
+        await M.api('/knowledge/' + encodeURIComponent(id), { method: 'DELETE' });
+        /* Re-read rather than patched: the pack is gone, so this page is now the view of a
+         * pack the service has and this machine does not — which it already knows how to be. */
+        await load();
+        say('Deleted. It is available to download again.', 'ok');
+      } catch (error) {
+        say(error.message, 'error');
+      } finally {
+        deleteButton.disabled = false;
       }
     });
 

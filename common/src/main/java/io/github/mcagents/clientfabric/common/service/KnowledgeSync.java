@@ -110,6 +110,24 @@ public final class KnowledgeSync {
     }
 
     /**
+     * Whether one pack is behind what the service publishes.
+     *
+     * <p>The check on a pack's own page, where the whole-library check would be the wrong
+     * question: a reader looking at one pack wants to know about that pack, and asking about
+     * every other one costs a listing they did not ask for.
+     *
+     * <p>One request, by id, and it downloads nothing.
+     */
+    public CompletableFuture<PackStatus> checkPack(String id) {
+        Objects.requireNonNull(id, "id");
+        return database.contents().findById(id).thenCompose(stored ->
+                service.content(id).thenApply(published -> new PackStatus(
+                        id,
+                        stored.map(KnowledgeContent::version).orElse(null),
+                        published.version())));
+    }
+
+    /**
      * Fetches the pack describing the mod, if it is missing or behind.
      *
      * <p>Called once at startup. It is the one thing the mod fetches without being asked,
@@ -236,6 +254,26 @@ public final class KnowledgeSync {
                         ? carried.withDownloaded()
                         : carried.withFailure(id))
                 .thenCompose(next -> downloadEach(rest, next));
+    }
+
+    /**
+     * Where one pack stands against what is published.
+     *
+     * @param id             the pack
+     * @param storedVersion  what this machine has, or {@code null} if it has none
+     * @param publishedVersion what the service publishes
+     */
+    public record PackStatus(String id, String storedVersion, String publishedVersion) {
+
+        /** Whether downloading would change anything. */
+        public boolean updateAvailable() {
+            return !publishedVersion.equals(storedVersion);
+        }
+
+        /** Whether this machine has the pack at all. */
+        public boolean stored() {
+            return storedVersion != null;
+        }
     }
 
     /**

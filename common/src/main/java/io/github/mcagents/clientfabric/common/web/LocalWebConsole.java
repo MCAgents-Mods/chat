@@ -272,6 +272,13 @@ public final class LocalWebConsole implements WebConsole {
                 return;
             }
         }
+        if (path.startsWith("/api/knowledge/") && path.endsWith("/update")
+                && method.equals("GET")) {
+            String id = path.substring("/api/knowledge/".length(),
+                    path.length() - "/update".length());
+            sendJson(exchange, 200, api.packUpdate(decode(id)));
+            return;
+        }
         if (path.startsWith("/api/knowledge/") && path.endsWith("/download")
                 && method.equals("POST")) {
             String id = path.substring("/api/knowledge/".length(),
@@ -315,6 +322,11 @@ public final class LocalWebConsole implements WebConsole {
         }
         if (path.equals("/api/catalog") && method.equals("GET")) {
             sendJson(exchange, 200, api.catalog());
+            return;
+        }
+        if (path.startsWith("/api/knowledge/") && method.equals("DELETE")) {
+            String id = decode(path.substring("/api/knowledge/".length()));
+            sendChanged(exchange, api.deletePack(id), "No such Knowledge Pack.");
             return;
         }
         if (path.startsWith("/api/knowledge/") && method.equals("GET")) {
