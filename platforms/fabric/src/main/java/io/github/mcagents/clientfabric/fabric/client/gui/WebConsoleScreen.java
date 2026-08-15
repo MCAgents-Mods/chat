@@ -1,7 +1,7 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
-import io.github.mcagents.clientfabric.common.web.LocalWebConsole;
+import io.github.mcagents.clientfabric.website.LocalWebConsole;
 import io.github.mcagents.clientfabric.common.ui.StackedRows;
 import io.github.mcagents.clientfabric.common.wallet.SystemBrowser;
 import io.github.mcagents.clientfabric.fabric.MCAgentsClientMod;

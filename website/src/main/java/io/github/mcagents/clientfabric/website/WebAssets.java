@@ -1,4 +1,4 @@
-package io.github.mcagents.clientfabric.common.web;
+package io.github.mcagents.clientfabric.website;
 
 import java.io.IOException;
 import java.io.InputStream;

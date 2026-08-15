@@ -43,16 +43,21 @@ dependencies {
 
     implementation project(':mcagents-fabric-api')
     implementation project(':mcagents-fabric-common')
+    implementation project(':mcagents-fabric-website')
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
     include libs.sqlite.jdbc
 }
 
-// api/ and common/ are plain JVM modules, so their classes are merged into the mod jar
-// rather than nested as separate Fabric mods. Third-party runtime libraries are bundled
-// with Loom's `include` instead.
-def bundledModules = [':mcagents-fabric-api', ':mcagents-fabric-common']
+// api/, common/ and website/ are plain JVM modules, so their classes and resources are
+// merged into the mod jar rather than nested as separate Fabric mods. Third-party runtime
+// libraries are bundled with Loom's `include` instead.
+def bundledModules = [
+        ':mcagents-fabric-api',
+        ':mcagents-fabric-common',
+        ':mcagents-fabric-website'
+]
 
 tasks.named('jar', Jar) {
     bundledModules.each { path ->

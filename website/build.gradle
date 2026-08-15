@@ -1,0 +1,64 @@
+// The web console: the loopback server, its routes, and the pages it serves.
+//
+// A module of its own because it is one purpose with one boundary — everything a browser
+// ever sees, and nothing else. It sits above common/ rather than beside it: the console
+// reads storage, drives the agent, syncs knowledge, and files wallets, so it depends on
+// those implementations, and nothing in common/ depends back on it.
+//
+// Like common/, this must compile and be testable without Minecraft on the classpath. See
+// .agents/rules/repository.md.
+
+plugins {
+    id 'java-library'
+}
+
+base {
+    archivesName = 'mcagents-fabric-website'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = libs.versions.java.get() as int
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // api rather than implementation: platforms/fabric holds a WebConsole and calls into
+    // the same records this module returns, so it needs both on its compile classpath.
+    api project(':mcagents-fabric-common')
+
+    // Minecraft ships Gson, so it is present at runtime in the game and must NOT be
+    // bundled. compileOnly here says exactly that: compile against it, ship nothing.
+    compileOnly libs.gson
+    testImplementation libs.gson
+
+    // The doubles that stand in for a network and for MetaMask. They live in common's
+    // test fixtures because both modules test against them, and a test source set is not
+    // shared between Gradle projects.
+    testImplementation testFixtures(project(':mcagents-fabric-common'))
+
+    // The tests open a real SQLite database. common/ keeps sqlite-jdbc off its consumers'
+    // compile classpath on purpose — nothing here names a sqlite type — so it is asked for
+    // at runtime only.
+    testRuntimeOnly libs.sqlite.jdbc
+
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}

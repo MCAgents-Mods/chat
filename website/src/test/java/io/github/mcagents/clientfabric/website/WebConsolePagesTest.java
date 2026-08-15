@@ -1,4 +1,4 @@
-package io.github.mcagents.clientfabric.common.web;
+package io.github.mcagents.clientfabric.website;
 
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
