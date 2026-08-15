@@ -54,11 +54,16 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 239 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 265 tests, all in `common/`.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
   `CachingModelClient` (embeddings cached, completions deliberately not).
+* Knowledge: published as text with no vector. `KnowledgeSync` downloads — the whole
+  difference, or one pack by id — and `EmbeddingBackfill` gives stored packs a vector using
+  the player's own embedding model, because a vector is only comparable inside the space of
+  the model that made it. Startup fetches and version-checks `mcagents-info` and nothing
+  else; everything else is checked when `/chat/` opens.
 * Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
   cosine similarity, and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
@@ -126,10 +131,14 @@ Two things are outstanding, and the second is the more interesting.
    source set, so nothing here can prove any of them. One session in a real client would
    settle all four, plus a binding through the real MetaMask extension and a message typed
    in game appearing in a browser tab.
-2. **Every pack the live service publishes carries `embeddedData` of `"[]"`.** Retrieval
-   is built, tested, and correct, and it currently selects nothing from real content
-   because there are no vectors to match. Until the catalog publishes embeddings, the
-   feature is only demonstrable against seeded data.
+2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
+   the failure path is exercised and the success path is not. One press with a real key
+   would settle it — and would be the first end-to-end proof that a downloaded pack can be
+   retrieved against.
+
+The `embeddedData: "[]"` gap recorded earlier is closed, and was never a content bug: the
+service publishes text on purpose and the client embeds it. The placeholder `example-*`
+packs are gone, replaced by five written from the README and wiki.
 
 Then wire retrieval, so downloaded Knowledge Packs actually reach the prompt, and after that
 the content browser and its download path against `MCAgents/server-fabric-expressjs`.

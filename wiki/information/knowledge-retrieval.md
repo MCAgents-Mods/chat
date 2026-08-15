@@ -3,6 +3,53 @@
 The mod can put relevant Knowledge Packs in front of your question before it asks the
 model. This page is what that means, what it costs, and how to turn it off.
 
+## Getting packs onto your machine
+
+Packs live on the knowledge service and do nothing until they are on your disk. There are
+three ways to get them there, and they exist for different moments.
+
+| | What it fetches | Where |
+|---|---|---|
+| **Automatic, at startup** | `mcagents-info` only | Every time the game loads |
+| **Download** | One pack | That pack's page, `/knowledge/<id>` |
+| **Update knowledge** / **Refresh** | Everything missing or out of date | The chat page, and `/knowledge/` |
+
+**Only one pack is fetched without being asked for**, and only at startup: the pack
+describing the mod, so the agent can answer "what are you". A game that stalled on somebody
+else's host while it loaded would be a game that stalled, so nothing else is checked there.
+
+**Everything else is checked when the chat page opens.** It tells you how many updates are
+waiting — that check is one request and downloads nothing. Pressing **Update knowledge** is
+what actually fetches them.
+
+To browse what exists without taking all of it, open `/knowledge/`. Below your own library
+is **Available to download**: packs the service publishes that you do not have. Open one and
+its page has a **Download** button. That page works for a pack you do not own — the console
+shows it from the service — which is the only reason a download button can live there.
+
+## Embedding what you downloaded
+
+**A pack you just downloaded cannot be retrieved against yet.** It arrives as text with no
+vector, and it stays inert until it has one.
+
+That is on purpose. A vector is only comparable inside the space of the model that produced
+it, so a vector shipped by the service would silently force every player onto whichever
+model the service happened to use. Instead the service ships text and *your* client embeds
+it with *your* embedding model.
+
+**Check embeddings**, in the chat page header, is what does it. It embeds every stored pack
+that has no usable vector, one at a time, with your embedding model. The header also tells
+you how many are waiting — counting is free, so the page says so on load rather than leaving
+you to wonder why the agent knows nothing about a pack you can plainly see.
+
+It also re-embeds the whole library when you change your embedding model, because that is
+exactly what changing it means. The mod records which model embedded the library, so it
+knows; it does not guess from the vectors.
+
+The button asks your model provider, not the knowledge service, so it works while the
+service is asleep — and it works with the Embedding switch off, because the switch governs
+whether retrieval happens, not whether you may prepare for it.
+
 ## What happens when you ask something
 
 1. Your question is sent to your **embedding model**, which returns a vector — a list of
@@ -69,8 +116,8 @@ mean nothing. The mod detects this — vectors of different lengths cannot be co
 those packs, and says so in the log. The fix is to re-embed the library, not to change the
 switch.
 
-**A pack published without an embedding never takes part.** The list marks these *No
-embedding*.
+**A pack published without an embedding never takes part** until you embed it. The list
+marks these *No embedding*; **Check embeddings** on the chat page fixes them.
 
 **Retrieval failing never stops an answer.** If the embedding call fails — no key, rate
 limited, provider down, a model id that does not exist — you get an answer without the extra
@@ -90,7 +137,7 @@ flipping the switch never costs you an uncached turn.
 | Layer | What it holds |
 |---|---|
 | `api/` | `ModelPreferences` — the two model ids and the switch, loaded together |
-| `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement) |
+| `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement), `EmbeddingBackfill` (giving packs a vector), `KnowledgeSync` (downloading) |
 | `platforms/fabric/` | the toggle on `ModelSettingsScreen` |
 
 ## Related
