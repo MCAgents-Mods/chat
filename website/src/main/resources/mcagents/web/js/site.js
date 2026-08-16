@@ -321,6 +321,15 @@
     field.autocomplete = 'off';
     fieldWrap.appendChild(field);
 
+    /* A second field rather than a textarea that pretends to be both: a one-line rename and
+     * a page of markdown want different sizes, different fonts, and different things from
+     * the Enter key. Built once here, shown one at a time. */
+    var areaWrap = el('div', 'dialog__field');
+    var area = el('textarea', 'field dialog__textarea');
+    area.spellcheck = false;
+    area.autocomplete = 'off';
+    areaWrap.appendChild(area);
+
     var actions = el('div', 'dialog__actions');
     var cancel = el('button', 'btn', 'Cancel');
     cancel.type = 'button';
@@ -332,13 +341,15 @@
     box.appendChild(title);
     box.appendChild(body);
     box.appendChild(fieldWrap);
+    box.appendChild(areaWrap);
     box.appendChild(actions);
     scrim.appendChild(box);
     document.body.appendChild(scrim);
 
     dialogParts = {
       scrim: scrim, box: box, title: title, body: body,
-      fieldWrap: fieldWrap, field: field, cancel: cancel, confirm: confirm
+      fieldWrap: fieldWrap, field: field, areaWrap: areaWrap, area: area,
+      cancel: cancel, confirm: confirm
     };
     return dialogParts;
   }
@@ -349,20 +360,26 @@
    * Resolves rather than rejects on cancel: cancelling is an ordinary answer, and a caller
    * that had to catch it would treat "no" as a failure.
    *
-   * @param options title, message, confirmLabel, danger, and prompt/value for a text answer
+   * @param options title, message, confirmLabel, danger, and prompt/value for a text answer;
+   *                multiline for a whole document rather than a line, and wide for a box to
+   *                read it in
    * @returns false or null when cancelled; true, or the typed string, when confirmed
    */
   function openDialog(options) {
     var parts = buildDialog();
     var settings = options || {};
     var wantsText = Object.prototype.hasOwnProperty.call(settings, 'value');
+    var multiline = wantsText && settings.multiline === true;
+    var input = multiline ? parts.area : parts.field;
     var returning = document.activeElement;
 
     parts.title.textContent = settings.title || 'Are you sure?';
     parts.body.textContent = settings.message || '';
     parts.body.hidden = !settings.message;
-    parts.fieldWrap.hidden = !wantsText;
-    parts.field.value = wantsText ? (settings.value || '') : '';
+    parts.fieldWrap.hidden = !wantsText || multiline;
+    parts.areaWrap.hidden = !multiline;
+    input.value = wantsText ? (settings.value || '') : '';
+    parts.box.classList.toggle('dialog--wide', settings.wide === true);
     parts.confirm.textContent = settings.confirmLabel || 'Confirm';
     parts.confirm.className = 'btn ' + (settings.danger ? 'btn--danger' : 'btn--primary');
     parts.cancel.textContent = settings.cancelLabel || 'Cancel';
@@ -371,9 +388,14 @@
     /* The text box if there is one, otherwise Cancel — never the confirming button. The
      * dialog opens under wherever the reader was already clicking, and a stray second click
      * must not be able to land on the destructive choice. */
-    (wantsText ? parts.field : parts.cancel).focus();
-    if (wantsText) {
-      parts.field.select();
+    (wantsText ? input : parts.cancel).focus();
+    if (wantsText && !multiline) {
+      /* Selected so a rename can be replaced by typing. Never for a document: the first
+       * keystroke would delete everything the reader came here to edit. */
+      input.select();
+    } else if (multiline) {
+      input.setSelectionRange(0, 0);
+      input.scrollTop = 0;
     }
 
     return new Promise(function (resolve) {
@@ -389,7 +411,7 @@
         resolve(answer);
       }
       function onCancel() { close(wantsText ? null : false); }
-      function onConfirm() { close(wantsText ? parts.field.value : true); }
+      function onConfirm() { close(wantsText ? input.value : true); }
       function onScrim(event) {
         /* Only the backdrop itself. A drag that started inside the box and ended out here
          * is a text selection, not a dismissal. */
@@ -404,6 +426,12 @@
           return;
         }
         if (event.key === 'Enter' && (wantsText || document.activeElement !== parts.cancel)) {
+          /* In a document, Enter is a new line and nothing else. Saving on Enter would make
+           * the return key destructive in the one place a reader presses it constantly, so
+           * the button — or Ctrl/Cmd+Enter — is the only way to commit. */
+          if (multiline && !(event.ctrlKey || event.metaKey)) {
+            return;
+          }
           event.preventDefault();
           onConfirm();
           return;
@@ -414,7 +442,7 @@
         /* Focus stays inside while this is open, which is what "modal" means to anyone
          * navigating by keyboard. */
         var focusable = wantsText
-          ? [parts.field, parts.cancel, parts.confirm]
+          ? [input, parts.cancel, parts.confirm]
           : [parts.cancel, parts.confirm];
         var index = focusable.indexOf(document.activeElement);
         var next = event.shiftKey ? index - 1 : index + 1;

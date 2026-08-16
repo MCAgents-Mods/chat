@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
+import io.github.mcagents.clientfabric.api.agent.PersonaStore;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.web.WebConsole;
 import io.github.mcagents.clientfabric.api.web.WebConsoleException;
@@ -78,8 +79,17 @@ public final class LocalWebConsole implements WebConsole {
 
     private static final int TOKEN_BYTES = 32;
 
-    /** Enough for a prompt; anything larger is not a request one of these pages made. */
-    private static final int MAX_BODY_BYTES = 64 * 1024;
+    /**
+     * Enough for the largest thing a page sends, which is now {@code AGENTS.md} rather than
+     * a prompt.
+     *
+     * <p>Still bounded, and the bound still matters: this listens on a socket anything on
+     * the machine can open, and an unbounded read there is a way to make the game run out
+     * of memory. It is sized so that a persona at the in-game editor's own character limit
+     * fits with its JSON escaping, because a save that was silently cut in half would be
+     * the worst possible failure for a file somebody wrote by hand.
+     */
+    private static final int MAX_BODY_BYTES = 256 * 1024;
 
     /** Enough to answer a page's parallel fetches without letting the pool grow unbounded. */
     private static final int WORKER_THREADS = 4;
@@ -124,15 +134,41 @@ public final class LocalWebConsole implements WebConsole {
     }
 
     /**
+     * @param personaStore the player's {@code AGENTS.md}, for a caller that has one but has
+     *                     no model client to give — the default one is built, exactly as it
+     *                     is for the overloads above
+     */
+    public static LocalWebConsole start(LocalDatabase database, Agent agent,
+                                        CentralService service, PersonaStore personaStore) {
+        return start(database, agent, service, defaultModelClient(database), personaStore);
+    }
+
+    /**
      * @param modelClient used only to embed stored packs; the console never completes a chat
      *                    with it, because that is what {@code agent} is for
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent,
                                         CentralService service, ModelClient modelClient) {
+        // Without a game directory there is no AGENTS.md to serve. The persona routes say
+        // so rather than inventing an empty file to save into.
+        return start(database, agent, service, modelClient, PersonaStore.notConfigured());
+    }
+
+    /**
+     * @param personaStore the player's {@code AGENTS.md}. <strong>The same instance the game
+     *                     uses</strong>: a save made on the chat page has to be the persona
+     *                     the next in-game question is asked with, and a second store would
+     *                     hold a second copy of the file for exactly as long as it took the
+     *                     player to notice
+     */
+    public static LocalWebConsole start(LocalDatabase database, Agent agent,
+                                        CentralService service, ModelClient modelClient,
+                                        PersonaStore personaStore) {
         Objects.requireNonNull(database, "database");
         Objects.requireNonNull(agent, "agent");
         Objects.requireNonNull(service, "service");
         Objects.requireNonNull(modelClient, "modelClient");
+        Objects.requireNonNull(personaStore, "personaStore");
 
         HttpServer server;
         try {
@@ -156,7 +192,7 @@ public final class LocalWebConsole implements WebConsole {
 
         LocalWebConsole console = new LocalWebConsole(server, workers,
                 new WebApi(database, agent, service, new KnowledgeSync(service, database),
-                        new EmbeddingBackfill(database, modelClient)),
+                        new EmbeddingBackfill(database, modelClient), personaStore),
                 token, url);
 
         server.createContext("/", console::route);
@@ -285,6 +321,16 @@ public final class LocalWebConsole implements WebConsole {
                     path.length() - "/download".length());
             sendJson(exchange, 200, api.downloadPack(decode(id)));
             return;
+        }
+        if (path.equals("/api/agent/persona")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.persona());
+                return;
+            }
+            if (method.equals("PUT")) {
+                sendJson(exchange, 200, api.savePersona(readBody(exchange)));
+                return;
+            }
         }
         if (path.equals("/api/models")) {
             if (method.equals("GET")) {

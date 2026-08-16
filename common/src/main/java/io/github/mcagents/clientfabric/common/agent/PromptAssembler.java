@@ -1,5 +1,6 @@
 package io.github.mcagents.clientfabric.common.agent;
 
+import io.github.mcagents.clientfabric.api.agent.PlayerEnvironment;
 import io.github.mcagents.clientfabric.api.agent.PromptMessage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
@@ -20,6 +21,7 @@ import java.util.List;
  * <ol>
  *   <li>the persona from {@code {minecraft_dir}/MCAgents/AGENTS.md} — unchanged for as
  *       long as the player does not edit it;</li>
+ *   <li>where the player is playing — unchanged for as long as they stay there;</li>
  *   <li>the conversation so far — grows by appending, so every earlier turn stays
  *       byte-identical;</li>
  *   <li>the new question, last.</li>
@@ -38,14 +40,26 @@ public final class PromptAssembler {
     }
 
     /**
-     * Builds the message list, with no retrieved content.
+     * Builds the message list, with no retrieved content and no environment.
      *
      * @param persona  the player's instructions, or blank if they have written none
      * @param messages the stored conversation, oldest first, already including the
      *                 player's newest message
      */
     public static List<PromptMessage> assemble(String persona, List<ChatMessage> messages) {
-        return assemble(persona, messages, List.of());
+        return assemble(persona, PlayerEnvironment.unknown(), messages, List.of());
+    }
+
+    /**
+     * Builds the message list, with no environment.
+     *
+     * @param persona   the player's instructions, or blank if they have written none
+     * @param messages  the stored conversation, oldest first
+     * @param knowledge the packs retrieval chose, best first
+     */
+    public static List<PromptMessage> assemble(String persona, List<ChatMessage> messages,
+                                               List<KnowledgeContent> knowledge) {
+        return assemble(persona, PlayerEnvironment.unknown(), messages, knowledge);
     }
 
     /**
@@ -56,21 +70,39 @@ public final class PromptAssembler {
      * before the question, so the thing the model is being asked stays last. See the class
      * note: putting them in the persona would re-bill the whole conversation every turn.
      *
-     * @param persona   the player's instructions, or blank if they have written none
-     * @param messages  the stored conversation, oldest first, already including the
-     *                  player's newest message
-     * @param knowledge the packs retrieval chose, best first; empty when retrieval is off,
-     *                  found nothing, or could not run
+     * <p>The environment goes in its own system message directly after the persona, and
+     * <strong>not inside it</strong>. Two reasons, and the second is the one that matters:
+     * the persona is the player's own file and appending to it would put words in it they
+     * did not write; and a player who walks from one server to another would otherwise
+     * change the first bytes of the request, throwing away a cached prefix that is
+     * identical apart from one line. Separated, the persona keeps its breakpoint and only
+     * the short note behind it changes.
+     *
+     * @param persona     the player's instructions, or blank if they have written none
+     * @param environment where the player is playing; {@link PlayerEnvironment.Kind#UNKNOWN}
+     *                    adds nothing to the prompt at all
+     * @param messages    the stored conversation, oldest first, already including the
+     *                    player's newest message
+     * @param knowledge   the packs retrieval chose, best first; empty when retrieval is off,
+     *                    found nothing, or could not run
      */
-    public static List<PromptMessage> assemble(String persona, List<ChatMessage> messages,
+    public static List<PromptMessage> assemble(String persona, PlayerEnvironment environment,
+                                               List<ChatMessage> messages,
                                                List<KnowledgeContent> knowledge) {
-        List<PromptMessage> prompt = new ArrayList<>(messages.size() + 2);
+        List<PromptMessage> prompt = new ArrayList<>(messages.size() + 3);
 
         String instructions = persona == null || persona.isBlank()
                 ? defaultPersona()
                 : persona.trim();
         // Breakpoint one: the persona is byte-identical until the player edits their file.
         prompt.add(PromptMessage.system(instructions).asCacheBreakpoint());
+
+        // No breakpoint of its own. It sits between the persona's breakpoint and the one on
+        // the newest completed answer, which already covers it in every request after the
+        // first — and a third breakpoint buys one short line of reuse for a write.
+        if (environment != null && environment.isKnown()) {
+            prompt.add(PromptMessage.system(whereThePlayerIs(environment)));
+        }
 
         int lastSettledTurn = lastSettledTurnIndex(messages);
         int questionIndex = knowledge.isEmpty() ? -1 : newestQuestionIndex(messages);
@@ -94,10 +126,36 @@ public final class PromptAssembler {
             prompt.add(PromptMessage.system(reference(knowledge)));
         }
 
-        if (prompt.size() == 1) {
+        // Counted from the conversation rather than from the prompt's size: the prompt now
+        // starts with either one leading system message or two, and a size check would have
+        // quietly started accepting an empty conversation the day the environment arrived.
+        if (messages.isEmpty()) {
             throw new IllegalArgumentException("A prompt needs at least one stored message");
         }
         return List.copyOf(prompt);
+    }
+
+    /**
+     * Where the player is, as one short system message.
+     *
+     * <p>The context itself is on its own line and unaltered — for single player it is
+     * {@link PlayerEnvironment#SINGLE_PLAYER_CONTEXT} exactly, and for a server it is the
+     * address and nothing else. The lines around it say what the value is and what to do
+     * with it, because an address dropped into a prompt with no frame reads as noise.
+     *
+     * <p>It is told to prefer the player's own account of where they are. A client knows
+     * the address it dialled; it does not know that the address is a proxy in front of
+     * fifty minigame servers, and the player does.
+     */
+    private static String whereThePlayerIs(PlayerEnvironment environment) {
+        return """
+                Where the player is playing right now, as reported by their game client:
+
+                %s
+
+                Take this into account when it changes the answer — server rules, plugins, \
+                and versions all do. If the player says something different about where \
+                they are, believe the player.""".formatted(environment.context());
     }
 
     /**

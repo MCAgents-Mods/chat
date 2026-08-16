@@ -38,6 +38,13 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   given. The `/wallets/` page has been driven in Chromium. See
   `.agents/memory/tasks/wallet-binding.md` and
   `.agents/memory/tasks/wallet-accounts.md`.
+* **The persona file and the server context.** `AGENTS.md` is written on first run, edited
+  from `PersonaScreen` in game and from a modal on the console's `/chat/` page, and reloaded
+  into the one shared `FilePersonaStore` as it is saved. The agent is told where the player
+  is playing — a server address, or exactly `Player is playing in single player.` — through
+  `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. The
+  browser half was driven in Chromium; **no screen has been opened in a real client and no
+  join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
 * Key rotation, retry with backoff, and the failure messages for each `ModelException` kind
   — all covered by tests against a stub transport, none seen against real OpenRouter.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
@@ -58,7 +65,17 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 282 tests, all in `common/`.
+* Every I/O method returns `CompletableFuture`. 344 tests across `common/` and `website/`.
+* The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
+  game session**, held by `AgentFactory` and handed to the console, so a save from either
+  interface is the persona the next question uses. It generates the file when it is missing
+  and never rewrites it after that, and its cache re-reads whenever the file's timestamp or
+  size has moved — which is what keeps a text editor working without a disk read per turn.
+* The environment: `PlayerEnvironment` and `EnvironmentSource` in `api/`, recorded by
+  `GameEnvironment` on join and cleared on disconnect. `PromptAssembler` puts it in its own
+  system message **after** the persona, with no breakpoint of its own: the persona is the
+  player's file and the cached prefix, and changing servers must not invalidate it. Not
+  knowing where the player is adds nothing to the prompt at all.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
@@ -143,14 +160,17 @@ answers with `RateLimit-*` headers.
 Two things are outstanding, and the second is the more interesting.
 
 1. Wallets — now a screen of account columns rather than one account behind a dropdown —
-   the web console, the console button, and the embedding toggle on
-   `ModelSettingsScreen` are compile-verified and unopened. `platforms/fabric` has no test
-   source set, so nothing here can prove any of them. One session in a real client would
-   settle them all, plus a binding through the real MetaMask extension and a message typed
-   in game appearing in a browser tab. **A screenshot found two collisions on
-   `WebConsoleScreen` that had survived several rounds** — the arithmetic behind that screen
-   is under test now, in `common/ui/StackedRows`, but what a screen *looks* like still is
-   not.
+   the web console, the console button, the embedding toggle on `ModelSettingsScreen`, and
+   now the persona editor and the join-event detection behind the server context are
+   compile-verified and unopened. `platforms/fabric` has no test source set, so nothing here
+   can prove any of them. One session in a real client would settle them all, plus a binding
+   through the real MetaMask extension and a message typed in game appearing in a browser
+   tab. **A screenshot found two collisions on `WebConsoleScreen` that had survived several
+   rounds** — the arithmetic behind that screen is under test now, in
+   `common/ui/StackedRows`, but what a screen *looks* like still is not. The two cheapest
+   checks in that session: open the AGENTS.md screen and type a long persona into it, and
+   watch `logs/latest.log` for the `Player environment is now …` line when joining a world,
+   a server, and a realm.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
    would settle it — and would be the first end-to-end proof that a downloaded pack can be
