@@ -5,6 +5,7 @@ import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
+import io.github.mcagents.clientfabric.fabric.client.GameEnvironment;
 import io.github.mcagents.clientfabric.fabric.client.KnowledgeSyncFactory;
 import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
 import io.github.mcagents.clientfabric.fabric.client.WebConsoleHolder;
@@ -63,6 +64,10 @@ public final class MCAgentsClientMod implements ClientModInitializer {
         // here — and because that throw would crash startup outright, a game that reaches
         // the main menu has proven its key mappings registered.
         MCAgentsKeyMappings.register();
+        // Registering a listener cannot fail and needs nothing on disk, so it goes beside
+        // the key mapping rather than after storage: a player can be in a world before the
+        // database has finished opening, and the join they made is the one worth recording.
+        GameEnvironment.register();
         registerShutdownHook();
 
         paths = ClientPaths.under(FabricLoader.getInstance().getGameDir());

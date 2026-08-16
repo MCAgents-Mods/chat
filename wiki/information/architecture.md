@@ -95,9 +95,9 @@ and `getNow()` are never called from render or tick code.
 1. The player types a prompt in the chat screen (`platforms/fabric/`).
 2. The prompt is embedded and matched against the stored Knowledge Pack embeddings
    (`common/`), returning only the closest content.
-3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, the session's
-   prior messages from the local database, the retrieved content, and the prompt are
-   assembled into a request (`common/`).
+3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
+   is playing, the session's prior messages from the local database, the retrieved content,
+   and the prompt are assembled into a request (`common/`).
 4. The request goes to OpenRouter with the player's key. The screen shows an animated
    waiting state while the future is pending.
 5. The answer is written to the local database as the next message in the session and
@@ -107,18 +107,31 @@ Steps 1, 3, and 5 work with no internet. Step 2 works with whatever was already
 downloaded. Only step 4 needs OpenRouter, and only downloading *new* packs needs the
 central service.
 
-## The persona is a file, and one store owns it
+## The player's own two inputs
 
-`PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the only thing that
-reads or writes it. The mod writes a starting file the first time it runs, so a player who
-has never heard of the file still has one to edit; after that it is theirs, and nothing in
-the mod rewrites it.
+Two things in that request come from the player rather than from a database, and both cross
+the module boundary the same way — as a contract in `api/` that `platforms/fabric`
+implements or supplies.
 
-It can be edited from the in-game screen, from the console's chat page, or in a text editor,
-and all three agree because **there is one store per game session** and every screen is
-handed the same instance. It caches the text and re-reads whenever the file's timestamp or
-size has moved, which is what keeps the text editor working without a disk read per
-question.
+**The persona.** `PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the
+only thing that reads or writes it. The mod writes a starting file the first time it runs,
+so a player who has never heard of the file still has one to edit; after that it is theirs,
+and nothing in the mod rewrites it. It can be edited from the in-game screen, from the
+console's chat page, or in a text editor, and all three agree because **there is one store
+per game session** and every screen is handed the same instance. It caches the text and
+re-reads whenever the file's timestamp or size has moved, which is what keeps the text
+editor working without a disk read per question.
+
+**Where the player is.** `EnvironmentSource` answers "single player, a server, or not in a
+world", and `platforms/fabric` records the answer from the game's connection events. It
+reaches the model as one short system message after the persona rather than inside it: the
+persona is the player's file, and it is also the cached prefix of every request — a player
+walking from one server to another should not invalidate it. Single player is reported as
+one exact sentence, `Player is playing in single player.`, because the generated `AGENTS.md`
+quotes that sentence back and instructions written against it have to keep matching.
+
+Nothing else about the game is sent. Inventory, coordinates, and chat logs stay on the
+machine.
 
 ## Local database
 

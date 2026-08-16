@@ -3,6 +3,7 @@ package io.github.mcagents.clientfabric.common.agent;
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.ChatCompletion;
 import io.github.mcagents.clientfabric.api.agent.ChatRequest;
+import io.github.mcagents.clientfabric.api.agent.EnvironmentSource;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.agent.ModelException;
 import io.github.mcagents.clientfabric.api.agent.PersonaStore;
@@ -35,18 +36,33 @@ public final class OpenRouterAgent implements Agent {
     private final ModelClient client;
     private final KnowledgeRetriever retriever;
     private final PersonaStore persona;
+    private final EnvironmentSource environment;
 
     /**
      * @param database the player's local store
      * @param client   the model client
-     * @param persona  the player's {@code AGENTS.md}; the store creates it if it is
-     *                 missing, and is shared with every screen that can edit it so a save
-     *                 is in force by the next question
+     * @param persona  the player's {@code AGENTS.md}; the store creates it if it is missing
      */
     public OpenRouterAgent(LocalDatabase database, ModelClient client, PersonaStore persona) {
+        this(database, client, persona, EnvironmentSource.unknown());
+    }
+
+    /**
+     * @param database    the player's local store
+     * @param client      the model client
+     * @param persona     the player's {@code AGENTS.md}; the store creates it if it is
+     *                    missing, and is shared with every screen that can edit it so a
+     *                    save is in force by the next question
+     * @param environment where the player is playing, asked at request time rather than at
+     *                    construction time — an agent built at the main menu answers
+     *                    questions asked on a server
+     */
+    public OpenRouterAgent(LocalDatabase database, ModelClient client, PersonaStore persona,
+                           EnvironmentSource environment) {
         this.database = Objects.requireNonNull(database, "database");
         this.client = Objects.requireNonNull(client, "client");
         this.persona = Objects.requireNonNull(persona, "persona");
+        this.environment = Objects.requireNonNull(environment, "environment");
         this.retriever = new KnowledgeRetriever(database, client);
     }
 
@@ -79,7 +95,9 @@ public final class OpenRouterAgent implements Agent {
 
         return retriever.retrieve(conversation.preferences(), question)
                 .thenCombine(instructions, (knowledge, personaText) -> PromptAssembler.assemble(
-                        personaText, conversation.messages(), knowledge))
+                        // Read here rather than held: the player may have joined a server
+                        // since this agent was built, or since their last question.
+                        personaText, environment.current(), conversation.messages(), knowledge))
                 .thenCompose(messages -> client.complete(
                         new ChatRequest(conversation.preferences().chatModel(), messages)));
     }

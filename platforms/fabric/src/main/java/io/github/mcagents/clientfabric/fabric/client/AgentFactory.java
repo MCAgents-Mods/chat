@@ -39,7 +39,8 @@ public final class AgentFactory {
      * @param paths    the mod's on-disk layout, for the persona file
      */
     public static Agent create(LocalDatabase database, ClientPaths paths) {
-        return new OpenRouterAgent(database, sharedClient(database), personaStore(paths));
+        return new OpenRouterAgent(database, sharedClient(database), personaStore(paths),
+                GameEnvironment.source());
     }
 
     /**

@@ -87,6 +87,10 @@ the AGENTS.md button on the chat screen, from the same button on the console's c
 or in any text editor: a save takes effect on the next question, whichever of the three
 made it.
 
+The agent is also told **where you are playing** — the address of the server you are on, or
+that you are in single player — so an answer can take the server into account. Nothing else
+about your game is sent: not your inventory, not your coordinates, not your chat log.
+
 ## Offline behaviour
 
 **The central service is a content source, not a dependency.** When

@@ -151,6 +151,15 @@ project is developed under.
   Proprietary; three categories of authorized licensee; publisher-verification warning for
   third-party distribution platforms.
 * **README.** Rewritten as an overview pointing at the wiki.
+* **Server context.** The agent is told where the player is playing: the address of the
+  server they are connected to, or exactly `Player is playing in single player.`
+  `PlayerEnvironment` and `EnvironmentSource` in `api/agent` are the contract;
+  `GameEnvironment` in `platforms/fabric` records the value from the Fabric connection
+  events and clears it on disconnect; `PromptAssembler` sends it as one system message
+  **after** the persona rather than inside it, so a player who changes servers does not
+  invalidate the cached prefix of every request, and so the mod never appends words to a
+  file the player wrote. Not knowing where they are adds nothing to the prompt at all —
+  "unknown" is a line a model would try to use.
 * **`AGENTS.md`, written by the mod and edited from either interface.**
   * `PersonaStore` in `api/agent`, `FilePersonaStore` and `DefaultPersona` in
     `common/agent`. Every method returns a `CompletableFuture`; the last synchronous read in
@@ -209,3 +218,8 @@ project is developed under.
   only** — no screen has been opened in a real client, and no join event has ever fired, so
   which of single player, a server, a joined LAN world, and a realm report what is still
   unobserved.
+* The environment note is sent by default and has no switch, which sets aside the clause in
+  `.agents/api/openrouter.md` reserving context injection for something the player turns on.
+  It was done on an explicit instruction and mitigated by disclosure rather than by silence:
+  the generated `AGENTS.md` states exactly what each question carries and what never leaves
+  the machine, and every change of environment is logged.
