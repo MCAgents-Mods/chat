@@ -7,6 +7,7 @@ import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ChatSession;
 import io.github.mcagents.clientfabric.api.storage.ChatRepository;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
+import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.fabric.MCAgentsClientMod;
 import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
 import io.github.mcagents.clientfabric.fabric.client.PlayerAccounts;
@@ -133,6 +134,17 @@ public final class AgentChatScreen extends Screen {
                 .bounds(MARGIN + sidebarWidth - LINE, MARGIN, LINE, LINE)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
                         Component.translatable("gui.mcagents.session.new")))
+                .build());
+
+        // Beside the other three rather than down with the wallets: this one changes how
+        // every answer in the conversation beside it reads, so it belongs on the row the
+        // player looks at before asking something.
+        addRenderableWidget(Button.builder(
+                        Component.literal("📝"),
+                        button -> openPersona())
+                .bounds(width - MARGIN - LINE * 4 - 12, MARGIN, LINE, LINE)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
+                        Component.translatable("gui.mcagents.persona.tip")))
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -344,6 +356,22 @@ public final class AgentChatScreen extends Screen {
         if (minecraft != null && hasStorage()) {
             minecraft.setScreenAndShow(new WebConsoleScreen(database, this));
         }
+    }
+
+    /**
+     * Opens the persona editor.
+     *
+     * <p>The one control on this row that does not need storage: {@code AGENTS.md} is a
+     * file, the database is not involved in reading or writing it, and a player whose
+     * database will not open should still be able to write their instructions.
+     */
+    private void openPersona() {
+        if (minecraft == null) {
+            return;
+        }
+        ClientPaths paths = MCAgentsClientMod.paths();
+        minecraft.setScreenAndShow(new PersonaScreen(
+                AgentFactory.personaStore(paths), paths.instructions(), this));
     }
 
     private void openWallets() {

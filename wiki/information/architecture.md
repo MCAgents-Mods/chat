@@ -107,6 +107,19 @@ Steps 1, 3, and 5 work with no internet. Step 2 works with whatever was already
 downloaded. Only step 4 needs OpenRouter, and only downloading *new* packs needs the
 central service.
 
+## The persona is a file, and one store owns it
+
+`PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the only thing that
+reads or writes it. The mod writes a starting file the first time it runs, so a player who
+has never heard of the file still has one to edit; after that it is theirs, and nothing in
+the mod rewrites it.
+
+It can be edited from the in-game screen, from the console's chat page, or in a text editor,
+and all three agree because **there is one store per game session** and every screen is
+handed the same instance. It caches the text and re-reads whenever the file's timestamp or
+size has moved, which is what keeps the text editor working without a disk read per
+question.
+
 ## Local database
 
 SQLite at `{minecraft_dir}/MCAgents/data.db`, via `org.xerial:sqlite-jdbc`. Eight tables:

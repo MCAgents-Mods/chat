@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import io.github.mcagents.clientfabric.api.agent.Agent;
+import io.github.mcagents.clientfabric.api.agent.PersonaStore;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ContentAvailability;
@@ -91,6 +92,7 @@ final class WebApi {
     private final KnowledgeSync sync;
     private final EmbeddingBackfill backfill;
     private final AccountWallets accountWallets;
+    private final PersonaStore persona;
 
     /**
      * The challenges this console has issued and not yet seen answered.
@@ -101,13 +103,46 @@ final class WebApi {
     private final WalletChallenges challenges = new WalletChallenges();
 
     WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync,
-           EmbeddingBackfill backfill) {
+           EmbeddingBackfill backfill, PersonaStore persona) {
         this.accountWallets = new AccountWallets(database.wallets());
         this.database = database;
         this.agent = agent;
         this.service = service;
         this.sync = sync;
         this.backfill = backfill;
+        this.persona = persona;
+    }
+
+    /**
+     * The player's {@code AGENTS.md}, as text.
+     *
+     * <p>The same store the game reads, so what the browser shows is what the next
+     * question will be asked with — not a copy that has to be kept in step.
+     */
+    JsonObject persona() {
+        JsonObject body = new JsonObject();
+        body.addProperty("content", await(persona.read(), STORAGE_TIMEOUT));
+        return body;
+    }
+
+    /**
+     * Replaces {@code AGENTS.md} with what the reader typed.
+     *
+     * <p>Blank is a legitimate save — emptying the file is how a player goes back to the
+     * built-in persona — but an <em>absent</em> field is not: it means the request said
+     * nothing about the text, and writing a blank file for it would delete somebody's
+     * instructions because a page sent the wrong shape.
+     *
+     * <p>The store makes the new text live as it writes it, so there is nothing to reload
+     * and no window in which the game and the browser disagree.
+     */
+    JsonObject savePersona(String body) {
+        String content = member(body, "content").orElseThrow(() ->
+                new IllegalArgumentException("A save has to carry the text to save."));
+
+        JsonObject result = new JsonObject();
+        result.addProperty("content", await(persona.save(content), STORAGE_TIMEOUT));
+        return result;
     }
 
     /**

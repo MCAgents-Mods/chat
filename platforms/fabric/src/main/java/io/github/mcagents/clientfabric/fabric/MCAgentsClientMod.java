@@ -68,7 +68,30 @@ public final class MCAgentsClientMod implements ClientModInitializer {
         paths = ClientPaths.under(FabricLoader.getInstance().getGameDir());
         LOGGER.info("{} initialising, data directory {}", MCAgents.MOD_NAME, paths.dataDirectory());
 
+        ensurePersonaFile();
         reopenDatabase();
+    }
+
+    /**
+     * Writes {@code AGENTS.md} if the player does not have one yet.
+     *
+     * <p>Separate from opening the database, and not conditional on it: the persona is a
+     * file the player edits, and a storage failure is no reason to leave them without one.
+     * Nothing waits on it — a slow disk delays the file, not the game — and a failure is
+     * logged rather than surfaced, because the mod works perfectly well without the file
+     * and the assembler already substitutes a default persona.
+     */
+    private static void ensurePersonaFile() {
+        AgentFactory.personaStore(paths).ensureCreated()
+                .whenComplete((created, failure) -> {
+                    if (failure != null) {
+                        LOGGER.warn("Could not create {}; the agent will use its default persona",
+                                paths.instructions(), failure);
+                    } else if (created) {
+                        LOGGER.info("Created {} — edit it to change how the agent answers",
+                                paths.instructions());
+                    }
+                });
     }
 
     /**

@@ -81,7 +81,11 @@ Everything the mod remembers lives on the player's own machine:
 | Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
 
 `data.db` is SQLite. `AGENTS.md` is a plain markdown file the player edits to define how
-the agent should behave.
+the agent should behave. **The mod writes it the first time it runs** — with a starting
+persona and instructions for editing it — and never rewrites it after that. Edit it from
+the AGENTS.md button on the chat screen, from the same button on the console's chat page,
+or in any text editor: a save takes effect on the next question, whichever of the three
+made it.
 
 ## Offline behaviour
 

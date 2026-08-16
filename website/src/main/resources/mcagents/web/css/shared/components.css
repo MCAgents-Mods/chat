@@ -430,6 +430,24 @@ tr:last-child td { border-bottom: 0; }
 
 .dialog__field { margin-bottom: 1rem; }
 
+/* Wider, for a dialog holding a document rather than a line. 27rem is right for a
+   question and far too narrow for markdown the reader has to be able to read back. */
+.dialog--wide { max-width: 52rem; }
+
+/* Monospaced because this is a markdown file, and because indented list items and fenced
+   blocks are only legible when the columns line up. Sized in vh so it fills a laptop
+   screen without overflowing a short one. */
+.dialog__textarea {
+  width: 100%;
+  height: 55vh;
+  min-height: 14rem;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: .86rem;
+  line-height: 1.55;
+  tab-size: 2;
+}
+
 /* Confirm last, so the destructive choice is not the one under a reader's cursor when the
    dialog opens on top of wherever they were already clicking. */
 .dialog__actions {

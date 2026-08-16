@@ -53,11 +53,16 @@ public final class WebConsoleHolder {
             // answered exactly as one asked in the game — and the same model client, so
             // embedding a pack from the console reuses the connection pool and the embedding
             // cache the game already has rather than opening a second stack beside it.
+            //
+            // The persona store is shared for a sharper reason than either: the console can
+            // write AGENTS.md, and a store of its own would leave the game answering from
+            // the text the player had just replaced.
             LocalWebConsole started = LocalWebConsole.start(
                     database,
                     AgentFactory.create(database, paths),
                     KnowledgeSyncFactory.service(),
-                    AgentFactory.modelClient(database));
+                    AgentFactory.modelClient(database),
+                    AgentFactory.personaStore(paths));
             console = started;
             return started;
         });

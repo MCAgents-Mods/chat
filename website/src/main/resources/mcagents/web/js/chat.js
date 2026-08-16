@@ -498,6 +498,62 @@
       }
     });
 
+    /* The persona, edited in the browser.
+     *
+     * It writes the same file the game reads, through the same store, so a save here is in
+     * force by the next question asked anywhere — no reload, no restart, and nothing to
+     * press in the game afterwards.
+     *
+     * It is fetched when the button is pressed rather than held on the page: the file can
+     * be edited in game or in a text editor while this tab sits open, and a modal opened on
+     * a copy from ten minutes ago would save that copy back over the newer one. */
+    var personaButton = document.getElementById('edit-persona');
+
+    function sayPersona(message, kind) {
+      noteEl.textContent = message || '';
+      noteEl.className = 'sync-note' + (kind ? ' is-' + kind : '');
+    }
+
+    personaButton.addEventListener('click', async function () {
+      personaButton.disabled = true;
+      sayPersona('Reading AGENTS.md…');
+      var current;
+      try {
+        current = (await M.api('/agent/persona')).content;
+      } catch (error) {
+        sayPersona(error.message, 'error');
+        return;
+      } finally {
+        personaButton.disabled = false;
+      }
+
+      var next = await M.prompt({
+        title: 'AGENTS.md',
+        message: 'The instructions every conversation starts from. They are sent at the top '
+          + 'of every question, in the game and here. Saving takes effect on the next one.',
+        value: current,
+        multiline: true,
+        wide: true,
+        confirmLabel: 'Save'
+      });
+      if (next === null) {
+        /* Cancelled. The file is untouched, and saying so would be noise. */
+        sayPersona('');
+        return;
+      }
+
+      sayPersona('Saving…');
+      personaButton.disabled = true;
+      try {
+        await M.api('/agent/persona', { method: 'PUT', body: { content: next } });
+        sayPersona('AGENTS.md saved. Your next question uses it.', 'ok');
+      } catch (error) {
+        sayPersona(error.message, 'error');
+      } finally {
+        personaButton.disabled = false;
+      }
+    });
+
     /* Counting is free — it reads the local table and one setting — so the page can say so
      * on load rather than waiting for the player to wonder why the agent knows nothing. */
     await showEmbeddingStatus();

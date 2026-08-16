@@ -108,6 +108,13 @@ conversation changes, from either side. The browser polls it; the game checks it
 A message typed in Minecraft appears in the browser within a few seconds, and one typed in
 the browser appears in the game the same way.
 
+**AGENTS.md** opens your instructions in a modal with the file's text in it — the same file
+the in-game editor writes and the same one every answer starts from. Save writes it and it
+takes effect on the next question, in the browser and in the game alike; Cancel writes
+nothing. The text is fetched when the button is pressed rather than when the page loads, so
+a tab left open all evening cannot save a stale copy over something you typed in game since.
+Enter is a new line here, not a save — the buttons, or Ctrl+Enter, commit.
+
 ### `/model/`
 
 The chat model and the embedding model, with the suggested ids and the defaults. The lists
@@ -227,8 +234,8 @@ yours. Every page and every data route stays behind the token.
 
 | Layer | What it holds |
 |---|---|
-| `api/` | `WebConsole`, `WebConsoleException`, `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary` |
-| `common/` | `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets` — what the console reads, drives, and writes through |
+| `api/` | `WebConsole`, `WebConsoleException`, `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary`, `PersonaStore` |
+| `common/` | `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets`, `FilePersonaStore` — what the console reads, drives, and writes through |
 | `website/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and the pages under `resources/mcagents/web/` |
 | `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder`, and the button on `AgentChatScreen` |
 

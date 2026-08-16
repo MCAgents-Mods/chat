@@ -5,18 +5,15 @@ import io.github.mcagents.clientfabric.api.agent.ChatCompletion;
 import io.github.mcagents.clientfabric.api.agent.ChatRequest;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.agent.ModelException;
+import io.github.mcagents.clientfabric.api.agent.PersonaStore;
 import io.github.mcagents.clientfabric.api.agent.PromptMessage;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 
-import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -37,17 +34,19 @@ public final class OpenRouterAgent implements Agent {
     private final LocalDatabase database;
     private final ModelClient client;
     private final KnowledgeRetriever retriever;
-    private final Path personaFile;
+    private final PersonaStore persona;
 
     /**
-     * @param database    the player's local store
-     * @param client      the model client
-     * @param personaFile {@code {minecraft_dir}/MCAgents/AGENTS.md}; it need not exist
+     * @param database the player's local store
+     * @param client   the model client
+     * @param persona  the player's {@code AGENTS.md}; the store creates it if it is
+     *                 missing, and is shared with every screen that can edit it so a save
+     *                 is in force by the next question
      */
-    public OpenRouterAgent(LocalDatabase database, ModelClient client, Path personaFile) {
+    public OpenRouterAgent(LocalDatabase database, ModelClient client, PersonaStore persona) {
         this.database = Objects.requireNonNull(database, "database");
         this.client = Objects.requireNonNull(client, "client");
-        this.personaFile = Objects.requireNonNull(personaFile, "personaFile");
+        this.persona = Objects.requireNonNull(persona, "persona");
         this.retriever = new KnowledgeRetriever(database, client);
     }
 
@@ -73,13 +72,16 @@ public final class OpenRouterAgent implements Agent {
         // it used to be about.
         String question = newestQuestion(conversation.messages());
 
+        // Both are started before either is waited on: retrieval is a provider round trip
+        // and the persona is a disk read, and there is no reason for the second to begin
+        // only once the first has finished.
+        CompletableFuture<String> instructions = readPersona();
+
         return retriever.retrieve(conversation.preferences(), question)
-                .thenCompose(knowledge -> {
-                    List<PromptMessage> messages = PromptAssembler.assemble(
-                            readPersona(), conversation.messages(), knowledge);
-                    return client.complete(
-                            new ChatRequest(conversation.preferences().chatModel(), messages));
-                });
+                .thenCombine(instructions, (knowledge, personaText) -> PromptAssembler.assemble(
+                        personaText, conversation.messages(), knowledge))
+                .thenCompose(messages -> client.complete(
+                        new ChatRequest(conversation.preferences().chatModel(), messages)));
     }
 
     /** The text of the newest user message, or blank if the conversation has none. */
@@ -94,21 +96,20 @@ public final class OpenRouterAgent implements Agent {
     }
 
     /**
-     * Reads the player's instructions.
+     * Reads the player's instructions, off this thread and off the client thread.
      *
-     * <p>A missing or unreadable file is not an error — most players will never create one
-     * — so the default persona is used and the mod carries on.
+     * <p>An unreadable file is not an error worth failing a question over — a locked file,
+     * a permission the launcher lost, a folder on a share that has gone away. The assembler
+     * substitutes its own default persona for a blank one, so the player still gets an
+     * answer and the reason is in the log.
      */
-    private String readPersona() {
-        try {
-            if (!Files.isRegularFile(personaFile)) {
-                return "";
-            }
-            return Files.readString(personaFile, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Could not read the persona file at " + personaFile, e);
+    private CompletableFuture<String> readPersona() {
+        return persona.read().exceptionally(failure -> {
+            LOGGER.log(Level.WARNING,
+                    "Could not read the player's instructions; answering with the default persona",
+                    failure);
             return "";
-        }
+        });
     }
 
     /**

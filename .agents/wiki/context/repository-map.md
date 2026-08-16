@@ -36,10 +36,10 @@ three documents for a long time before any code called `ModelClient.embed`.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever` and `Vectors` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — and `common.ui`, the screen arithmetic that can be tested without Minecraft. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and context injection. No Minecraft on the classpath. |
+| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.agent` (the model and prompt contracts, plus `PersonaStore`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — and `common.ui`, the screen arithmetic that can be tested without Minecraft. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and context injection. No Minecraft on the classpath. |
 | `website/` | `mcagents-fabric-website` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and every page under `resources/mcagents/web/`. Everything a browser ever sees, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, and `client.gui` — the chat screen, its panels, the model settings screen, the wallet screens, and the console screen. | Mixins, context injection, the content browser. |
+| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Mixins, context injection, the content browser. |
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -231,7 +231,10 @@ adding one would be treating a symptom.
   the value belongs in an `api/` contract passed in from the platform module.
 * The repository root `AGENTS.md` is the agent entry point. `{minecraft_dir}/MCAgents/AGENTS.md`
   is the *player's* persona file at runtime. They are unrelated files with the same name —
-  do not confuse them.
+  do not confuse them. The runtime one is written by `FilePersonaStore` when it is missing
+  and **never rewritten afterwards**; there is one store per game session and every screen
+  that edits it is handed that instance, because a second store would mean a save in the
+  browser and a question in the game disagreeing about what the persona is.
 * The shared instruction set resolves through the `lxagents-agents-base` connector. If it
   is unavailable, say so and work from `.agents/` alone; do not reconstruct it.
 * **Keccak-256 is not SHA3-256.** The JDK ships the latter, the difference is one padding

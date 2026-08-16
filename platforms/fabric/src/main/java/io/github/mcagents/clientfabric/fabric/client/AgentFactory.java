@@ -2,9 +2,11 @@ package io.github.mcagents.clientfabric.fabric.client;
 
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
+import io.github.mcagents.clientfabric.api.agent.PersonaStore;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.agent.CachingModelClient;
+import io.github.mcagents.clientfabric.common.agent.FilePersonaStore;
 import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
 import io.github.mcagents.clientfabric.common.agent.OpenRouterAgent;
 import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
@@ -24,6 +26,7 @@ import io.github.mcagents.clientfabric.common.agent.openrouter.OpenRouterClient;
 public final class AgentFactory {
 
     private static volatile ModelClient modelClient;
+    private static volatile PersonaStore personaStore;
 
     private AgentFactory() {
         throw new AssertionError("No instances.");
@@ -36,7 +39,28 @@ public final class AgentFactory {
      * @param paths    the mod's on-disk layout, for the persona file
      */
     public static Agent create(LocalDatabase database, ClientPaths paths) {
-        return new OpenRouterAgent(database, sharedClient(database), paths.instructions());
+        return new OpenRouterAgent(database, sharedClient(database), personaStore(paths));
+    }
+
+    /**
+     * The one persona store this game session uses.
+     *
+     * <p>Shared for the same reason the model client is, and more sharply: the editor
+     * screen, the web console, and the agent all read and write {@code AGENTS.md}, and a
+     * second store would hold a second copy of its contents. The player would save in the
+     * browser, ask in the game, and be answered by the persona they had just replaced.
+     */
+    public static PersonaStore personaStore(ClientPaths paths) {
+        PersonaStore existing = personaStore;
+        if (existing != null) {
+            return existing;
+        }
+        synchronized (AgentFactory.class) {
+            if (personaStore == null) {
+                personaStore = new FilePersonaStore(paths.instructions());
+            }
+            return personaStore;
+        }
     }
 
     /**
