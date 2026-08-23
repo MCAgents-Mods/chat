@@ -94,6 +94,11 @@ Minecraft's client thread renders the game. Blocking it freezes the game.
   be overwritten by an update without the player asking.
 * The database schema is created idempotently at startup. A schema change ships with a
   migration; never with a "delete the database and start again".
+* External MCP servers are cloned to `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`,
+  with an optional `mcp_servers.json` beside them. **That file is as sensitive as the
+  database**: an MCP server entry carries the environment the server is started with, which
+  is where its credentials sit. Never log it, never attach it to an issue.
+  [`../mcp/host.md`](../mcp/host.md) is the authority on everything under `mcps/`.
 * Everything under `{minecraft_dir}/MCAgents/` is player data. Never commit a copy of it,
   and never log an API key.
 

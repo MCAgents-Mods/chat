@@ -62,6 +62,9 @@ do not share your `data.db`.
 * **Wallet binding** — record the wallets you own, across several accounts and chains, and
   prove an EVM address by signing in MetaMask. Public addresses only; there is no field for
   a private key or a recovery phrase.
+* **External tools over MCP** — ask the agent to add a Model Context Protocol server and it
+  clones, runs, and uses it from your next question, with no restart. Servers live in
+  `.minecraft/MCAgents/mcps/{owner}/{repository}/`.
 * **Player-defined personas** in `.minecraft/MCAgents/AGENTS.md`.
 * **Offline-first throughout.**
 
@@ -109,6 +112,8 @@ not permitted, except where mandatory law says otherwise.
 * [`wiki/information/knowledge-retrieval.md`](wiki/information/knowledge-retrieval.md) —
   retrieval, and the Embedding switch.
 * [`wiki/information/web-console.md`](wiki/information/web-console.md) — the browser view.
+* [`wiki/information/mcp-servers.md`](wiki/information/mcp-servers.md) — external MCP
+  servers.
 * [`wiki/information/wallet-binding.md`](wiki/information/wallet-binding.md) — wallets.
 * [`wiki/environments/setup.md`](wiki/environments/setup.md) — building and running it.
 * `AGENTS.md` — the entry point for agents working on this repository.

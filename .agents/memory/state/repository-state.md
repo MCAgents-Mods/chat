@@ -45,6 +45,14 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. The
   browser half was driven in Chromium; **no screen has been opened in a real client and no
   join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
+* **The whole MCP client.** The mod can clone external MCP servers into
+  `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`, discover and run them over stdio or
+  HTTP, merge their tools into one registry, and route the model's tool calls back to the
+  server that owns each one. Covered by 97 tests in `common/`, seventeen of which drive a
+  **real child process** — but **no game has ever started the host**, **no real
+  third-party MCP server has been connected**, and **no real model has been driven through
+  the tool loop**: every completion in those tests is scripted. See
+  `.agents/memory/tasks/mcp-host.md` and `.agents/memory/tasks/mcp-routing.md`.
 * Key rotation, retry with backoff, and the failure messages for each `ModelException` kind
   — all covered by tests against a stub transport, none seen against real OpenRouter.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
@@ -53,7 +61,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 ## What does not exist
 
-* Streaming. An answer arrives whole.
+* Streaming. An answer arrives whole — including a tool exchange, so a question needing
+  several rounds looks to the player like one long wait.
+* Any per-tool consent prompt. A tool runs because the model asked for it; the trust
+  boundary is the player's decision to clone that server.
 * Embedding and retrieval. The agent answers from the conversation only; downloaded
   Knowledge Packs are stored but never consulted.
 * Any download path from the central service.
@@ -65,7 +76,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 344 tests across `common/` and `website/`.
+* Every I/O method returns `CompletableFuture`. 441 tests across `common/` and `website/`.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to the console, so a save from either
   interface is the persona the next question uses. It generates the file when it is missing
@@ -96,6 +107,16 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `model.embedding.enabled`, carried on `ModelPreferences` and shared by the in-game
   screen and the console. Off does no work at all rather than filtering afterwards, and
   a failed embedding call yields an ordinary answer rather than an error.
+* MCP: the mod is an MCP **client**. `api.mcp` holds the contracts and `api.agent` the
+  tool-calling ones (`ToolBroker`, `ToolDefinition`, `ToolCall`, `ToolOutcome`);
+  `common.mcp` holds `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`,
+  `HttpMcpSession`, `WatchingMcpHost` (connects, watches the directory, reloads as a diff
+  so an unchanged server keeps its process), `GitRepositoryCloner`, and `McpToolRouter`.
+  `McpHostFactory` owns one host per game session on daemon threads. Tools are exposed as
+  `{server}__{tool}` capped at 64 characters, because a provider rejects the whole request
+  over one bad function name. **Nothing about MCP may fail the mod** — a server that will
+  not start is a status row. `mcp_clone_repository` is built in rather than served, because
+  a player with no servers cannot be handed a tool by one.
 * Reading: long lists come back a window at a time through `Page` and `PageRequest`, with
   the total counted rather than inferred. Any ordering a window is taken from is total, or
   the reader sees rows twice and never sees others.
@@ -160,9 +181,9 @@ answers with `RateLimit-*` headers.
 Two things are outstanding, and the second is the more interesting.
 
 1. Wallets — now a screen of account columns rather than one account behind a dropdown —
-   the web console, the console button, the embedding toggle on `ModelSettingsScreen`, and
-   now the persona editor and the join-event detection behind the server context are
-   compile-verified and unopened. `platforms/fabric` has no test source set, so nothing here
+   the web console, the console button, the embedding toggle on `ModelSettingsScreen`, the
+   persona editor, the join-event detection behind the server context, and now **the whole
+   MCP host and tool loop** are compile-verified and unopened. `platforms/fabric` has no test source set, so nothing here
    can prove any of them. One session in a real client would settle them all, plus a binding
    through the real MetaMask extension and a message typed in game appearing in a browser
    tab. **A screenshot found two collisions on `WebConsoleScreen` that had survived several
@@ -170,7 +191,10 @@ Two things are outstanding, and the second is the more interesting.
    `common/ui/StackedRows`, but what a screen *looks* like still is not. The two cheapest
    checks in that session: open the AGENTS.md screen and type a long persona into it, and
    watch `logs/latest.log` for the `Player environment is now …` line when joining a world,
-   a server, and a realm.
+   a server, and a realm. A third is now worth as much: ask the agent to clone a real MCP
+   server and then ask it something that needs one of that server's tools — it is the only
+   way to learn what a real model does with these tool descriptions, and what a real
+   third-party server does that the fake one does not.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
    would settle it — and would be the first end-to-end proof that a downloaded pack can be

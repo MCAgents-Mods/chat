@@ -17,7 +17,16 @@ public enum ChatRole {
     ASSISTANT("assistant"),
 
     /** Instructions assembled from the player's personas and the retrieved context. */
-    SYSTEM("system");
+    SYSTEM("system"),
+
+    /**
+     * The result of a tool the model asked for.
+     *
+     * <p>A wire role only. Tool results are part of one exchange with the provider and are
+     * never written to the database: they are the working-out, not the answer, and a
+     * conversation replayed from storage must read as the conversation the player had.
+     */
+    TOOL("tool");
 
     private final String wireName;
 

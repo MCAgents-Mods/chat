@@ -208,6 +208,29 @@ project is developed under.
     restart. The fake server they drive misbehaves on purpose at startup, logging to
     standard output where only protocol belongs.
 
+* **LLM routing and execution.** The agent can call the tools those servers offer:
+  * `api/` — `ToolBroker`, `ToolDefinition`, `ToolCall`, and `ToolOutcome` in `api.agent`;
+    `ChatRequest` carries the tools offered, `ChatCompletion` carries the calls the model
+    made, `PromptMessage` carries an assistant turn's `tool_calls` and a result's
+    `tool_call_id`, and `ChatRole` gains `TOOL` as a wire-only role.
+  * `common/` — `McpToolRouter` resolves a `{server}__{tool}` name to the session that owns
+    it and strips the qualification before calling; `CloneRepositoryTool` offers the clone
+    capability to the model as `mcp_clone_repository`, built in because a player with no
+    servers cannot be given a tool by one; `OpenRouterPayloads` sends the `tools` array and
+    reads `tool_calls`; `OpenRouterAgent` runs the loop, executing a turn's calls
+    concurrently and re-asking until the model answers.
+  * `platforms/fabric/` — `AgentFactory` builds the broker per request, so a server
+    connected since the screen opened is offered without reopening anything.
+  * Every tool failure is a message the model reads — an unknown tool answers with the real
+    names, unparseable arguments go back to the model that wrote them, and a disconnected
+    server says so. A question is never failed by a tool call.
+  * The loop is bounded at eight rounds, and the stop returns whatever the model had
+    produced rather than an error about the limit.
+  * Tool messages are never written to `chat_messages`: a replayed conversation reads as
+    the conversation the player had.
+  * 40 further tests, among them five driving a model's call through to a real MCP server
+    process and back.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.

@@ -20,7 +20,7 @@ platforms/fabric/           the mod: GUI, mixins, events, paths
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
 | `api/` | `mcagents-fabric-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `mcagents-fabric-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography. Plain Java. |
+| `common/` | `mcagents-fabric-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
 | `website/` | `mcagents-fabric-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
 | `platforms/fabric/` | `mcagents-fabric` | all of the above | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
 
@@ -52,6 +52,29 @@ stopped applying.
 `platforms/fabric` merges all three lower modules into the mod jar rather than nesting them
 as separate Fabric mods, so the split is a build-time and reading-time boundary; the shipped
 jar is unchanged by it.
+
+## Where external MCP servers sit
+
+The mod is an MCP **client**: it runs servers other people wrote and offers their tools to
+the agent. Player-facing documentation is [`mcp-servers.md`](mcp-servers.md).
+
+It obeys the same split as everything else. `api/` holds the contracts — `McpHost`,
+`McpSession`, the descriptors, and the tool-calling types the agent loop speaks.
+`common/` holds the implementations: discovery, the stdio and HTTP transports, the
+directory watch, the git cloner, and the router that resolves a tool name back to the
+server that owns it. `platforms/fabric/` resolves the game directory and owns the host's
+lifetime, as it does for storage.
+
+Two consequences are worth stating because they are easy to undo:
+
+**An external server is a child process, and it is still below the Minecraft line.** The
+host lives in `common/`, so it is testable by spawning real servers with no game running —
+which is how it is tested. Nothing about a server may need a Minecraft type.
+
+**Nothing about MCP may fail the mod.** A server that will not start becomes a status row
+and the rest carry on. This is the offline-first rule of this document applied to a second
+optional thing: the central service is one, an MCP server is another, and neither is
+allowed onto the path of anything local.
 
 ## Rules the split enforces
 

@@ -3,6 +3,8 @@ package io.github.mcagents.clientfabric.fabric.client;
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.agent.PersonaStore;
+import io.github.mcagents.clientfabric.api.agent.ToolBroker;
+import io.github.mcagents.clientfabric.api.mcp.McpHost;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.common.ClientPaths;
 import io.github.mcagents.clientfabric.common.agent.CachingModelClient;
@@ -11,6 +13,8 @@ import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
 import io.github.mcagents.clientfabric.common.agent.OpenRouterAgent;
 import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
 import io.github.mcagents.clientfabric.common.agent.openrouter.OpenRouterClient;
+import io.github.mcagents.clientfabric.common.mcp.CloneRepositoryTool;
+import io.github.mcagents.clientfabric.common.mcp.McpToolRouter;
 
 /**
  * Builds the agent the chat screen uses, and owns the model client's lifetime.
@@ -40,7 +44,22 @@ public final class AgentFactory {
      */
     public static Agent create(LocalDatabase database, ClientPaths paths) {
         return new OpenRouterAgent(database, sharedClient(database), personaStore(paths),
-                GameEnvironment.source());
+                GameEnvironment.source(), toolBroker(paths));
+    }
+
+    /**
+     * The tools the model may call: everything the MCP servers offer, plus the built-in
+     * one that clones a new server.
+     *
+     * <p>Built fresh per agent rather than cached. It reads the host's registry at request
+     * time, so a server connected since the screen opened is offered without the player
+     * reopening anything — and a player with no servers gets a broker with one tool, which
+     * costs a few hundred characters of prompt and nothing else.
+     */
+    private static ToolBroker toolBroker(ClientPaths paths) {
+        McpHost host = McpHostFactory.host();
+        return new McpToolRouter(host)
+                .withBuiltIn(new CloneRepositoryTool(McpHostFactory.cloner(paths), host));
     }
 
     /**

@@ -33,6 +33,35 @@ point.
   `{minecraft_dir}/MCAgents/AGENTS.md` and the retrieved Knowledge Pack content. It is
   stored with `role = 'system'` only when it should persist in the transcript.
 
+## Tool calls
+
+An exchange with tools is still one request shape, extended:
+
+* **`tools` goes after `messages` and stays identical across a follow-up.** A round of
+  tool calls re-sends the whole conversation, so a `tools` array that changed between the
+  first request and the second would break the cached prefix the breakpoints exist to
+  reuse.
+* **Every tool name must match `[A-Za-z0-9_-]{1,64}`.** The provider rejects the *entire
+  request* over one bad name, naming none of the others. Filter before building the
+  request; never let a bad name reach the wire — [`../mcp/host.md`](../mcp/host.md).
+* **A schema is passed through as its server wrote it.** Rewriting a third-party schema is
+  how a tool ends up described in a way its own server will not accept. A schema that will
+  not parse is replaced with an empty object schema rather than made fatal, so one bad tool
+  cannot silence the rest.
+* **A response with `tool_calls` and no `content` is normal, not malformed.** The calls are
+  the message. Only a message with neither is a malformed response.
+* **The assistant turn is echoed back verbatim, ids included, followed by one `tool`
+  message per call carrying its `tool_call_id`.** The provider matches results to calls by
+  id and rejects a result for a call it cannot see, so neither half may be summarised,
+  reordered, or dropped.
+* **A call missing an id is skipped, not fatal.** It could never be answered — there is
+  nothing to match a result to — and dropping it lets the rest of the batch run.
+* **Tool messages are never stored.** They are the working-out, not the answer; a
+  conversation replayed from `chat_messages` must read as the conversation the player had.
+* The loop is bounded. A model that keeps calling tools without converging is stopped and
+  whatever text it had produced is returned, because a player who waited deserves the
+  partial answer rather than an error about a limit they did not know existed.
+
 ## Model selection
 
 * The player chooses a chat model and an embedding model. Both are stored in `settings` and
@@ -66,6 +95,9 @@ point.
 * Another player's data.
 * Any identifier for the central service's account system. OpenRouter is between the player
   and OpenRouter.
+* **An MCP server's environment.** A tool's name, description and schema are sent because
+  the model must be able to call it; the credentials that server was configured with are
+  not part of any of the three.
 
 ## Offline
 
