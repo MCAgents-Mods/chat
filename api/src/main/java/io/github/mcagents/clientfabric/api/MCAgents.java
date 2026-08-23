@@ -25,6 +25,31 @@ public final class MCAgents {
     public static final String INSTRUCTIONS_FILE = "AGENTS.md";
 
     /**
+     * Directory holding external MCP servers, laid out as {@code mcps/{owner}/{repository}/}.
+     *
+     * <p>Not to be confused with the repository's own {@code ./mcps/}, which holds servers
+     * for the agent working on this source tree. This one is on a player's machine and is
+     * filled by the mod at runtime.
+     */
+    public static final String MCP_DIRECTORY = "mcps";
+
+    /**
+     * The MCP server catalog, inside {@link #MCP_DIRECTORY}.
+     *
+     * <p>Optional. A player with no such file still gets every server that discovery finds
+     * on disk; the file exists to add hosted servers and to switch discovered ones off.
+     */
+    public static final String MCP_SERVERS_FILE = "mcp_servers.json";
+
+    /**
+     * Manifest a cloned repository may carry to describe how to run itself.
+     *
+     * <p>Read from the root of each {@code mcps/{owner}/{repository}/} checkout. Without it
+     * the loader falls back to what it can infer from {@code package.json}.
+     */
+    public static final String MCP_MANIFEST_FILE = "mcp.json";
+
+    /**
      * The central Knowledge Pack service.
      *
      * <p>A content source and never a dependency: everything the mod does locally works
