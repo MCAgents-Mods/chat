@@ -1,0 +1,83 @@
+// A minimal but genuine MCP server over stdio, used by the host tests.
+//
+// Run with the JVM's own single-file source launcher, so the suite needs nothing that
+// building this project does not already require. It deliberately misbehaves twice at
+// startup — one line to standard error, one non-JSON line to standard output — because a
+// host that only survives well-behaved servers does not survive the ecosystem.
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+
+public class FakeServer {
+
+    // Replaced when the file is written, so a test can stand up two different servers.
+    private static final String TOOL = "__TOOL_NAME__";
+
+    public static void main(String[] args) throws Exception {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out, StandardCharsets.UTF_8), true);
+
+        System.err.println("fake server starting up");
+        out.println("a server logging to stdout, which is its bug and must not be ours");
+
+        String line;
+        while ((line = in.readLine()) != null) {
+            if (line.isBlank()) {
+                continue;
+            }
+            String id = number(line, "\"id\":");
+            String method = quoted(line, "\"method\":\"");
+            if (id == null) {
+                continue; // a notification; nothing is waiting for it
+            }
+            switch (method) {
+                case "initialize" -> out.println(result(id,
+                        "{\"protocolVersion\":\"2025-06-18\","
+                                + "\"serverInfo\":{\"name\":\"fake\",\"version\":\"1\"}}"));
+                case "tools/list" -> out.println(result(id,
+                        "{\"tools\":[{\"name\":\"" + TOOL + "\",\"description\":\"Echoes back\","
+                                + "\"inputSchema\":{\"type\":\"object\"}}]}"));
+                case "resources/list" -> out.println(result(id,
+                        "{\"resources\":[{\"uri\":\"fake://one\",\"name\":\"one\"}]}"));
+                case "prompts/list" -> out.println(result(id,
+                        "{\"prompts\":[{\"name\":\"greet\",\"description\":\"Says hello\"}]}"));
+                case "tools/call" -> out.println(result(id,
+                        "{\"content\":[{\"type\":\"text\",\"text\":\"echo "
+                                + quoted(line, "\"say\":\"") + "\"}]}"));
+                case "resources/read" -> out.println(result(id,
+                        "{\"contents\":[{\"uri\":\"fake://one\",\"text\":\"body\"}]}"));
+                default -> out.println("{\"jsonrpc\":\"2.0\",\"id\":" + id
+                        + ",\"error\":{\"code\":-32601,\"message\":\"no such method\"}}");
+            }
+        }
+    }
+
+    private static String result(String id, String body) {
+        return "{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":" + body + "}";
+    }
+
+    private static String number(String json, String key) {
+        int at = json.indexOf(key);
+        if (at < 0) {
+            return null;
+        }
+        int from = at + key.length();
+        int to = from;
+        while (to < json.length() && Character.isDigit(json.charAt(to))) {
+            to++;
+        }
+        return to == from ? null : json.substring(from, to);
+    }
+
+    private static String quoted(String json, String key) {
+        int at = json.indexOf(key);
+        if (at < 0) {
+            return "";
+        }
+        int from = at + key.length();
+        int to = json.indexOf('"', from);
+        return to < 0 ? "" : json.substring(from, to);
+    }
+}
