@@ -235,8 +235,12 @@ adding one would be treating a symptom.
   and **never rewritten afterwards**; there is one store per game session and every screen
   that edits it is handed that instance, because a second store would mean a save in the
   browser and a question in the game disagreeing about what the persona is.
-* The shared instruction set resolves through the `lxagents-agents-base` connector. If it
-  is unavailable, say so and work from `.agents/` alone; do not reconstruct it.
+* The shared instruction set resolves through the `lxagents-agents-base` connector. The
+  wiring is **not** in the repository: `.gitignore` carries both `.mcp.json` (local
+  environment configuration, `env` block and all) and `mcps/` (the server checkouts). A
+  fresh environment rebuilds both from the bootstrap in `AGENTS.md`. If the connector is
+  still unreachable, say so and work from `.agents/` alone; do not reconstruct it, and
+  never commit a copy of it.
 * **Keccak-256 is not SHA3-256.** The JDK ships the latter, the difference is one padding
   byte, and substituting it recovers the wrong Ethereum address while looking entirely
   plausible. `common.wallet.Keccak256` exists for exactly this reason — do not "simplify" it

@@ -41,6 +41,72 @@ file's `name` replaces that shared file entirely for this repository. The curren
 overrides are listed in
 [`.agents/index/root-index.md`](.agents/index/root-index.md).
 
+### Bootstrap in a Fresh Session
+
+**Neither the checkout nor the wiring is committed**, so a session that does not already
+list the shared server among its MCP servers rebuilds both with the three steps below.
+Run them from the repository root, in order. They are idempotent — check first and skip
+what is already there:
+
+```bash
+test -d mcps/LXAgents-MCP/shared-instruction || echo "run step 1"
+test -f .mcp.json                            || echo "run step 2"
+```
+
+**1. Clone the server** into the ignored `mcps/{org-or-user}/{repo}/` tree:
+
+```bash
+mkdir -p mcps/LXAgents-MCP
+git clone https://github.com/LXAgents-MCP/shared-instruction.git \
+  mcps/LXAgents-MCP/shared-instruction
+```
+
+The checkout is a **server to run**, never instruction content to keep. Nothing under it
+is committed here, and nothing under it is read as a file while the connector can be read
+instead — a checkout drifts, the connector does not.
+
+**2. Install and register it** as a stdio MCP server. Node.js 20 or newer is required:
+
+```bash
+npm --prefix mcps/LXAgents-MCP/shared-instruction install
+claude mcp add lxagents-agents-base --scope project -- \
+  node mcps/LXAgents-MCP/shared-instruction/src/index.js
+```
+
+Two things this command gets wrong if you vary it:
+
+* **Register under the server id `lxagents-agents-base`, not the repository name
+  `shared-instruction`.** The bootstrap block above contracts on that id, and so does the
+  trigger table. A server registered under any other name is a connector no session finds.
+* **Keep the path relative.** `claude mcp add` records the path exactly as given; an
+  absolute one pins the configuration to one machine's home directory.
+
+**3. Read the shared setup before starting any task.** Call the `agents-setup` prompt, or
+the `agents_setup` tool, and follow what it returns. Prefer the prompts and resources; the
+tools return identical text and exist for clients that surface tools only.
+
+### Why None of This Is Committed
+
+`.gitignore` carries both `.mcp.json` and `mcps/`, and both stay there.
+
+* **`.mcp.json` is local environment configuration.** An MCP registration carries an `env`
+  block, and that is where a server's credentials end up. This repository's environment
+  does not go to a remote — the same rule that keeps `MCAgents/` and `*.db` out.
+* **`mcps/` would vendor the shared instruction set**, which
+  `{shared}/rules/shared-instructions.md` forbids and the setup procedure verifies
+  against. A file readable from `agents://` must not exist here as a copy.
+
+The cost is that steps 1 and 2 run once per environment. Making that cheap is what this
+section is for: it is the recreation procedure, so none of it has to be asked for again.
+
+### When the Connector Still Is Not There
+
+If the server is registered but its tools are absent from the session's tool list, the
+client has not reloaded `.mcp.json` — restart the session, or speak to the server over
+stdio directly and call the same tools. If it cannot be reached at all, say so plainly and
+work from `.agents/` alone. Do not reconstruct the shared rules from memory, and never
+commit a copy of them.
+
 ## Auto-Activation
 
 The instruction set is **always active** — the local `.agents/` set and the shared set
@@ -51,7 +117,8 @@ reference material.
 At the start of every session, before doing any work:
 
 1. Read `AGENTS.md` (this file).
-2. Resolve the shared set per the bootstrap above.
+2. Resolve the shared set per the bootstrap above — including the clone and
+   registration steps when the connector is not yet present in the session.
 3. Read [`.agents/index/root-index.md`](.agents/index/root-index.md).
 4. Read [`.agents/index/memory-index.md`](.agents/index/memory-index.md) and load only
    the memory rows whose scope matches the current request, so you continue prior work
@@ -78,7 +145,7 @@ rows for this repository's own instructions are appended after them.
 | Notice a rule worth adding, or content worth adding to an existing instruction | `{shared}/rules/discovery-protocol.md` |
 | Wonder whether something is local or shared, or need to override a shared rule | `{shared}/rules/shared-instructions.md` |
 | Decide where a new file goes | `{shared}/rules/directories.md` |
-| Resolve, connect, or fail to reach the shared set | `{shared}/rules/mcp-connector.md` |
+| Resolve, connect, or fail to reach the shared set | [Bootstrap in a Fresh Session](#bootstrap-in-a-fresh-session), then `{shared}/rules/mcp-connector.md` |
 | Add, move, rename, or delete any file in a set or in `wiki/` | `{shared}/creators/index-creator.md` |
 | Write a rule or instruction | `{shared}/creators/instruction-creator.md` |
 | Write documentation, an SOP, or a domain guideline | `{shared}/creators/information-creator.md` |
