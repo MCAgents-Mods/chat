@@ -8,6 +8,7 @@ import io.github.mcagents.clientfabric.fabric.client.AgentFactory;
 import io.github.mcagents.clientfabric.fabric.client.GameEnvironment;
 import io.github.mcagents.clientfabric.fabric.client.KnowledgeSyncFactory;
 import io.github.mcagents.clientfabric.fabric.client.MCAgentsKeyMappings;
+import io.github.mcagents.clientfabric.fabric.client.McpHostFactory;
 import io.github.mcagents.clientfabric.fabric.client.WebConsoleHolder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
@@ -74,7 +75,26 @@ public final class MCAgentsClientMod implements ClientModInitializer {
         LOGGER.info("{} initialising, data directory {}", MCAgents.MOD_NAME, paths.dataDirectory());
 
         ensurePersonaFile();
+        startMcpHost();
         reopenDatabase();
+    }
+
+    /**
+     * Starts the MCP host, which connects to whatever external servers the player has.
+     *
+     * <p>Not conditional on the database, and nothing waits on it. MCP servers are an
+     * optional extra: a player with none — the usual case — loses nothing, and a server
+     * that will not start is reported in the registry rather than failing startup. It runs
+     * before the database opens because the two are unrelated, and making the agent's tools
+     * wait on storage would delay them for no reason.
+     */
+    private static void startMcpHost() {
+        try {
+            McpHostFactory.start(paths);
+        } catch (RuntimeException failure) {
+            LOGGER.warn("Could not start the MCP host; no external servers will be available",
+                    failure);
+        }
     }
 
     /**
@@ -179,6 +199,9 @@ public final class MCAgentsClientMod implements ClientModInitializer {
             // no point letting that outlive the store it would write the answer to.
             AgentFactory.close();
             KnowledgeSyncFactory.close();
+            // Then the MCP servers: each is a child process, and one left running would
+            // outlive the game that started it.
+            McpHostFactory.close();
             LocalDatabase database = DATABASE.getAndSet(null);
             if (database != null) {
                 database.close();
@@ -216,5 +239,21 @@ public final class MCAgentsClientMod implements ClientModInitializer {
     /** A one-line description of the last storage failure, if there was one. */
     public static Optional<String> storageFailure() {
         return Optional.ofNullable(FAILURE.get());
+    }
+
+    /**
+     * The MCP host: the tools, resources and prompts external servers currently offer.
+     *
+     * <p>Never empty as an object and frequently empty as a registry. Callers read
+     * {@code registry()} from it and act on what is there, rather than checking whether MCP
+     * is set up at all.
+     */
+    public static io.github.mcagents.clientfabric.api.mcp.McpHost mcpHost() {
+        return McpHostFactory.host();
+    }
+
+    /** Clones an external MCP repository into {@code MCAgents/mcps/{owner}/{repository}/}. */
+    public static io.github.mcagents.clientfabric.api.mcp.McpRepositoryCloner mcpCloner() {
+        return McpHostFactory.cloner(paths());
     }
 }
