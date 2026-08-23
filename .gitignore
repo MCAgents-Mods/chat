@@ -25,3 +25,10 @@ Thumbs.db
 # Player data must never be committed. data.db holds OpenRouter API keys in the clear.
 MCAgents/
 *.db
+
+# MCP wiring is local environment configuration, never repository content.
+# .mcp.json carries an env block a server's credentials end up in; mcps/ holds
+# checkouts of servers to run, which would vendor their content if committed.
+# AGENTS.md documents how to recreate both.
+.mcp.json
+mcps/
