@@ -182,6 +182,32 @@ project is developed under.
   * The console's dialog grew a multiline variant rather than a second dialog. Enter is a
     new line there and never a save.
 
+* **MCP client (host) capability.** The mod can run other people's MCP servers and offer
+  their tools to the agent:
+  * `api/` — `api.mcp`: `McpHost`, `McpSession`, `McpServerSpec`, `McpToolDescriptor`,
+    `McpResourceDescriptor`, `McpPromptDescriptor`, `McpToolResult`, `McpServerStatus`,
+    `McpContextRegistry`, `McpTransport`, `McpException`, `McpRepositoryCloner`, and
+    `RepositoryCoordinate`, which validates an owner and repository before either becomes
+    a path.
+  * `common/` — `common.mcp`: `McpDiscovery` reads `mcp.json`, `package.json`, and
+    `mcp_servers.json` and returns specs without starting anything; `StdioMcpSession` runs
+    a server as a child process over newline-delimited JSON-RPC; `HttpMcpSession` posts to
+    a hosted server and reads plain JSON or `text/event-stream` replies;
+    `WatchingMcpHost` connects, watches `MCAgents/mcps/` and reloads as a diff so an
+    unchanged server keeps its process; `GitRepositoryCloner` clones with the machine's own
+    git into `MCAgents/mcps/{owner}/{repository}/`.
+  * `platforms/fabric/` — `McpHostFactory` owns one host per game session on daemon
+    threads, started beside the persona file and stopped with the game.
+  * Tools are merged into one registry as `{server}__{tool}`, capped at 64 characters
+    because OpenAI-compatible providers reject the whole request over a longer function
+    name. Collisions are dropped and reported rather than left to shadow each other.
+  * A server that will not start is a status row, not a failure: the mod loads, the other
+    servers stay connected, and a copy with no servers at all is the normal case.
+  * 57 tests in `common/`, twelve of them spawning a real child process — among them one
+    that adds a server while the host is running and asserts its tools appear without a
+    restart. The fake server they drive misbehaves on purpose at startup, logging to
+    standard output where only protocol belongs.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.

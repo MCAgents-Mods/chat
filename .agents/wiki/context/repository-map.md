@@ -36,8 +36,8 @@ three documents for a long time before any code called `ModelClient.embed`.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.agent` (the model and prompt contracts, plus `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — and `common.ui`, the screen arithmetic that can be tested without Minecraft. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
+| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences`, `ModelCatalog`), `api.agent` (the model and prompt contracts, plus `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.agent` — the OpenRouter client, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, and the git cloner. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
 | `website/` | `mcagents-fabric-website` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and every page under `resources/mcagents/web/`. Everything a browser ever sees, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
 | `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Mixins, further context injection, the content browser. |
 
@@ -100,6 +100,46 @@ the SQLite repository with it. What matters before changing either:
   memory the game does not have.
 * Nothing cached is written to disk. A cache file would be a second copy of player data to
   keep in step, and a second place an API key could end up.
+
+## External MCP servers
+
+`common.mcp` lets the mod act as an MCP **client**: it runs other people's servers and
+merges their tools into one registry the agent is shown. Player-facing documentation is
+[`../../../wiki/information/mcp-servers.md`](../../../wiki/information/mcp-servers.md).
+What matters before changing any of it:
+
+* **`{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/` is the layout, and it is not
+  negotiable.** `ClientPaths.mcpRepository` resolves it and refuses anything that escapes
+  the root. `RepositoryCoordinate` has already refused traversal before that. Both checks
+  stay: the values reaching them are frequently chosen by a language model, not a person.
+* **Discovery never starts anything.** `McpDiscovery` reads files and returns specs;
+  `WatchingMcpHost` starts them. That split is why "what is installed" is testable against
+  a directory tree with no child process anywhere in the test.
+* **A reload is a diff, not a restart.** `McpServerSpec.sameWiring` decides what actually
+  changed, and an unchanged server keeps its live process. Restarting everything on every
+  filesystem event would drop working connections constantly — servers write inside their
+  own directories.
+* **The watcher is not recursive and must not become so.** `WatchService` would need a key
+  per directory; registering every checkout means a key per `node_modules` tree. Only the
+  root and the owner directories are watched, and the two-second settle window covers the
+  rest.
+* **Tool names are qualified `{server}__{tool}` and capped at 64 characters**, because
+  OpenAI-compatible providers reject a function name outside `[A-Za-z0-9_-]{1,64}` — and
+  they reject the *whole request*, not just the offending tool. `McpContextRegistry.merge`
+  is the only place that can see every tool at once, so it is where collisions are caught.
+* **Stdout is the protocol on stdio.** A server logging there is a real and common bug;
+  `StdioMcpSession` skips non-JSON lines rather than failing. Its stderr is drained and
+  discarded — a child whose error pipe fills blocks forever, and that stream is exactly
+  where a server prints the credentials it was handed.
+* **`isError` is not a failed future.** A failed future means the server could not be
+  reached; `isError` is the server saying the call went wrong. The model can act on the
+  second and must be told about it.
+* **Nothing here may fail the mod.** A server that will not start is an
+  `McpServerStatus.State.FAILED` row. This is the offline-first mandate, applied to MCP.
+* Tests spawn a **real child process** — `common/src/test/resources/mcp/FakeServer.java.txt`
+  run through the JVM's own source launcher, so the suite needs nothing beyond the build's
+  own toolchain. It misbehaves on purpose at startup, because a host that only survives
+  well-behaved servers does not survive the ecosystem.
 
 ## Where versions live
 
@@ -259,6 +299,12 @@ adding one would be treating a symptom.
 * **Anything a window is paged over needs a total ordering.** `LIMIT`/`OFFSET` over an
   ambiguous sort shows some rows twice and never shows others, which reads as data loss
   rather than as a sort bug.
+* **An MCP server is a child process with your permissions.** The mod controls where a
+  repository is cloned and what it is called, not what it does once running. `mcp_servers.json`
+  is where a server's credentials would sit, which makes it as sensitive as `data.db`.
+* **`git` is shelled out to, not embedded.** A Java git implementation would be megabytes
+  in a jar that already carries SQLite's natives, for something the machine can nearly
+  always already do. A machine without git gets a clear message instead.
 * **The mod never handles a private key or a recovery phrase.** Not in a field, not in a
   parameter, not in a log. Wallet code deals in public addresses and signatures over
   messages the mod chose.

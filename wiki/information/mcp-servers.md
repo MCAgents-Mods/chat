@@ -1,0 +1,123 @@
+# External MCP Servers
+
+MCAgentsClient can use tools that are not part of the mod. An **MCP server** is a small
+program — someone else's, usually — that publishes a set of tools, resources, and prompts
+over a standard protocol. The mod runs those servers, asks what they offer, and puts the
+result in front of the agent alongside everything it can already do.
+
+It is entirely optional. A copy of the mod with no MCP servers is the normal case, and
+nothing about the game, the chat screen, or the console changes when there are none.
+
+## Where they live
+
+```
+{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/
+```
+
+One directory per repository, grouped by the owner it came from — the same shape GitHub
+uses, so a checkout is identifiable at a glance:
+
+```
+MCAgents/mcps/
+  LXAgents-MCP/
+    shared-instruction/
+  acme/
+    weather-mcp/
+  mcp_servers.json          <- optional
+```
+
+This is player data, like `data.db` and `AGENTS.md`. It is never part of the mod and never
+committed anywhere.
+
+## Adding one
+
+Ask the agent to add a repository, and it clones it here. Only `https://` URLs are
+accepted — an `ssh` URL would need credentials the mod does not have, and a `file://` URL
+would let a prompt reach anywhere on your disk. The owner and repository name come from the
+URL rather than from anything the model chose, so a clone cannot land outside the `mcps`
+directory.
+
+Cloning uses the `git` already on your machine. If you do not have git, the mod says so
+rather than failing obscurely; bundling a git implementation would have made the mod
+permanently larger for a feature most players never use.
+
+A repository that is already there is updated rather than re-cloned, so asking twice is
+harmless.
+
+## Being picked up
+
+**No restart.** The mod watches the `mcps` directory. A repository cloned while you are
+playing is connected within a few seconds of the clone finishing, and its tools become
+available in the next question you ask.
+
+The wait is deliberate. A clone writes hundreds of files, and connecting to a repository
+that is still being written produces a failure that looks like a broken server. The mod
+waits for the directory to go quiet first.
+
+## How the mod knows what to run
+
+Two things are read, in this order.
+
+**1. The repository itself.** A repository carrying an `mcp.json` at its root is stating
+how it wants to be run:
+
+```json
+{
+  "command": "node",
+  "args": ["src/index.js"]
+}
+```
+
+Without one, the mod reads `package.json` and uses the `bin` entry, or failing that
+`main`. It goes no further than that: a repository that does not say how to start itself is
+listed as a problem rather than guessed at, because a wrong guess produces a server that
+starts and then fails in a way nobody can diagnose.
+
+**2. `mcp_servers.json`, if you have one.** It sits at `MCAgents/mcps/mcp_servers.json` and
+does two jobs — correcting what was inferred, and adding servers that are not on your disk
+at all:
+
+```json
+{
+  "mcpServers": {
+    "weather-mcp": { "command": "python3", "args": ["server.py"] },
+    "noisy-mcp":   { "enabled": false },
+    "hosted":      { "type": "http", "url": "https://example.com/mcp" }
+  }
+}
+```
+
+An entry naming a repository you have cloned edits that server. An entry naming something
+else adds one. An entry with only `"enabled": false` switches a server off without
+forgetting how it was wired, so turning it back on needs no retyping.
+
+For a hosted server, **the URL must include the MCP path** — usually `/mcp`. Without it the
+request lands on a route that speaks no MCP, and servers commonly report that as a sign-in
+failure rather than a wrong address. If a server insists it needs authentication, check the
+path first.
+
+## What the agent sees
+
+Every connected server's tools are merged into one list, each renamed to
+`{server}__{tool}`. Two servers can therefore both offer `search` without either shadowing
+the other. Resources keep their own URIs, which are already unique to the server that
+published them.
+
+## When a server does not work
+
+It is reported, and nothing else breaks. A server that will not start, answers nothing, or
+is missing its entry point becomes a line saying which server and why — the other servers
+stay connected, their tools stay available, and the mod carries on. This is the same rule
+that applies to the central Knowledge Pack service: an optional thing that is unavailable
+is a message, never a failure.
+
+Servers are stopped when the game exits. One that ignores that is killed rather than
+allowed to outlive the game that started it.
+
+## A note on trust
+
+An MCP server is a program you have chosen to run, with your user account's permissions.
+The mod isolates *where it is cloned* and *what it is called*, not what it does once
+running. Clone repositories you would be willing to run by hand, and remember that a
+server's environment in `mcp_servers.json` is where its credentials would sit — that file
+is as sensitive as an API key.
