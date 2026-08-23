@@ -49,28 +49,39 @@ Run them from the repository root, in order. They are idempotent — check first
 what is already there:
 
 ```bash
-test -d mcps/LXAgents-MCP/shared-instruction || echo "run step 1"
+test -d ./mcps/LXAgents-MCP/shared-instruction || echo "run step 1"
 test -f .mcp.json                            || echo "run step 2"
 ```
 
-**1. Clone the server** into the ignored `mcps/{org-or-user}/{repo}/` tree:
+**1. Clone the server** into the ignored `./mcps/{org-or-user}/{repo}/` tree:
 
 ```bash
-mkdir -p mcps/LXAgents-MCP
+mkdir -p ./mcps/LXAgents-MCP
 git clone https://github.com/LXAgents-MCP/shared-instruction.git \
-  mcps/LXAgents-MCP/shared-instruction
+  ./mcps/LXAgents-MCP/shared-instruction
 ```
 
 The checkout is a **server to run**, never instruction content to keep. Nothing under it
 is committed here, and nothing under it is read as a file while the connector can be read
 instead — a checkout drifts, the connector does not.
 
+**`./mcps/` is not `.minecraft/MCAgents/mcps/`.** Two MCP trees exist in this project and
+they never mix:
+
+| Tree | Cloned by | Serves | Lives |
+|---|---|---|---|
+| `./mcps/{org-or-user}/{repo}/` | a person or an agent, by hand | the agent working **on this repository** in an IDE | in the working copy, ignored by git |
+| `{minecraft_dir}/MCAgents/mcps/{org-or-user}/{repo}/` | the mod, at runtime | the in-game agent, **on a player's machine** | in the game directory, never in this repository |
+
+The path shape is deliberately the same so one mental model covers both. Everything else
+differs — who clones, who consumes, and when. A change to one is not a change to the other.
+
 **2. Install and register it** as a stdio MCP server. Node.js 20 or newer is required:
 
 ```bash
-npm --prefix mcps/LXAgents-MCP/shared-instruction install
+npm --prefix ./mcps/LXAgents-MCP/shared-instruction install
 claude mcp add lxagents-agents-base --scope project -- \
-  node mcps/LXAgents-MCP/shared-instruction/src/index.js
+  node ./mcps/LXAgents-MCP/shared-instruction/src/index.js
 ```
 
 Two things this command gets wrong if you vary it:

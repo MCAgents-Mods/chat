@@ -68,6 +68,28 @@ covers the case: *recreate the branch correctly and delete the wrong one, or pre
 options to the user.* Recreated at the same commit, the local branch deleted, the remote
 one left in place because this session cannot delete it.
 
+**Two MCP trees, and they are not the same tree.** `./mcps/{org}/{repo}/` holds servers for
+the agent working **on this repository** in an IDE — cloned by hand, ignored by git.
+`{minecraft_dir}/MCAgents/mcps/{org}/{repo}/` holds servers the **mod** clones at runtime for
+the in-game agent, on a player's machine. The path shape is deliberately identical so one
+mental model covers both; who clones, who consumes, and when are all different.
+
+This was gotten wrong once, in this task: reading "we can't have mcp repo within our repo"
+as a request to move the dev-time clone out of the working copy, and proposing
+`~/.mcagents/mcps/` for it. It is not — the dev-time clone belongs at `./mcps/`, and what
+must stay out of the repository is the **tracking**, not the directory. `.gitignore` already
+does that. The table in `AGENTS.md` exists so the two are never conflated again.
+
+**`./mcps/x` and `mcps/x` are the same path to git** — the `./` is a no-op prefix, matched
+by the same ignore rule and resolved to the same destination. The documented form is `./`
+because it states "relative to the repository root" out loud, not because it behaves
+differently. Verified: `claude mcp add … node ./mcps/…/src/index.js` records the path as
+given and the server completes an MCP handshake from it.
+
+**A nested `.git` does sit in the working copy** and that is accepted, not overlooked.
+`git add -f` on it would stage a gitlink stub — git warns about exactly this. The ignore
+entry is what keeps it unreachable; nothing else has to.
+
 **Task plan.** Three tasks, stacked in dependency order per
 `{shared}/planning/task-workflow.md` §C:
 
