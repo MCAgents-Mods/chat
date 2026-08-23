@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.common;
 
 import io.github.mcagents.clientfabric.api.MCAgents;
+import io.github.mcagents.clientfabric.api.mcp.RepositoryCoordinate;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +47,44 @@ public final class ClientPaths {
     /** {@code {game_dir}/MCAgents/AGENTS.md} — the player's own agent instructions. */
     public Path instructions() {
         return dataDirectory.resolve(MCAgents.INSTRUCTIONS_FILE);
+    }
+
+    /**
+     * {@code {game_dir}/MCAgents/mcps} — external MCP servers, one directory per
+     * {@code {owner}/{repository}}.
+     */
+    public Path mcpDirectory() {
+        return dataDirectory.resolve(MCAgents.MCP_DIRECTORY);
+    }
+
+    /** {@code {game_dir}/MCAgents/mcps/mcp_servers.json} — the optional server catalog. */
+    public Path mcpServerCatalog() {
+        return mcpDirectory().resolve(MCAgents.MCP_SERVERS_FILE);
+    }
+
+    /**
+     * Where a cloned repository belongs.
+     *
+     * <p>The result is normalized and checked to be under {@link #mcpDirectory()}. The
+     * coordinate has already rejected traversal, so this is a second lock on the same door
+     * — cheap, and the one that would still hold if the first were ever loosened.
+     *
+     * @throws IllegalArgumentException if the resolved path escapes the mcps directory
+     */
+    public Path mcpRepository(RepositoryCoordinate coordinate) {
+        Objects.requireNonNull(coordinate, "coordinate");
+        Path root = mcpDirectory();
+        Path resolved = root.resolve(coordinate.owner()).resolve(coordinate.repository()).normalize();
+        if (!resolved.startsWith(root)) {
+            throw new IllegalArgumentException(
+                    "Repository " + coordinate.slug() + " resolves outside " + root);
+        }
+        return resolved;
+    }
+
+    /** Creates {@link #mcpDirectory()} if it does not exist, and returns it. */
+    public Path createMcpDirectory() throws IOException {
+        return Files.createDirectories(mcpDirectory());
     }
 
     /**

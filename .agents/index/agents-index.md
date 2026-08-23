@@ -32,6 +32,12 @@ description: Index of MCAgentsClient's local instruction folders — the rules t
 |---|---|
 | [`../api/openrouter.md`](../api/openrouter.md) | Request shape, model selection, retry and timeout policy, and what is never sent to the model provider. |
 
+## mcp
+
+| File | Purpose |
+|---|---|
+| [`../mcp/host.md`](../mcp/host.md) | The mod as an MCP client: the mcps layout, the doubled path validation, the qualified-name cap, the reload-as-a-diff rule, and why a failing server is never fatal. |
+
 ## design
 
 | File | Purpose |
