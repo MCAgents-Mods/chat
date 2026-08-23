@@ -98,3 +98,10 @@ entry is what keeps it unreachable; nothing else has to.
 | 1 | `docs/mcp-connector-bootstrap` | `master` | Persistent connector setup in `AGENTS.md` |
 | 2 | `feat/mcp-host` | task 1 | Clone tool, `.minecraft/MCAgents/mcps/{org}/{repo}/`, dynamic loading, unified registry |
 | 3 | `feat/mcp-routing` | task 2 | Parse LLM tool calls, route to the owning server, format results back |
+
+**Done.** All three branches are pushed. Nothing here is outstanding: the bootstrap is in
+`AGENTS.md`, `.mcp.json` and `mcps/` are both ignored, and a fresh session resolves the
+connector from the file rather than from a prompt. The one thing this task could not finish
+is outside it — `origin/claude/zen-pasteur-zrj3rg` still carries the commit in which
+`.mcp.json` was briefly tracked, because this session cannot delete a remote branch. Nothing
+sensitive is in it (`"env": {}` and a relative path), but the branch is worth deleting.

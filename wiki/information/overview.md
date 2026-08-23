@@ -25,6 +25,21 @@ whole, when it is ready; responses are not streamed yet. Multiple keys can be st
 key the provider rejects is deactivated so the next one takes over without interrupting the
 conversation.
 
+### External tools
+
+The agent is not limited to what the mod can do. Ask it to add an **MCP server** — a small
+program someone else wrote that publishes a set of tools — and it clones it into
+`.minecraft/MCAgents/mcps/`, runs it, and can use its tools from your next question on. No
+restart, no configuration file to write.
+
+You never call these tools yourself. The agent decides it needs one, calls it, reads the
+result, and carries on until it can answer. If a tool fails or does not exist, that comes
+back to the agent as something it can read and recover from, so a broken tool does not break
+your question. See [`mcp-servers.md`](mcp-servers.md).
+
+A copy of the mod with no MCP servers is the normal case and behaves exactly as it did
+before this existed.
+
 ### Knowledge Packs and retrieval
 
 A Knowledge Pack is a unit of downloadable content — a server's rules, a progression guide,
@@ -143,6 +158,8 @@ each will live.
 ## Related
 
 * [`architecture.md`](architecture.md) — how the modules are split and why.
+* [`mcp-servers.md`](mcp-servers.md) — external MCP servers: adding them, running them, and
+  what happens when one fails.
 * [`knowledge-retrieval.md`](knowledge-retrieval.md) — how packs reach a prompt, and the
   switch that stops them.
 * [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.

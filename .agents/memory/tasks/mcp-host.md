@@ -95,10 +95,14 @@ server implements the protocol as documented, which is not the same as what serv
 notifications is not heard — the registry refreshes on reload and on the directory watch
 instead. Adding one would mean a thread per server for a signal nothing consumes yet.
 
-## Next
+## Done
 
-Task 3, `feat/mcp-routing`: parse the model's tool calls, route each to the session that owns
-it via `McpHost.session(serverId)`, format results back into the loop. The registry is
-already an immutable snapshot so a request and the calls it produces see the same tool set.
-The cloner is built but not yet offered to the model as a callable tool — that belongs with
-the routing work.
+Task 3 shipped on `feat/mcp-routing` and consumed everything this task left open:
+`McpToolRouter` routes through `McpHost.session(serverId)`, and the cloner is now offered to
+the model as the built-in `mcp_clone_repository`. The immutable registry snapshot did the job
+it was designed for — a request and the calls it produces see the same tool set. See
+`mcp-routing.md`.
+
+What this task built is still unproven where it was unproven: no game has started the host,
+and no real third-party MCP server has been connected. Those gaps are tracked in
+`repository-state.md`, not here.
