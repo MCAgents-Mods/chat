@@ -34,6 +34,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/server-context-and-persona.md`](../memory/tasks/server-context-and-persona.md) | Telling the agent where the player is, and making `AGENTS.md` a file the mod writes and the player edits from either interface — the decisions, the rule set aside, and what a browser proved that the Java suite could not. |
 | [`../memory/tasks/mcp-connector-bootstrap.md`](../memory/tasks/mcp-connector-bootstrap.md) | Making the shared-instruction connector survive a session: the committed registration, the ignored checkout, and why the server id is not the repository name. |
 | [`../memory/tasks/mcp-host.md`](../memory/tasks/mcp-host.md) | The mod as an MCP client: the mcps layout, why discovery is split from connection, the qualified-name cap, and what is proven versus only compiled. |
+| [`../memory/tasks/mcp-routing.md`](../memory/tasks/mcp-routing.md) | Routing a model's tool call to the server that owns it: the three names that must agree, why a tool failure is never a failed question, and what is proven. |
 
 ## Maintenance
 

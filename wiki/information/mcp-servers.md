@@ -103,6 +103,34 @@ Every connected server's tools are merged into one list, each renamed to
 the other. Resources keep their own URIs, which are already unique to the server that
 published them.
 
+## Asking the agent to use them
+
+You do not call these tools; the agent does. Ask a question, and if answering it needs one
+of the tools a server offers, the agent calls it, reads the result, and carries on — as
+many times as it needs, then answers you. All you see is the answer.
+
+Adding a server is itself one of these tools. Ask the agent to add a repository and it
+clones it, connects it, and tells you how many tools that server brought:
+
+> **Cloned acme/weather-mcp. It is connected and offers 3 tools.**
+
+or, when a repository arrives but will not run:
+
+> **Cloned acme/notes. It is not offering any tools — it may not be an MCP server, or it
+> may not say how to start itself.**
+
+The new server's tools can be used from your very next question.
+
+## When a tool call goes wrong
+
+It does not break your question. A tool that does not exist, arguments the agent got wrong,
+or a server that has stopped since the agent was told about it all come back to the agent
+as a message it can read — so it corrects itself and tries again, or tells you plainly what
+it could not do.
+
+The agent will not loop forever either. If it keeps needing tools without getting anywhere,
+it stops and gives you what it has.
+
 ## When a server does not work
 
 It is reported, and nothing else breaks. A server that will not start, answers nothing, or

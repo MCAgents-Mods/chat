@@ -153,7 +153,9 @@ final class ConversationPanel extends ScrollablePanel {
         return switch (role) {
             case USER -> 0xFF9CC4FF;
             case ASSISTANT -> TEXT;
-            case SYSTEM -> TEXT_DIM;
+            // A tool result is never stored, so it never reaches this panel. It is
+            // handled rather than defaulted so that adding a role stays a compile error.
+            case SYSTEM, TOOL -> TEXT_DIM;
         };
     }
 
@@ -161,7 +163,7 @@ final class ConversationPanel extends ScrollablePanel {
         return switch (role) {
             case USER -> "gui.mcagents.role.user";
             case ASSISTANT -> "gui.mcagents.role.assistant";
-            case SYSTEM -> "gui.mcagents.role.system";
+            case SYSTEM, TOOL -> "gui.mcagents.role.system";
         };
     }
 }
