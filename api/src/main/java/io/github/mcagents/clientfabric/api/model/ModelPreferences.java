@@ -51,6 +51,10 @@ public record ModelPreferences(String chatModel, String embeddingModel, boolean 
      * cannot become a model id that OpenRouter rejects for a reason the player cannot see —
      * and so a player who saved a model id that has since stopped working is moved off it
      * rather than left with a mod that fails every request until they think to look.
+     *
+     * <p>It also lowercases, which is {@link ModelName}'s rule and is applied here because
+     * here is the last point before the write: {@code OpenAI/GPT-4o-Mini} and
+     * {@code openai/gpt-4o-mini} are one model, and the column must never hold both.
      */
     public static ModelPreferences of(String chatModel, String embeddingModel,
                                       boolean embeddingEnabled) {
@@ -73,7 +77,24 @@ public record ModelPreferences(String chatModel, String embeddingModel, boolean 
         if (value == null || value.isBlank()) {
             return fallback;
         }
+        // resolve() normalises before it looks a retirement up, so this is already
+        // {platform}/{model} in lowercase by the time it is returned.
         return ModelCatalog.resolve(value);
+    }
+
+    /**
+     * Which platform serves the chat model, if the id says.
+     *
+     * <p>Empty for an unqualified id — the player typed a bare model name, and the mod does
+     * not invent a platform for one. Such a request goes through the gateway.
+     */
+    public java.util.Optional<String> chatPlatform() {
+        return ModelName.parse(chatModel).map(ModelName::platform);
+    }
+
+    /** Which platform serves the embedding model, if the id says. */
+    public java.util.Optional<String> embeddingPlatform() {
+        return ModelName.parse(embeddingModel).map(ModelName::platform);
     }
 
     /** This selection with a different chat model. */

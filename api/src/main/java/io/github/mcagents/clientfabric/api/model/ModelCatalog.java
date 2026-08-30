@@ -68,14 +68,18 @@ public final class ModelCatalog {
     /**
      * The id to use in place of {@code model}, which is {@code model} itself unless it has
      * been retired.
+     *
+     * <p>Normalised with {@link ModelName#normalise(String)} first, so a retired id survives
+     * being pasted back with different capitalisation. One model, one spelling.
      */
     public static String resolve(String model) {
-        return model == null ? null : RETIRED.getOrDefault(model.trim(), model.trim());
+        String normalised = ModelName.normalise(model);
+        return normalised == null ? null : RETIRED.getOrDefault(normalised, normalised);
     }
 
     /** Whether this id is one the mod will silently replace. */
     public static boolean isRetired(String model) {
-        return model != null && RETIRED.containsKey(model.trim());
+        return model != null && RETIRED.containsKey(ModelName.normalise(model));
     }
 
     /**
@@ -91,5 +95,25 @@ public final class ModelCatalog {
     /** Presentation counterpart of {@link #isSuggestedChatModel(String)}. */
     public static boolean isSuggestedEmbeddingModel(String model) {
         return SUGGESTED_EMBEDDING_MODELS.contains(model);
+    }
+
+    /**
+     * Every platform the suggested lists name, in the order they first appear.
+     *
+     * <p>Offered where a player is asked which platform a key belongs to: the platforms they
+     * are most likely to hold a key for are the ones whose models the mod already suggests.
+     * Like the lists themselves this is a suggestion and never a whitelist — a key may be
+     * stored for any platform at all.
+     */
+    public static List<String> suggestedPlatforms() {
+        java.util.LinkedHashSet<String> platforms = new java.util.LinkedHashSet<>();
+        platforms.add(ModelPlatform.OPENROUTER);
+        java.util.stream.Stream.concat(
+                        SUGGESTED_CHAT_MODELS.stream(), SUGGESTED_EMBEDDING_MODELS.stream())
+                .map(ModelName::parse)
+                .flatMap(java.util.Optional::stream)
+                .map(ModelName::platform)
+                .forEach(platforms::add);
+        return List.copyOf(platforms);
     }
 }
