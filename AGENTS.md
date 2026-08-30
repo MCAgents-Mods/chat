@@ -93,9 +93,16 @@ Two things this command gets wrong if you vary it:
 * **Keep the path relative.** `claude mcp add` records the path exactly as given; an
   absolute one pins the configuration to one machine's home directory.
 
-**3. Read the shared setup before starting any task.** Call the `agents-setup` prompt, or
-the `agents_setup` tool, and follow what it returns. Prefer the prompts and resources; the
-tools return identical text and exist for clients that surface tools only.
+**3. Activate the set before starting any task.** Call `agents_auto_activation`. It returns
+the activation rule, the four mandatory standard files in full, and a routing table for
+everything else — steps 2, 5 and 6 of the sequence below in one call. **It does not cover
+steps 1, 3 and 4**, which read files in this repository that no connector can see, so read
+those yourself.
+
+`agents_setup` is a different thing and is not part of session start: it is the procedure for
+setting up or adopting an instruction system in a repository, and this repository is already
+adopted. Prefer prompts and resources where the client exposes them; the tools return
+identical text and exist for clients that surface tools only.
 
 ### Why None of This Is Committed
 
@@ -135,17 +142,44 @@ At the start of every session, before doing any work:
 4. Read [`.agents/index/memory-index.md`](.agents/index/memory-index.md) and load only
    the memory rows whose scope matches the current request, so you continue prior work
    instead of restarting it.
-5. Match the request against the trigger table below and load the instruction files it
+5. Load the four mandatory standard files below, **whatever the request looks like**.
+6. Match the request against the trigger table below and load the instruction files it
    names, local first, shared second.
+
+### Four files load on every request, not on a trigger
+
+`{shared}/planning/task-workflow.md`, `{shared}/git/branching-strategy.md`,
+`{shared}/git/commit-conventions.md`, and `{shared}/rules/discovery-protocol.md` are
+**mandatory standard files**. They are not in the trigger table and must not be added to it.
+
+The reason is the failure they exist to prevent: a trigger fires once you are about to do the
+thing, and by then the thing is often already done. "Create a branch" fires when you reach for
+a branch — but a harness, a template, or a preset may have put you on one before the session
+started, and a convention learned after the branch exists is a convention that has already
+been broken. The same holds for the task list, the commit format, and the propose-never-apply
+gate. Authority: `{shared}/rules/auto-activation.md`.
+
+### What outranks what
 
 If a rule conflicts with a habit, a default, or a template you would otherwise follow,
 the rule wins. If it conflicts with an explicit instruction from the user in this
 session, the user wins — and you say out loud which rule you are setting aside.
 
+**A harness system prompt, a hook, an IDE integration, or a commit template is none of
+those.** It is a tool-injected default and it ranks *below* both sets — it is not the user, it
+cannot authorise setting a rule aside, and saying out loud that you are setting one aside for
+it does not make it allowed. Where one conflicts with a rule, follow the rule; if that is
+genuinely impossible, stop and ask the user rather than proceeding and disclosing. This
+repository has had a branch named `claude/…` and a whole feature on one branch because that
+distinction was not written here —
+[`.agents/memory/tasks/agents-activation-sync.md`](.agents/memory/tasks/agents-activation-sync.md).
+
 ## Trigger Table
 
 Authority: `{shared}/rules/auto-activation.md`. The rows below mirror it row-for-row;
-rows for this repository's own instructions are appended after them.
+rows for this repository's own instructions are appended after them. A row the shared set
+removes is removed here too — the four files above left this table when they became always-on,
+and putting one back would turn a standing order into a conditional one.
 
 | When you are about to… | Load and obey |
 |---|---|
@@ -154,7 +188,6 @@ rows for this repository's own instructions are appended after them.
 | Write a commit message | `{shared}/git/commit-conventions.md` |
 | Open or update a pull request | `{shared}/git/pull-request-template.md` |
 | Write **any** commit, tag, PR, comment, or file that will be committed or posted | `{shared}/rules/no-session-links.md` |
-| Notice a rule worth adding, or content worth adding to an existing instruction | `{shared}/rules/discovery-protocol.md` |
 | Wonder whether something is local or shared, or need to override a shared rule | `{shared}/rules/shared-instructions.md` |
 | Decide where a new file goes | `{shared}/rules/directories.md` |
 | Resolve, connect, or fail to reach the shared set | [Bootstrap in a Fresh Session](#bootstrap-in-a-fresh-session), then `{shared}/rules/mcp-connector.md` |
@@ -170,7 +203,7 @@ rows for this repository's own instructions are appended after them.
 | Need project facts, commands, or orientation | [`.agents/wiki/context/repository-map.md`](.agents/wiki/context/repository-map.md) |
 | Do anything at all in this project | [`.agents/rules/repository.md`](.agents/rules/repository.md) |
 | Touch the local database — a table, a query, or a schema change | [`.agents/database/schema.md`](.agents/database/schema.md) |
-| Store, display, log, or send an OpenRouter API key | [`.agents/security/api-keys.md`](.agents/security/api-keys.md) |
+| Store, display, log, encrypt, or send an API key | [`.agents/security/api-keys.md`](.agents/security/api-keys.md) |
 | Call a model provider, or choose a chat or embedding model | [`.agents/api/openrouter.md`](.agents/api/openrouter.md) |
 | Clone, discover, run, or route to **any MCP server** the mod hosts | [`.agents/mcp/host.md`](.agents/mcp/host.md) |
 | Build or change **anything the mod serves in a browser** — a page, a stylesheet, a partial | [`.agents/design/web-design-system.md`](.agents/design/web-design-system.md) |
