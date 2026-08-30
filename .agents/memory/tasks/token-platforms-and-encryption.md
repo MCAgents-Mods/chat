@@ -75,3 +75,27 @@ that overrides one, and the https-or-loopback test.
 are not the OpenAI shape this client speaks — different path, different auth header,
 different body — so listing them would have produced requests they reject. They work through
 the gateway, which is where they stay until something speaks their format.
+
+### Task 3 — the token cipher
+
+**AES-256-GCM with a fresh 96-bit nonce per write.** Encrypting one token twice gives two
+unrelated strings, both of which open. That property is the whole reason a cipher was used
+rather than a hash: a deterministic transform of a token is a fingerprint of it, so a stolen
+database would still answer "do these two rows hold the same key?" and "is this guess the
+key?" without holding a key.
+
+**The key material is hashed with SHA-256, always.** No detection of hex or base64. One
+derivation means no later release can reinterpret an existing variable and lock a player out
+of their own tokens, and any length of passphrase works.
+
+**A blank or absent variable is the pass-through cipher, not an error.** It stores what it is
+given and reads back what is there, which is the mod that existed before this. Making
+encryption mandatory would have broken every current player for a property they never asked
+for.
+
+**The stored form is marked `mcagents:v1:`**, so mixed rows are readable and a future scheme
+can be told apart from this one — a token cannot be re-encrypted by a version that cannot
+read it.
+
+**Nothing in a failure message is a token.** The message names the variable and what was
+attempted, which is the same rule every message out of the storage layer follows.
