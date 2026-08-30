@@ -47,6 +47,27 @@ final class OpenRouterPayloads {
      * was actually reused. Without it there is no way to tell caching from wishful thinking.
      */
     static String chatRequestBody(ChatRequest request) {
+        return chatRequestBody(request, true);
+    }
+
+    /**
+     * The same body, with the gateway's own extensions left out when the request is not going
+     * to the gateway.
+     *
+     * <p>Two fields above are OpenRouter's rather than OpenAI's: {@code usage.include}, and the
+     * {@code cache_control} part a breakpoint is written as. A platform called directly
+     * <strong>rejects the whole request</strong> over either — an unrecognised argument is a
+     * 400, not something ignored — so a direct route sends plain content and no usage block.
+     *
+     * <p>Nothing is lost by dropping them. The providers reachable directly cache implicitly,
+     * on prefix stability alone, which is the same thing the message order already arranges;
+     * the marker only ever mattered to the models that read it, and those are reached through
+     * the gateway.
+     *
+     * @param throughOpenRouter whether the gateway, rather than a platform's own API, is being
+     *                          called
+     */
+    static String chatRequestBody(ChatRequest request, boolean throughOpenRouter) {
         JsonObject body = new JsonObject();
         body.addProperty("model", request.model());
 
@@ -54,7 +75,7 @@ final class OpenRouterPayloads {
         for (PromptMessage message : request.messages()) {
             JsonObject entry = new JsonObject();
             entry.addProperty("role", message.role().wireName());
-            if (message.cacheBreakpoint()) {
+            if (message.cacheBreakpoint() && throughOpenRouter) {
                 entry.add("content", cacheableContent(message.text()));
             } else {
                 entry.addProperty("content", message.text());
@@ -73,9 +94,11 @@ final class OpenRouterPayloads {
             body.add("tools", tools(request.tools()));
         }
 
-        JsonObject usage = new JsonObject();
-        usage.addProperty("include", true);
-        body.add("usage", usage);
+        if (throughOpenRouter) {
+            JsonObject usage = new JsonObject();
+            usage.addProperty("include", true);
+            body.add("usage", usage);
+        }
 
         return body.toString();
     }

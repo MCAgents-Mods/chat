@@ -12,6 +12,7 @@ import io.github.mcagents.clientfabric.common.agent.FilePersonaStore;
 import io.github.mcagents.clientfabric.common.agent.JdkHttpTransport;
 import io.github.mcagents.clientfabric.common.agent.OpenRouterAgent;
 import io.github.mcagents.clientfabric.common.agent.RepositoryApiKeySource;
+import io.github.mcagents.clientfabric.common.agent.StoredProviderRoutes;
 import io.github.mcagents.clientfabric.common.agent.openrouter.OpenRouterClient;
 import io.github.mcagents.clientfabric.common.mcp.CloneRepositoryTool;
 import io.github.mcagents.clientfabric.common.mcp.McpToolRouter;
@@ -104,9 +105,13 @@ public final class AgentFactory {
                 // Embeddings are cached locally; completions are not, and the prompt
                 // itself is reused provider-side through the breakpoints the assembler
                 // places. See CachingModelClient.
+                // Routing is read from the same store the keys are, per request, so a key
+                // added or a base URL set while the game is running takes effect without a
+                // restart — and a player who has configured neither keeps the gateway.
                 modelClient = new CachingModelClient(new OpenRouterClient(
                         new JdkHttpTransport(),
-                        new RepositoryApiKeySource(database.apiKeys())));
+                        new RepositoryApiKeySource(database.apiKeys()),
+                        new StoredProviderRoutes(database.settings(), database.apiKeys())));
             }
             return modelClient;
         }

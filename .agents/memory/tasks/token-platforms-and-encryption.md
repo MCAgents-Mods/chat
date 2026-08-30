@@ -133,3 +133,30 @@ database does not keep.
 **A row that cannot be opened is skipped, warned about once, and left in place.** Putting the
 right variable back is all it takes to get the keys back. A page's total still counts it, so
 one unreadable row does not shift every later window.
+
+### Task 5 — direct platform routes
+
+**Three questions, and the gateway if any answers no.** Does the model id name a platform, is
+there an address for it, and is there a key for it? `StoredProviderRoutes` asks all three per
+request, against the same store the keys live in, so a key added while the game is running
+takes effect on the next question.
+
+**The route decides the model id on the wire.** Through the gateway the whole stored name
+travels, because that is how OpenRouter addresses a model; direct, the bare id travels,
+because the platform has never heard of the prefix. Both come out of one stored name, which
+is the entire point of the naming convention.
+
+**Two fields are dropped on a direct request.** `usage.include` and the `cache_control`
+content part are OpenRouter's, not OpenAI's, and a platform's own API rejects the *whole
+request* over an unrecognised argument rather than ignoring it. Nothing is lost: the
+providers reachable directly cache implicitly, on prefix stability, which the message order
+already arranges. The attribution headers go the same way.
+
+**`OpenRouterClient` kept its name.** It speaks the wire format OpenRouter defines, which is
+OpenAI's, and that is exactly why one client covers both routes. A rename would have touched
+four documents and every test for no behavioural gain; the class comment says which format it
+speaks and why that is not a contradiction.
+
+**A configured address that is neither https nor loopback is ignored, not used.** The value
+being configured is where an API key gets sent. Loopback is allowed so a player can point at
+a gateway they run themselves.
