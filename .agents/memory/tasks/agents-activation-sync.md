@@ -67,3 +67,33 @@ precisely, so applying those is the smaller and more reviewable change than re-d
 whole system from a 28,000-character procedure.
 
 *(each task appends below as it lands)*
+
+### Task 2 — the sync
+
+**Applied `0/8/0`, both halves.** The discovery-protocol trigger row is gone and the always-on
+paragraph is in, naming four files. Doing only the first half would have dropped the
+propose-never-self-apply gate out of this repository altogether, which is what the release note
+warned about.
+
+**Applied `0/12/0`.** The bootstrap now names `agents_auto_activation` as the one call that
+covers steps 2, 5 and 6, and says plainly that it does **not** cover steps 1, 3 and 4 — the
+three that read files here. It also says what `agents_setup` is, so the two stop being
+confused: one activates, the other adopts.
+
+**`0/11/0` was applied in the previous task**, when the `model_name` trigger row was added
+after "Record a release". Every outstanding consumer action in the shared logs index is now
+applied.
+
+**The conflict paragraph now names the tool-injected default.** It said the user wins and you
+disclose; it now also says a harness, hook, IDE integration or commit template is not the user,
+ranks below both sets, and that disclosure is not authorisation — stop and ask instead. That
+sentence is the one whose absence produced a `claude/…` branch.
+
+**The always-on paragraph is written as the reason, not the list.** A trigger fires when you
+are about to do the thing; a branch a harness created exists before the session starts, so a
+branch convention that loads on "create a branch" loads too late to apply. That is the whole
+argument for four files being exempt from the table, and it is now stated where the mistake
+happened rather than only upstream.
+
+**One local row's wording was stale** — "send an OpenRouter API key" — since keys became
+per-platform and encrypted. Now "store, display, log, encrypt, or send an API key".
