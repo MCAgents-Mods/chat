@@ -165,6 +165,10 @@ final class WebJson {
         JsonObject body = new JsonObject();
         body.addProperty("handle", ApiKeyHandles.of(key));
         body.addProperty("masked", key.masked());
+        // Which API the key opens, not a second thing to keep secret: the platform is the
+        // one part of a key that is safe to show, and without it a player cannot tell two
+        // masked keys apart.
+        body.addProperty("platform", key.platform());
         body.addProperty("active", key.active());
         body.addProperty("createdAt", key.createdAt().toString());
         return body;

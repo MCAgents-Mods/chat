@@ -5,6 +5,10 @@
  * opaque handle to act on it with, and resolves that handle back to a value inside the mod.
  * So there is nothing here to copy, nothing to leak into a screenshot, and nothing a page
  * that went wrong could hand to anybody.
+ *
+ * It does have the platform a key opens and the address that platform is called at. Neither is
+ * a secret — one is a provider's name and the other is a public API endpoint — and without
+ * them two masked keys are indistinguishable and a direct route is invisible.
  */
 (function () {
   'use strict';
@@ -17,8 +21,14 @@
   var sentinelVisible;
   var countLabel;
   var valueBox;
+  var platformBox;
+  var platformOptions;
   var addButton;
   var noteEl;
+  var routeList;
+  var routeNote;
+  var encryptionNote;
+  var encryptionText;
 
   var state = {
     offset: 0,
@@ -34,6 +44,7 @@
 
     /* masked, never the value — the console does not send one and this could not show it. */
     row.appendChild(M.el('span', 'key-row__value', key.masked));
+    row.appendChild(M.el('span', 'badge', key.platform || 'openrouter'));
     row.appendChild(M.el('span',
       'badge ' + (key.active ? 'badge--ok' : 'badge--warn'),
       key.active ? 'Active' : 'Rejected'));
@@ -119,12 +130,16 @@
 
     addButton.disabled = true;
     try {
-      await M.api('/keys', { method: 'POST', body: { value: value } });
+      await M.api('/keys', {
+        method: 'POST',
+        body: { value: value, platform: platformBox.value.trim() }
+      });
       /* Cleared the moment it is stored: a key left sitting in a visible field is a key
        * that survives into a screenshot or a stream. */
       valueBox.value = '';
       note('Key added.', 'ok');
-      await reset();
+      /* The new key may have made its platform reachable directly, so both halves refresh. */
+      await Promise.all([reset(), loadRoutes()]);
     } catch (error) {
       note(error.message, 'error');
     } finally {
@@ -152,6 +167,86 @@
     }
   }
 
+  /* One platform: where it is called, and whether it is called there. */
+  function routeRow(item) {
+    var M = window.MCAgents;
+    var row = M.el('div', 'route-row');
+
+    row.appendChild(M.el('span', 'route-row__name', item.platform));
+
+    var url = M.el('input', 'field route-row__url');
+    url.type = 'url';
+    url.spellcheck = false;
+    url.value = item.configuredUrl || '';
+    /* The known address when there is one, and a word when there is not — never a literal
+     * URL, which the page guard reads as something fetched off the machine. */
+    url.placeholder = item.knownUrl || 'Not set';
+    url.dataset.platform = item.platform;
+    url.setAttribute('aria-label', 'Base URL for ' + item.platform);
+    row.appendChild(url);
+
+    var save = M.el('button', 'btn btn--small', 'Save');
+    save.type = 'button';
+    save.dataset.savePlatform = item.platform;
+    row.appendChild(save);
+
+    /* Says which of the two routes this platform is actually on, and why when it is not the
+     * direct one — a URL with no key is as useless as a key with no URL. */
+    var state = item.direct
+      ? M.el('span', 'badge badge--ok', 'Direct')
+      : M.el('span', 'badge', item.hasKey ? 'No address' : 'Via OpenRouter');
+    row.appendChild(state);
+
+    return row;
+  }
+
+  async function loadRoutes() {
+    var M = window.MCAgents;
+    try {
+      var body = await M.api('/routes');
+
+      routeList.textContent = '';
+      if (!body.items.length) {
+        M.showState(routeList, 'Nothing to route yet — every question goes through OpenRouter.');
+      } else {
+        body.items.forEach(function (item) { routeList.appendChild(routeRow(item)); });
+      }
+
+      platformOptions.textContent = '';
+      (body.suggestedPlatforms || []).forEach(function (platform) {
+        var option = document.createElement('option');
+        option.value = platform;
+        platformOptions.appendChild(option);
+      });
+
+      var encryption = body.encryption || {};
+      encryptionText.textContent = encryption.enabled
+        ? 'Stored keys are encrypted on this machine. Keep ' + encryption.variable
+          + ' set to the same value, or the mod cannot read them back.'
+        : 'Stored keys are kept as you pasted them. Set ' + encryption.variable
+          + ' before starting the game to have them encrypted in the database.';
+      encryptionNote.hidden = false;
+    } catch (error) {
+      M.showState(routeList, error.message, 'error');
+    }
+  }
+
+  async function saveRoute(platform, box) {
+    var M = window.MCAgents;
+    try {
+      await M.api('/routes', {
+        method: 'PUT',
+        body: { platform: platform, baseUrl: box.value.trim() }
+      });
+      routeNote.textContent = 'Saved. ' + platform + ' will be used on the next question.';
+      routeNote.className = 'muted key-note is-ok';
+      await loadRoutes();
+    } catch (error) {
+      routeNote.textContent = error.message;
+      routeNote.className = 'muted key-note is-error';
+    }
+  }
+
   document.addEventListener('mcagents:ready', async function () {
     var M = window.MCAgents;
 
@@ -160,8 +255,22 @@
     sentinel = document.getElementById('scroll-sentinel');
     countLabel = document.getElementById('key-count');
     valueBox = document.getElementById('key-value');
+    platformBox = document.getElementById('key-platform');
+    platformOptions = document.getElementById('platform-options');
     addButton = document.getElementById('add-key');
     noteEl = document.getElementById('add-note');
+    routeList = document.getElementById('route-list');
+    routeNote = document.getElementById('route-note');
+    encryptionNote = document.getElementById('encryption-note');
+    encryptionText = document.getElementById('encryption-text');
+
+    routeList.addEventListener('click', function (event) {
+      var button = event.target.closest('button[data-save-platform]');
+      if (button) {
+        saveRoute(button.dataset.savePlatform,
+          button.closest('.route-row').querySelector('.route-row__url'));
+      }
+    });
 
     valueBox.addEventListener('input', function () {
       addButton.disabled = valueBox.value.trim().length === 0;
@@ -176,6 +285,6 @@
     });
 
     sentinelVisible = M.onVisible(sentinel, loadMore, scrollRoot());
-    await reset();
+    await Promise.all([reset(), loadRoutes()]);
   });
 })();

@@ -342,6 +342,16 @@ public final class LocalWebConsole implements WebConsole {
                 return;
             }
         }
+        if (path.equals("/api/routes")) {
+            if (method.equals("GET")) {
+                sendJson(exchange, 200, api.routes());
+                return;
+            }
+            if (method.equals("PUT")) {
+                sendJson(exchange, 200, api.saveRoute(readBody(exchange)));
+                return;
+            }
+        }
         if (path.equals("/api/keys")) {
             if (method.equals("GET")) {
                 sendJson(exchange, 200, api.keys(query));
