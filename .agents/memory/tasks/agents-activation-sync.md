@@ -1,5 +1,6 @@
 ---
 name: memory-task-agents-activation-sync
+status: done
 description: Applying the shared set's outstanding consumer actions — why branching-strategy never fired, what AGENTS.md was missing, and what the audit found.
 ---
 
@@ -46,9 +47,9 @@ Its own note warned why: "Both edits, or the gate leaves your repository."
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/agents-activation-sync-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | The sync | The outstanding consumer actions, applied to `AGENTS.md` | `MCAgents/client-fabric` | `docs/agents-activation-sync` | `AGENTS.md` | |
-| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/agents-activation-release` | `wiki/logs/` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/agents-activation-sync-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #78 |
+| 2 | The sync | The outstanding consumer actions, applied to `AGENTS.md` | `MCAgents/client-fabric` | `docs/agents-activation-sync` | `AGENTS.md` | #79 |
+| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/agents-activation-release` | `wiki/logs/` | #80 |
 
 Stacked on `docs/token-platform-release`, not on `master`: that branch also edits `AGENTS.md`,
 and two tasks touching one file are never independent.
@@ -127,3 +128,11 @@ section before the shared file, which is a modified mirrored row rather than a c
 no override is declared for it in `root-index.md`. The shared file is still loaded, so nothing
 is lost today. Either declare it as an override or restore the plain row — a decision for the
 user, not a silent edit.
+
+## Closed
+
+Merged into `master` in order, tasks 1 to 3, as pull requests #78 to #80, after the eight of
+the token chain below them. Each pull request was re-targeted to `master` before it was merged
+rather than after: a forge only re-targets a stacked pull request when its base branch is
+deleted on merge, and where that setting is off the merge succeeds into the branch below while
+the default branch silently stays behind.

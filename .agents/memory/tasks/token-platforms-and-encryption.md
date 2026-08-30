@@ -1,5 +1,6 @@
 ---
 name: memory-task-token-platforms-and-encryption
+status: done
 description: Platform-aware, encrypted token storage and direct platform routing — the plan, the rule that was set aside, the decisions not to relitigate, and what is proven.
 ---
 
@@ -26,14 +27,14 @@ machine with no encryption key all behave as they did before. The encryption key
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/token-platforms-and-encryption-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Model naming | `{platform}/{model}` as a type, applied before every write | `MCAgents/client-fabric` | `feat/model-naming` | `api.model` | |
-| 3 | The token cipher | AES-GCM, a random nonce per write, key from the environment | `MCAgents/client-fabric` | `feat/token-cipher` | `common.security` | |
-| 4 | Platform column and encryption at rest | The added column, the migration, the storage boundary | `MCAgents/client-fabric` | `feat/token-storage` | `api.model`, `api.storage`, `common.storage.sqlite` | |
-| 5 | Direct routes | Resolving a route, and what changes on the wire | `MCAgents/client-fabric` | `feat/direct-routes` | `api.agent`, `common.agent` | |
-| 6 | The console | Choosing a platform, configuring an address, disclosing encryption | `MCAgents/client-fabric` | `feat/console-platforms` | `website/` | |
-| 7 | The game screen | Choosing a platform where a key is pasted | `MCAgents/client-fabric` | `feat/key-screen-platform` | `platforms/fabric/` | |
-| 8 | The release | Instructions, both wikis, the changelog, indexes | `MCAgents/client-fabric` | `docs/token-platform-release` | `.agents/`, `wiki/`, `README.md` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/token-platforms-and-encryption-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #70 |
+| 2 | Model naming | `{platform}/{model}` as a type, applied before every write | `MCAgents/client-fabric` | `feat/model-naming` | `api.model` | #71 |
+| 3 | The token cipher | AES-GCM, a random nonce per write, key from the environment | `MCAgents/client-fabric` | `feat/token-cipher` | `common.security` | #72 |
+| 4 | Platform column and encryption at rest | The added column, the migration, the storage boundary | `MCAgents/client-fabric` | `feat/token-storage` | `api.model`, `api.storage`, `common.storage.sqlite` | #73 |
+| 5 | Direct routes | Resolving a route, and what changes on the wire | `MCAgents/client-fabric` | `feat/direct-routes` | `api.agent`, `common.agent` | #74 |
+| 6 | The console | Choosing a platform, configuring an address, disclosing encryption | `MCAgents/client-fabric` | `feat/console-platforms` | `website/` | #75 |
+| 7 | The game screen | Choosing a platform where a key is pasted | `MCAgents/client-fabric` | `feat/key-screen-platform` | `platforms/fabric/` | #76 |
+| 8 | The release | Instructions, both wikis, the changelog, indexes | `MCAgents/client-fabric` | `docs/token-platform-release` | `.agents/`, `wiki/`, `README.md` | #77 |
 
 Ordered by dependency, and stacked that way: task 1 branches from `master`, task `k` from
 task `k-1`. Tasks 4 and 5 both need task 2's `ModelName`; task 4 needs task 3's cipher; tasks
@@ -241,3 +242,9 @@ does it, and typing a URL into a Minecraft text box is worse in every way. No ro
 encryption key — changing it means the old rows stay unreadable until the old value comes
 back, and a re-encrypt-under-a-new-key path is worth building only if somebody needs it. No
 per-platform model catalogue: the suggested lists are still one list.
+
+## Closed
+
+Merged into `master` in order, tasks 1 to 8, as pull requests #70 to #77. The `PR` column
+above was filled by the release task, on the branch that already contained every branch below
+it, so no branch in the stack was rebased to record its own number.
