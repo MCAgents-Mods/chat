@@ -97,3 +97,33 @@ happened rather than only upstream.
 
 **One local row's wording was stale** — "send an OpenRouter API key" — since keys became
 per-platform and encrypted. Now "store, display, log, encrypt, or send an API key".
+
+### Task 3 — the release
+
+**Recorded in the changelog**, because an entry point that misstates the activation protocol is
+a defect in how the repository is developed, and `0.0.0`'s log already covers the conventions
+the project is built under.
+
+**The duplicate audit ran and found nothing.** Five candidates after the exclusions the
+procedure names — `.agents/api/openrouter.md`, `.agents/database/schema.md`,
+`.agents/design/web-design-system.md`, `.agents/mcp/host.md`, `.agents/security/api-keys.md` —
+and every one is local-only: no `name` collision, no body matching a shared `sha256`, no path
+mirroring a shared path. The override table in `root-index.md` still correctly reads "no
+overrides". Nothing was proposed for deletion, so nothing needed approval.
+
+## What is proven, and what is not
+
+**Proven.** Every "Consumers must" row in the shared logs index is applied: `0/8/0` in both
+halves, `0/11/0` last task, `0/12/0` here. The trigger table mirrors the shared table row for
+row, with this repository's five local rows appended after them. The audit is clean.
+
+**Not proven.** That the next session actually behaves differently. The change makes the rule
+*reachable* before the work starts, which is the part that was missing; it cannot make a
+session read what it is given. The honest test is the next multi-task request in this
+repository, and whether its branches come out named correctly without anyone asking.
+
+**Observed, not changed.** The `mcp-connector` trigger row points at this file's own bootstrap
+section before the shared file, which is a modified mirrored row rather than a clean one, and
+no override is declared for it in `root-index.md`. The shared file is still loaded, so nothing
+is lost today. Either declare it as an override or restore the plain row — a decision for the
+user, not a silent edit.
