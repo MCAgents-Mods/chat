@@ -42,6 +42,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/mcp-host.md`](../memory/tasks/mcp-host.md) | The mod as an MCP client: the mcps layout, why discovery is split from connection, the qualified-name cap, and what is proven versus only compiled. |
 | [`../memory/tasks/mcp-routing.md`](../memory/tasks/mcp-routing.md) | Routing a model's tool call to the server that owns it: the three names that must agree, why a tool failure is never a failed question, and what is proven. |
 | [`../memory/tasks/token-platforms-and-encryption.md`](../memory/tasks/token-platforms-and-encryption.md) | Platform-aware, encrypted token storage and direct platform routing: the plan, the rule set aside, and what is proven. |
+| [`../memory/tasks/agents-activation-sync.md`](../memory/tasks/agents-activation-sync.md) | Why the branching rule never fired, which shared consumer actions were outstanding, and what the duplicate audit found. |
 
 ## Maintenance
 
