@@ -8,6 +8,7 @@ import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import io.github.mcagents.clientfabric.api.storage.SettingsRepository;
 import io.github.mcagents.clientfabric.api.storage.WalletRepository;
+import io.github.mcagents.clientfabric.common.security.TokenCipher;
 import io.github.mcagents.clientfabric.common.storage.CachingContentRepository;
 import io.github.mcagents.clientfabric.common.storage.RevisionedChatRepository;
 import org.sqlite.SQLiteConfig;
@@ -56,13 +57,17 @@ public final class SqliteDatabase implements LocalDatabase {
     private final WalletRepository wallets;
     private final AtomicLong chatRevision = new AtomicLong();
 
-    private SqliteDatabase(Path file, Connection connection, ExecutorService executor) {
+    private SqliteDatabase(Path file, Connection connection, ExecutorService executor,
+                           TokenCipher cipher) {
         this.file = file;
         this.connection = connection;
         this.executor = executor;
 
         SqlWorker worker = new SqlWorker(connection, executor);
-        this.apiKeys = new SqliteApiKeyRepository(worker);
+        // The cipher reaches exactly one repository. Tokens are the only thing in this
+        // database that is encrypted, because they are the only thing in it that is a
+        // credential — a conversation is not made safer by being unreadable to its owner.
+        this.apiKeys = new SqliteApiKeyRepository(worker, cipher);
         // Packs carry the largest rows in the database and are read on every question the
         // player asks, so reads of them go through a cache. The database stays the record;
         // the cache is dropped whenever a write touches what it holds.
@@ -87,10 +92,34 @@ public final class SqliteDatabase implements LocalDatabase {
      * opened — which is a real possibility on a player's machine (a read-only directory, a
      * file locked by another process) and must be handled rather than crashing the game.
      *
+     * <p>Stored tokens are encrypted with the key in
+     * {@value TokenCipher#KEY_VARIABLE} if this machine has one, and stored as they are if it
+     * does not — see {@link #open(Path, TokenCipher)}.
+     *
      * @param file the database file, usually {@code {minecraft_dir}/MCAgents/data.db}
      */
     public static CompletableFuture<LocalDatabase> open(Path file) {
+        return open(file, TokenCipher.fromEnvironment());
+    }
+
+    /**
+     * Opens the store with an explicit cipher.
+     *
+     * <p>The seam tests use, so proving what encryption does to the database never means
+     * setting an environment variable for the whole JVM.
+     *
+     * <p>When the cipher encrypts, any token still stored in the clear — written before
+     * encryption existed, or while no key was configured — is encrypted here, once, before
+     * anything can read it. Turning encryption on has to protect the keys the player already
+     * had; protecting only the next one they paste would be a promise the database does not
+     * keep.
+     *
+     * @param file   the database file
+     * @param cipher what encrypts and decrypts stored tokens
+     */
+    public static CompletableFuture<LocalDatabase> open(Path file, TokenCipher cipher) {
         Objects.requireNonNull(file, "file");
+        Objects.requireNonNull(cipher, "cipher");
         Path absolute = file.toAbsolutePath().normalize();
         ExecutorService executor = newDatabaseThread(absolute);
 
@@ -103,12 +132,18 @@ public final class SqliteDatabase implements LocalDatabase {
                 Connection connection = connect(absolute);
                 try {
                     SqliteSchema.apply(connection);
+                    int encrypted = SqliteApiKeyRepository.encryptStoredKeys(connection, cipher);
+                    if (encrypted > 0) {
+                        LOGGER.log(Level.INFO,
+                                "Encrypted {0} stored API keys that were held in the clear",
+                                encrypted);
+                    }
                 } catch (SQLException e) {
                     closeQuietly(connection);
                     throw e;
                 }
                 LOGGER.log(Level.INFO, "Opened the local database at {0}", absolute);
-                return (LocalDatabase) new SqliteDatabase(absolute, connection, executor);
+                return (LocalDatabase) new SqliteDatabase(absolute, connection, executor, cipher);
             } catch (SQLException | IOException e) {
                 executor.shutdownNow();
                 throw new DataAccessException("Opening the local database at " + absolute + " failed", e);

@@ -14,8 +14,22 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ApiKeySource {
 
-    /** The key to use next, or empty when the player has none active. */
+    /** The gateway key to use next, or empty when the player has none active. */
     CompletableFuture<Optional<String>> next();
+
+    /**
+     * The key {@code platform} should be called with next, or empty when the player has none
+     * active for it.
+     *
+     * <p>Defaults to {@link #next()}, which is what a source that predates direct routes — or
+     * a test double holding one list of keys — should do: every request went to the gateway,
+     * so every key was a gateway key.
+     *
+     * @param platform the platform id a route resolved to
+     */
+    default CompletableFuture<Optional<String>> next(String platform) {
+        return next();
+    }
 
     /**
      * Reports that the provider rejected {@code key}.

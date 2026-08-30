@@ -1,6 +1,8 @@
 package io.github.mcagents.clientfabric.common.storage.sqlite;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -12,6 +14,10 @@ import java.util.List;
  * no-op and applying it to a fresh one creates everything. A future schema change ships as
  * a migration appended here; the answer is never "delete the database", because the file
  * holds the player's whole history.
+ *
+ * <p>A column added to a table that already exists cannot say {@code IF NOT EXISTS}, so those
+ * live in their own list and are guarded by a read of the pragma instead. Both lists are
+ * append-only: their order is the migration history.
  */
 final class SqliteSchema {
 
@@ -104,16 +110,69 @@ final class SqliteSchema {
             "CREATE INDEX IF NOT EXISTS idx_wallet_addresses_wallet "
                     + "ON wallet_platform_addresses(wallet_id)");
 
+    /**
+     * Columns added to tables that already existed, applied after the statements above.
+     *
+     * <p>{@code IF NOT EXISTS} does not exist for a column, so each one is guarded by a read of
+     * {@code PRAGMA table_info} instead — the same idempotence by a different route. Each must
+     * be nullable or carry a default, because the rows already in the table will not have it.
+     *
+     * <p>Appended, never reordered, for the same reason as the list above: the order is the
+     * migration history.
+     */
+    private static final List<AddedColumn> ADDED_COLUMNS = List.of(
+            // Which platform a stored key authenticates to. Existing rows are OpenRouter keys,
+            // which is what every key was before the mod could call a platform directly, so the
+            // default is both the migration and the fallback.
+            new AddedColumn("api_keys", "platform",
+                    "ALTER TABLE api_keys ADD COLUMN platform VARCHAR(32) "
+                            + "NOT NULL DEFAULT 'openrouter'"));
+
+    /**
+     * One column added to an existing table.
+     *
+     * @param table  the table it belongs to
+     * @param column the column name, as {@code PRAGMA table_info} reports it
+     * @param ddl    the statement that adds it
+     */
+    private record AddedColumn(String table, String column, String ddl) {
+    }
+
     private SqliteSchema() {
         throw new AssertionError("No instances.");
     }
 
-    /** Creates every table and index that is not already present. */
+    /** Creates every table, index and column that is not already present. */
     static void apply(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             for (String ddl : STATEMENTS) {
                 statement.executeUpdate(ddl);
             }
+            for (AddedColumn column : ADDED_COLUMNS) {
+                if (!hasColumn(connection, column.table(), column.column())) {
+                    statement.executeUpdate(column.ddl());
+                }
+            }
         }
+    }
+
+    /** Whether {@code table} already has {@code column}, per SQLite's own catalogue. */
+    private static boolean hasColumn(Connection connection, String table, String column)
+            throws SQLException {
+        // The table-valued form of the pragma, so the table name is a bound parameter like
+        // every other value this layer sends — `PRAGMA table_info(x)` cannot be parameterised
+        // and would have to be concatenated, which nothing here is allowed to do.
+        try (PreparedStatement statement =
+                     connection.prepareStatement("SELECT name FROM pragma_table_info(?)")) {
+            statement.setString(1, table);
+            try (ResultSet rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    if (column.equalsIgnoreCase(rows.getString("name"))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

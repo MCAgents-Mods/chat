@@ -99,3 +99,37 @@ read it.
 
 **Nothing in a failure message is a token.** The message names the variable and what was
 attempted, which is the same rule every message out of the storage layer follows.
+
+### Task 4 — the platform column and encryption at rest
+
+**One added column, guarded by the pragma.** `SqliteSchema` gained a second list for columns
+added to tables that already exist, because `IF NOT EXISTS` does not exist for a column.
+`platform VARCHAR(32) NOT NULL DEFAULT 'openrouter'` is both the migration and the fallback:
+every row a player already had is an OpenRouter key, which is what every key was.
+
+**A key is only ever offered for its own platform.** `findNextActive()` is now shorthand for
+`findNextActive("openrouter")`, and no platform borrows another's key. A gateway key is not
+valid at OpenAI's own door, and sending it there would disclose it to somewhere it does not
+belong — which is worse than the request failing.
+
+**Re-adding a key under a different platform moves it.** Pasting it again is how a player
+corrects a key they filed in the wrong place, and a second row holding the same secret is the
+worse outcome.
+
+**Every lookup by value is a scan and a decrypt.** A randomised ciphertext has nothing SQL
+can match on. A blind index would have restored `WHERE`, and would have been a deterministic
+fingerprint of the token — the exact thing the encryption exists to prevent. A player holds a
+handful of keys, so the scan costs a handful of AES operations against a local file.
+
+**The ordering tie now breaks on `rowid`, not on `key_value`.** `CURRENT_TIMESTAMP` resolves
+to the second, and the column it used to break on holds ciphertext, whose order is arbitrary
+— so "the oldest active key" would have stopped meaning the oldest.
+
+**Turning encryption on encrypts what the player already had.** The migration runs at open,
+after the schema and before anything reads a key, in a transaction, and is a no-op on every
+start after the first. Protecting only the next key pasted would have been a promise the
+database does not keep.
+
+**A row that cannot be opened is skipped, warned about once, and left in place.** Putting the
+right variable back is all it takes to get the keys back. A page's total still counts it, so
+one unreadable row does not shift every later window.
