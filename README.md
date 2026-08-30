@@ -28,11 +28,16 @@ itself is fetched at startup — and version-checked on every start — so the a
 answer questions about what it is. Every other pack is checked when you open the chat page
 in the web console, and downloaded only when you ask.
 
-## Your API key
+## Your API keys
 
-Your key is stored on your own machine and sent to nobody but your model provider. It is
-never uploaded to the central service, never written to a file that travels with a world,
+A key is stored on your own machine and sent to nobody but the platform you stored it for. It
+is never uploaded to the central service, never written to a file that travels with a world,
 and shown in the interface only in shortened form.
+
+Set `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
+in the database as well, with the same key encrypting differently every time it is written.
+Leave it unset and they are stored as you pasted them, which is what the mod did before.
+Either way the console's key page tells you which.
 
 The consequence is worth stating plainly: **because the key never leaves your machine, the
 risk of leaking it is yours alone to manage.** Do not paste it where others can see it, and
@@ -56,7 +61,11 @@ do not share your `data.db`.
   jobs a Minecraft screen is bad at. Chat works both ways, so a message typed in the browser
   appears in the game and the other way round.
 * **Several API keys, with rotation** — a key the provider rejects is deactivated and the
-  next takes over without interrupting the conversation.
+  next takes over without interrupting the conversation. Each key records the platform it
+  opens, and is only ever sent there.
+* **OpenRouter, or a platform directly** — store a key for `openai`, `deepseek`, `groq` or a
+  gateway you run yourself, and questions for that platform's models go straight to it.
+  Anything you have not set up goes through OpenRouter, as it always did.
 * **Model choice** — pick a chat model and an embedding model, or type any id your provider
   serves. The lists are suggestions, not limits.
 * **Wallet binding** — record the wallets you own, across several accounts and chains, and
@@ -71,9 +80,9 @@ do not share your `data.db`.
 ## Quick start
 
 Press `G` in game. The chat screen opens with your conversations on the left and a prompt
-along the bottom. Add an OpenRouter key with the key button before asking anything; the
-gear picks models, the globe opens the web console, and **Wallets** is in the bottom-left
-corner.
+along the bottom. Add an API key with the key button before asking anything — the box beside
+it is the platform the key opens, and `openrouter` is the default. The gear picks models, the
+globe opens the web console, and **Wallets** is in the bottom-left corner.
 
 ## Where the project lives
 

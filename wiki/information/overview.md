@@ -19,11 +19,16 @@ chatbot that has never heard of it.
 
 ### Local agent
 
-The player supplies an OpenRouter API key. The mod sends the prompt, the conversation
-history, and the retrieved context to OpenRouter and shows the answer in the chat screen —
-whole, when it is ready; responses are not streamed yet. Multiple keys can be stored, and a
-key the provider rejects is deactivated so the next one takes over without interrupting the
-conversation.
+The player supplies an API key. The mod sends the prompt, the conversation history, and the
+retrieved context to the provider and shows the answer in the chat screen — whole, when it is
+ready; responses are not streamed yet. Multiple keys can be stored, and a key the provider
+rejects is deactivated so the next one takes over without interrupting the conversation.
+
+Each key records the platform it opens, and is only ever sent there. OpenRouter is the
+default and the fallback; store a key for `openai`, `deepseek`, `groq`, or a gateway you run
+yourself, and questions for that platform's models go straight to it instead. Keys are
+encrypted in the database when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the
+environment the game runs in, and stored as pasted when it is not.
 
 ### External tools
 
@@ -90,7 +95,7 @@ Everything the mod remembers lives on the player's own machine:
 | What | Where |
 |---|---|
 | Chat sessions and messages | `{minecraft_dir}/MCAgents/data.db` |
-| OpenRouter API keys | `{minecraft_dir}/MCAgents/data.db` |
+| API keys, and the platform each one opens | `{minecraft_dir}/MCAgents/data.db` |
 | Downloaded Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
 | Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/data.db` |
 | Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
@@ -132,9 +137,11 @@ be undone.
 If the agent cannot answer — no key, a model the provider does not serve, a rate limit — the
 reason appears in the conversation itself, in the provider's own words.
 
-The key button opens API key management — add your OpenRouter key there; stored keys are
-only ever shown masked. The gear button opens the model settings: pick a chat model and an
-embedding model from the suggested lists, or type any OpenRouter model id you like. The
+The key button opens API key management — add your key there, with the platform it opens in
+the box beside it (`openrouter` unless you say otherwise); stored keys are only ever shown
+masked. Where each platform is called is configured in the web console. The gear button opens
+the model settings: pick a chat model and an embedding model from the suggested lists, or
+type any model id you like. The
 lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
 ships. The **Embedding** button on that screen turns retrieval on and off — green for on,
 red for off.

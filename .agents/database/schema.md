@@ -27,7 +27,7 @@ begins "delete your data.db".
 
 | Table | Holds | Key |
 |---|---|---|
-| `api_keys` | The player's OpenRouter keys | the key value itself |
+| `api_keys` | The player's API keys, and which platform each one opens | the stored form of the key |
 | `content_categories` | Groupings for the content browser | id assigned by the central service |
 | `contents` | Downloaded Knowledge Packs, text and embedding | id assigned by the central service |
 | `chat_sessions` | One row per conversation | a UUID string |
@@ -78,6 +78,24 @@ These are not incidental; code depends on each one.
 * **Wallet tables hold public addresses only.** No private key and no recovery phrase is
   ever stored, accepted, or logged — the same rule as
   [`../security/api-keys.md`](../security/api-keys.md), and for a stronger reason.
+* **`api_keys.key_value` holds the stored form of a key, not the key.** With
+  `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` set it is an AES-GCM envelope under a fresh nonce,
+  so writing one key twice produces two different rows; with it unset it is the key itself.
+  `SqliteApiKeyRepository` is the only place either direction happens, and everything above it
+  sees the key.
+* **No lookup by key value happens in SQL.** A randomised ciphertext has nothing to match on,
+  so the repository reads the column and decrypts. **Never add a deterministic column to
+  search on** — a blind index is a fingerprint of the key and gives back exactly what the
+  encryption prevents. A player holds a handful of keys; the scan is a handful of AES
+  operations against a local file.
+* **A row that cannot be decrypted is skipped on read and never deleted.** Its place in a
+  page's `COUNT(*)` is kept too, so one unreadable row does not shift every later window.
+* **`api_keys.platform` decides which requests may use a key**, and never falls back to
+  another platform's. It defaults to `openrouter`, which is what every key was before the
+  column existed.
+* **The oldest active key wins, and the tie breaks on `rowid`.** `created_at` resolves to the
+  second and `key_value` may be ciphertext, whose order means nothing — so the tie-break is
+  insertion order, as it is for `player_wallets`.
 
 ## Migrations
 
@@ -88,7 +106,14 @@ These are not incidental; code depends on each one.
   nothing else is permitted.
 * **A new column** is added with `ALTER TABLE … ADD COLUMN`, guarded by a check of
   `PRAGMA table_info`, appended after the create statements. It must be nullable or carry a
-  default, because existing rows will not have it.
+  default, because existing rows will not have it. `SqliteSchema` keeps these in their own
+  append-only list — `IF NOT EXISTS` does not exist for a column, so the guard is a read of
+  `pragma_table_info(?)`, which is the table-valued form and therefore takes a bound parameter
+  like every other value this layer sends.
+* **A migration that rewrites values**, rather than shape, runs after the schema and before
+  anything reads — `SqliteApiKeyRepository.encryptStoredKeys` is the only one, and it is a
+  no-op on every start after the first. It runs in a transaction, so a failure leaves the
+  database exactly as it was.
 * **A column that must change type or disappear** is the expensive case: create the new
   table beside the old one, copy the rows across, and switch. Propose it before writing it.
 * Never reorder the existing statements. Their order is the migration history.

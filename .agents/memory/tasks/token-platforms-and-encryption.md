@@ -197,3 +197,47 @@ arithmetic that produced colliding text before —
 **An address is configured in the console, not in game.** Typing a URL into a Minecraft text
 box is a worse experience than the console's, and the console is one keypress away. The
 platform, which is one short word, is worth having in both.
+
+### Task 8 — the release
+
+**What was updated, and why each was not optional.** `.agents/security/api-keys.md` — the
+rule this work replaced, rewritten rather than quietly contradicted.
+`.agents/database/schema.md` — the added column, the ciphertext in `key_value`, the ban on a
+deterministic search column, and the value-rewriting migration.
+`.agents/api/openrouter.md` — the two routes and what a direct request must not carry.
+`.agents/wiki/context/repository-map.md`, `wiki/information/architecture.md`,
+`wiki/information/overview.md`, `wiki/information/web-console.md`,
+`wiki/environments/setup.md` (how to set the variable, and what happens if it is lost),
+`README.md`, and the changelog.
+
+**`AGENTS.md` was missing a mirrored row.** The shared trigger table has had
+`model-naming-convention` since before this work; the local table did not. Added, because
+mirroring is mandated rather than optional — a missing row is a rule that never fires here.
+
+## What is proven, and what is not
+
+**Proven, by 512 tests** (71 new): the same token encrypting differently on two writes and
+both opening; a database file read with its own JDBC connection holding nothing legible; keys
+already in the clear encrypted at the next open, and not re-encrypted after that; a wrong key
+hiding rows without deleting them, and the right one bringing them back; a key found by value
+though the column holds ciphertext; one platform's key never offered to another; a direct
+route's address, bare model id, dropped extensions, per-platform key and rotation; and every
+fallback path landing on the gateway.
+
+**Proven in a browser**, against a live console on a real database: the platform badges, the
+route badges, adding a key turning its platform direct, an address refused then accepted then
+cleared, the encryption disclosure, and no horizontal scroll at four widths. The database
+that run wrote held three rows, all ciphertext, with their platforms intact.
+
+**Not proven.** **No request has ever reached a platform's real API** — every direct-route
+assertion is against a stub transport, and the six shipped addresses have never been called.
+No real player's database has been migrated. Nothing has run inside Minecraft: the key
+screen's platform box is compile-verified only, as is everything else in
+`platforms/fabric/` — see [`gui-play-testing.md`](gui-play-testing.md), this repository's own
+record of a green Java suite meaning nothing about the mod loading.
+
+**Deliberately absent.** No way to set a platform's address from the game screen; the console
+does it, and typing a URL into a Minecraft text box is worse in every way. No rotation of the
+encryption key — changing it means the old rows stay unreadable until the old value comes
+back, and a re-encrypt-under-a-new-key path is worth building only if somebody needs it. No
+per-platform model catalogue: the suggested lists are still one list.
