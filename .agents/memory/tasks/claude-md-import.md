@@ -57,3 +57,22 @@ a directory the next session does not know about.
 **Nothing else in the repository points at this file.** It is read by a tool, not routed to by
 the trigger table, so it needs no index row and no trigger. `AGENTS.md` stays the entry point
 for everything, which is the entire point of the file being an import.
+
+### Task 3 — the release
+
+**Recorded in the changelog**, because which file an agent loads its instructions from is part
+of how this repository is developed, and `0.0.0`'s log already covers those conventions.
+
+## What is proven, and what is not
+
+**Proven.** The file's bytes match what was asked for, checked by diff before the commit. The
+repository map lists the new directory. `.claude/` is not in `.gitignore`, so the file is
+committed rather than silently local.
+
+**Not proven.** That Claude Code actually loads it from `.claude/CLAUDE.md` on this repository.
+The canonical project location is a `CLAUDE.md` at the repository root, and whether the
+`.claude/` variant is picked up is a property of the tool, not of this repository — nothing
+here was able to observe it. The test is one session: open this repository in Claude Code and
+check whether the `AGENTS.md` content is present in its context. If it is not, the fix is to
+move the file to the repository root and keep the same one-line import, which changes nothing
+else in this record.

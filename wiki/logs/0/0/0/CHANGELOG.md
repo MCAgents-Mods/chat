@@ -293,6 +293,15 @@ project is developed under.
   five local instruction files, none shadowing a shared `name`, path or body, nothing to
   remove.
 
+* **`.claude/CLAUDE.md`, as one import and nothing else.** Claude Code reads `CLAUDE.md` and
+  does not read `AGENTS.md`; every other agent reads `AGENTS.md` directly. The file imports
+  `../AGENTS.md` so both read the same one, which is the only arrangement in which they cannot
+  disagree. It carries no instruction content of its own — a second copy is what the shared
+  set's duplicate-instruction audit exists to catch, and it would arrive here through a door
+  that audit does not watch. The path is relative to the file holding it, so a bare
+  `@AGENTS.md` would name `.claude/AGENTS.md` and fail silently, with no file, no error, and no
+  instructions loaded; the reason is written into the file rather than left to be rediscovered.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
