@@ -43,3 +43,17 @@ committed pointer, and it has to be committed to be any use to the next person w
 repository.
 
 *(each task appends below as it lands)*
+
+### Task 2 — the import
+
+**Created verbatim as supplied.** The file is one import line, a blank line, and a block
+comment. Nothing was added to it, nothing was reworded, and no content from `AGENTS.md` was
+brought across. The bytes were diffed against the request before committing.
+
+**`.claude/` is a new top-level directory**, so the structure list in the repository map gains
+a line. That list is what a session reads to learn what exists; a directory missing from it is
+a directory the next session does not know about.
+
+**Nothing else in the repository points at this file.** It is read by a tool, not routed to by
+the trigger table, so it needs no index row and no trigger. `AGENTS.md` stays the entry point
+for everything, which is the entire point of the file being an import.
