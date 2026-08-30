@@ -43,6 +43,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/mcp-routing.md`](../memory/tasks/mcp-routing.md) | Routing a model's tool call to the server that owns it: the three names that must agree, why a tool failure is never a failed question, and what is proven. |
 | [`../memory/tasks/token-platforms-and-encryption.md`](../memory/tasks/token-platforms-and-encryption.md) | Platform-aware, encrypted token storage and direct platform routing: the plan, the rule set aside, and what is proven. |
 | [`../memory/tasks/agents-activation-sync.md`](../memory/tasks/agents-activation-sync.md) | Why the branching rule never fired, which shared consumer actions were outstanding, and what the duplicate audit found. |
+| [`../memory/tasks/claude-md-import.md`](../memory/tasks/claude-md-import.md) | Making Claude Code read `AGENTS.md` through an import rather than a copy, and why the path is `../AGENTS.md`. |
 
 ## Maintenance
 
