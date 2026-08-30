@@ -182,3 +182,18 @@ blank one clears the override back to the address the mod ships.
 **The platform box is a datalist, not a select.** The mod does not keep a whitelist of
 providers any more than it keeps one of models, so the box suggests and still accepts
 anything typed.
+
+### Task 7 — the game screen
+
+**A second box, and the list of stored keys shows the platform.** The box defaults to
+`openrouter` and is kept after a save, because a player adding two keys for one platform
+should not type it twice. The key box is still cleared the moment it is stored.
+
+**The screen's two methods now place rows from the same two constants.** `init` and the
+render pass each used to compute the list's top independently, which is exactly the
+arithmetic that produced colliding text before —
+[`screen-layout.md`](screen-layout.md).
+
+**An address is configured in the console, not in game.** Typing a URL into a Minecraft text
+box is a worse experience than the console's, and the console is one keypress away. The
+platform, which is one short word, is worth having in both.
