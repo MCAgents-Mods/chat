@@ -14,6 +14,12 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 |---|---|
 | [`../memory/state/repository-state.md`](../memory/state/repository-state.md) | What exists in this repository right now, what is not built yet, and the next obvious step. |
 
+## decisions
+
+| File | Purpose |
+|---|---|
+| [`../memory/decisions/token-encryption-at-rest.md`](../memory/decisions/token-encryption-at-rest.md) | Why stored tokens are encrypted, which local rule that set aside, and on whose instruction. |
+
 ## tasks
 
 | File | Purpose |
@@ -35,6 +41,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/mcp-connector-bootstrap.md`](../memory/tasks/mcp-connector-bootstrap.md) | Making the shared-instruction connector survive a session: the committed registration, the ignored checkout, and why the server id is not the repository name. |
 | [`../memory/tasks/mcp-host.md`](../memory/tasks/mcp-host.md) | The mod as an MCP client: the mcps layout, why discovery is split from connection, the qualified-name cap, and what is proven versus only compiled. |
 | [`../memory/tasks/mcp-routing.md`](../memory/tasks/mcp-routing.md) | Routing a model's tool call to the server that owns it: the three names that must agree, why a tool failure is never a failed question, and what is proven. |
+| [`../memory/tasks/token-platforms-and-encryption.md`](../memory/tasks/token-platforms-and-encryption.md) | Platform-aware, encrypted token storage and direct platform routing: the plan, the rule set aside, and what is proven. |
 
 ## Maintenance
 
