@@ -1,5 +1,6 @@
 ---
 name: memory-task-agents-activation-sync
+status: done
 description: Applying the shared set's outstanding consumer actions — why branching-strategy never fired, what AGENTS.md was missing, and what the audit found.
 ---
 
@@ -46,9 +47,9 @@ Its own note warned why: "Both edits, or the gate leaves your repository."
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/agents-activation-sync-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | The sync | The outstanding consumer actions, applied to `AGENTS.md` | `MCAgents/client-fabric` | `docs/agents-activation-sync` | `AGENTS.md` | |
-| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/agents-activation-release` | `wiki/logs/` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/agents-activation-sync-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #78 |
+| 2 | The sync | The outstanding consumer actions, applied to `AGENTS.md` | `MCAgents/client-fabric` | `docs/agents-activation-sync` | `AGENTS.md` | #79 |
+| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/agents-activation-release` | `wiki/logs/` | #80 |
 
 Stacked on `docs/token-platform-release`, not on `master`: that branch also edits `AGENTS.md`,
 and two tasks touching one file are never independent.
@@ -97,3 +98,41 @@ happened rather than only upstream.
 
 **One local row's wording was stale** — "send an OpenRouter API key" — since keys became
 per-platform and encrypted. Now "store, display, log, encrypt, or send an API key".
+
+### Task 3 — the release
+
+**Recorded in the changelog**, because an entry point that misstates the activation protocol is
+a defect in how the repository is developed, and `0.0.0`'s log already covers the conventions
+the project is built under.
+
+**The duplicate audit ran and found nothing.** Five candidates after the exclusions the
+procedure names — `.agents/api/openrouter.md`, `.agents/database/schema.md`,
+`.agents/design/web-design-system.md`, `.agents/mcp/host.md`, `.agents/security/api-keys.md` —
+and every one is local-only: no `name` collision, no body matching a shared `sha256`, no path
+mirroring a shared path. The override table in `root-index.md` still correctly reads "no
+overrides". Nothing was proposed for deletion, so nothing needed approval.
+
+## What is proven, and what is not
+
+**Proven.** Every "Consumers must" row in the shared logs index is applied: `0/8/0` in both
+halves, `0/11/0` last task, `0/12/0` here. The trigger table mirrors the shared table row for
+row, with this repository's five local rows appended after them. The audit is clean.
+
+**Not proven.** That the next session actually behaves differently. The change makes the rule
+*reachable* before the work starts, which is the part that was missing; it cannot make a
+session read what it is given. The honest test is the next multi-task request in this
+repository, and whether its branches come out named correctly without anyone asking.
+
+**Observed, not changed.** The `mcp-connector` trigger row points at this file's own bootstrap
+section before the shared file, which is a modified mirrored row rather than a clean one, and
+no override is declared for it in `root-index.md`. The shared file is still loaded, so nothing
+is lost today. Either declare it as an override or restore the plain row — a decision for the
+user, not a silent edit.
+
+## Closed
+
+Merged into `master` in order, tasks 1 to 3, as pull requests #78 to #80, after the eight of
+the token chain below them. Each pull request was re-targeted to `master` before it was merged
+rather than after: a forge only re-targets a stacked pull request when its base branch is
+deleted on merge, and where that setting is off the merge succeeds into the branch below while
+the default branch silently stays behind.

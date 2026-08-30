@@ -279,6 +279,20 @@ project is developed under.
   database file being read with its own connection to prove no token is legible in it, and the
   same token encrypting differently on two writes.
 
+* **The agent entry point now states the activation protocol the shared set defines.**
+  `AGENTS.md` was two shared releases behind: its session-start sequence had five steps where
+  the shared one has six, so the four mandatory standard files — the task workflow, the
+  branching strategy, the commit conventions and the discovery protocol — were never named and
+  read as trigger-fired rather than always-on. A branch convention that loads on "create a
+  branch" loads after a harness has already created one, which is exactly how this repository
+  acquired a branch named `claude/…` carrying a whole feature. Release `0/8/0`'s consumer
+  action is now applied in both halves, `0/12/0`'s names `agents_auto_activation` and the three
+  steps it cannot cover, and the conflict paragraph now says that a harness, hook, IDE
+  integration or commit template ranks below both sets and cannot authorise setting a rule
+  aside. A duplicate-instruction audit against the connector's manifest ran at the same time:
+  five local instruction files, none shadowing a shared `name`, path or body, nothing to
+  remove.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
