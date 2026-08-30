@@ -1,13 +1,50 @@
 ---
 name: openrouter-integration
-description: How the mod talks to OpenRouter — request shape, model selection, key rotation on rejection, retries, timeouts, and what must never be sent.
+description: How the mod talks to a model provider — the two routes a request can take, request shape, model selection, key rotation, retries, timeouts, and what must never be sent.
 ---
 
-# OpenRouter Integration
+# Model Provider Integration
 
-OpenRouter is the only model provider this mod calls, with the player's own key. Every call
-is optional: a player with no key has a working mod that cannot produce new answers, not a
-broken one.
+Every call is made with the player's own key, and every call is optional: a player with no
+key has a working mod that cannot produce new answers, not a broken one.
+
+## Two routes, one wire format
+
+**OpenRouter is the default and the fallback.** A request goes through the gateway unless the
+player has deliberately made a platform reachable on its own, which takes two things at once:
+an address for it, and a key stored for it.
+
+| | Sent to | `"model"` in the body | Key used |
+|---|---|---|---|
+| Through the gateway | `openrouter.ai/api/v1` | `openai/gpt-4o-mini` | an `openrouter` key |
+| Direct | `api.openai.com/v1` | `gpt-4o-mini` | an `openai` key |
+
+Both are built from one stored `{platform}/{model}` name — see
+`{shared}/rules/model-naming-convention.md`, which is why moving a model between the routes
+changes no stored data. `StoredProviderRoutes` resolves the route per request, from the same
+store the keys are in, so a key added while the game is running needs no restart.
+
+**Anything unresolved is the gateway**: an unqualified model id, a platform with no address,
+a platform with no key of its own, an address that is neither https nor loopback.
+
+`OpenRouterClient` serves both. It speaks the wire format OpenRouter defines, which is
+OpenAI's — that is precisely why one client covers a gateway and a platform's own API.
+
+### What a direct request must not carry
+
+* **`usage.include`** and **the `cache_control` content part**. Both are the gateway's. A
+  platform's own API rejects the *whole request* over an unrecognised argument rather than
+  ignoring it, and the providers reachable directly cache implicitly on prefix stability
+  anyway.
+* **`HTTP-Referer` and `X-Title`.** Attribution the gateway reads and nobody else does.
+
+### Where an address comes from
+
+`api.base-url.{platform}` in `settings` first, then the addresses `ModelPlatform` ships. A
+configured address must be `https`, or loopback for a gateway the player runs themselves;
+anything else is ignored rather than sent a key. Only OpenAI-compatible platforms are shipped
+— Anthropic and Google are deliberately absent, because their own APIs are a different path,
+header and body, and a direct call would be a request they reject.
 
 ## The seam
 
@@ -21,10 +58,10 @@ point.
 
 ## Request shape
 
-* Chat completions at `https://openrouter.ai/api/v1/chat/completions`; embeddings at
-  `https://openrouter.ai/api/v1/embeddings`.
-* The key travels in the `Authorization: Bearer …` header and nowhere else —
-  [`../security/api-keys.md`](../security/api-keys.md).
+* Chat completions at `{base}/chat/completions`; embeddings at `{base}/embeddings`, where
+  `{base}` is whatever the route resolved to.
+* The key travels in the `Authorization: Bearer …` header, to the platform it was stored for
+  and nowhere else — [`../security/api-keys.md`](../security/api-keys.md).
 * **The stored conversation is the request body.** `chat_messages` holds one row per turn
   with a `role` of `user`, `assistant`, or `system`, which is exactly the array the API
   expects. Mapping is the only step; if you find yourself parsing or reassembling, the
@@ -66,6 +103,12 @@ An exchange with tools is still one request shape, extended:
 
 * The player chooses a chat model and an embedding model. Both are stored in `settings` and
   read at request time — never hardcoded at a call site.
+* **Both are stored as `{platform}/{model}`, lowercased before the write.** `ModelName` is the
+  only thing that builds or parses one; never assemble a stored id by hand, and never store
+  one straight from a text box without `ModelPreferences.of` normalising it.
+* An id with no platform segment is kept as the player typed it and goes through the gateway.
+  Do not complete it — `openrouter/gpt-4o-mini` is not a longer spelling of `gpt-4o-mini`, it
+  is a model nobody serves.
 * **The suggested lists are suggestions, not a whitelist.** The interface offers them and
   also accepts anything the player types, because OpenRouter adds models faster than this
   mod ships. Never reject a model id the player entered; let the API reject it and report
@@ -76,9 +119,9 @@ An exchange with tools is still one request shape, extended:
 ## Failure handling
 
 * **Every call returns `CompletableFuture`** and runs off the client thread. No exception.
-* **A rejected key rotates.** 401 or 403 deactivates the key and retries once with the next
-  active key. If none is left, the player is told they need a working key — not that the
-  request failed.
+* **A rejected key rotates, within its own platform.** 401 or 403 deactivates the key and
+  retries with the next active key **for that platform**. If none is left, the player is told
+  which platform needs a working key — not that the request failed.
 * **429 and 5xx retry** with exponential backoff, at most three attempts, with jitter. 4xx
   other than 401/403/429 does not retry; the request was wrong and repeating it will not fix
   it.

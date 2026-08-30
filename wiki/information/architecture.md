@@ -121,14 +121,28 @@ and `getNow()` are never called from render or tick code.
 3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
    is playing, the session's prior messages from the local database, the retrieved content,
    and the prompt are assembled into a request (`common/`).
-4. The request goes to OpenRouter with the player's key. The screen shows an animated
-   waiting state while the future is pending.
+4. The request goes to OpenRouter with the player's key — or straight to the platform's own
+   API, if the player has stored a key for the platform the model belongs to. The screen
+   shows an animated waiting state while the future is pending.
 5. The answer is written to the local database as the next message in the session and
    rendered.
 
 Steps 1, 3, and 5 work with no internet. Step 2 works with whatever was already
-downloaded. Only step 4 needs OpenRouter, and only downloading *new* packs needs the
+downloaded. Only step 4 needs a model provider, and only downloading *new* packs needs the
 central service.
+
+### Which provider a request reaches
+
+A stored model id is `{platform}/{model}` — the shape OpenRouter itself uses — so the same
+stored value serves both routes. A request goes **directly** to a platform when two things
+are true at once: an address is known for that platform, and the player has stored a key for
+it. Otherwise it goes through OpenRouter, which is what every request did before direct
+routes existed, and what a player who configures nothing keeps getting.
+
+The difference on the wire is small and total: the gateway is sent the whole
+`openai/gpt-4o-mini`, a platform is sent `gpt-4o-mini`, and the gateway's own extensions —
+`usage.include`, the cache-control marker, the attribution headers — are left out of a direct
+call, because a platform's API rejects the whole request over an argument it does not know.
 
 ## The player's own two inputs
 
@@ -163,6 +177,12 @@ SQLite at `{minecraft_dir}/MCAgents/data.db`, via `org.xerial:sqlite-jdbc`. Eigh
 `player_wallets`, and `wallet_platform_addresses`. Chat
 messages are stored one row per turn with a `role` of `user` or `assistant`, which is the
 shape the OpenRouter API expects, so the history needs no reshaping before it is sent.
+
+`api_keys` carries the platform each key opens, and the key itself is encrypted with
+AES-GCM when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the environment — under a
+fresh nonce each write, so one key stored twice leaves two unrelated rows. The encryption key
+is never in the jar, the repository, or the database. With the variable unset, keys are stored
+as the player pasted them.
 
 The schema is created idempotently at startup. The game directory is resolved in
 `platforms/fabric/`; `common/` is handed a path and knows nothing about Minecraft.

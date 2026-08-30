@@ -55,6 +55,18 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `.agents/memory/tasks/mcp-host.md` and `.agents/memory/tasks/mcp-routing.md`.
 * Key rotation, retry with backoff, and the failure messages for each `ModelException` kind
   — all covered by tests against a stub transport, none seen against real OpenRouter.
+* **Platform-aware, encrypted token storage.** `api_keys` carries the platform each key opens
+  and `key_value` holds an AES-GCM envelope when
+  `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set. Proven by reading the database file with
+  its own connection: no token is legible in it, the same token encrypts differently on two
+  writes, keys already in the clear are encrypted at the next open, and a wrong key hides rows
+  without deleting them. **No real player's database has been migrated**, and the in-game key
+  screen's platform box is compile-verified only.
+* **Direct platform routes.** A stored `{platform}/{model}` name routes to the platform's own
+  API when an address is known and a key is stored for it, and to OpenRouter otherwise. The
+  address, the bare model id, the dropped gateway extensions and the per-platform key are
+  asserted against a stub transport; **no request has ever reached a platform's real API**,
+  and the six shipped addresses have not been called.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.

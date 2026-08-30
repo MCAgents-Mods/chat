@@ -157,7 +157,8 @@ Wallets live on this machine and the service has never heard of them.
 
 ### `/keys/`
 
-Your OpenRouter keys, ten at a time, with add and remove.
+Your API keys, ten at a time, with add and remove — and, above them, where each platform is
+called.
 
 **A key is never shown in full and never sent to the browser.** The page receives a
 shortened form to recognise a key by — `sk-o…mnop` — and an opaque handle to act on it with.
@@ -165,6 +166,29 @@ The handle is a hash: it names a key without being one, cannot be used to spend 
 and the mod resolves it back to a key internally. Adding a key sends it *inward* over
 loopback, the same direction it travels when you type it into the game. Nothing sends one
 outward.
+
+**What the page does show is the platform each key opens** — `openrouter`, `openai`,
+whatever you typed when you added it. A provider's name is not a secret, and without it two
+masked keys look identical.
+
+**Where each platform is called** lists every platform you hold a key for, plus the ones the
+mod knows an address for. Each row has the address in use and a badge saying which route it
+is actually on:
+
+| Badge | Meaning |
+|---|---|
+| **Direct** | An address and a key for this platform, so questions for its models go straight there |
+| **No address** | You hold a key, but nothing knows where to send it — type an address |
+| **Via OpenRouter** | No key for this platform, so its models go through the gateway |
+
+An address must be `https`, or a loopback address for a gateway you run yourself; anything
+else is refused rather than sent your key. Clearing a box goes back to the address the mod
+ships for that platform.
+
+**A note above says whether your keys are encrypted on this machine.** They are when
+`MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the environment the game runs in, and
+stored as you pasted them when it is not. The page says which rather than implying the
+stronger one.
 
 ## When the service is asleep
 

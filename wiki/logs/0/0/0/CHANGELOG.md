@@ -231,6 +231,54 @@ project is developed under.
   * 40 further tests, among them five driving a model's call through to a real MCP server
     process and back.
 
+* **Model identifiers stored as `{platform}/{model}`.** `ModelName` parses, builds and
+  normalises the shared instruction set's naming convention, lowercased before every write so
+  one model has exactly one spelling whichever route reached it. `ModelPlatform` carries the
+  gateway constant, the addresses this release knows for the platforms whose API is
+  OpenAI-compatible, the `api.base-url.{platform}` setting that overrides one, and the
+  https-or-loopback test that decides whether a key may be sent to an address. An id with no
+  platform segment is kept as the player typed it and goes through the gateway — nothing
+  invents a platform for one.
+* **A platform on every stored key.** `api_keys` gains a `platform` column by
+  `ALTER TABLE … ADD COLUMN`, guarded by a read of `pragma_table_info(?)` and defaulting to
+  `openrouter`, so every key a player already had keeps working unchanged. A key is offered
+  only for its own platform and never borrows another's — a gateway key is not valid at a
+  platform's own door, and sending it there would disclose it to somewhere it does not
+  belong. Re-adding a key under a different platform moves it rather than storing the secret
+  twice.
+* **Direct platform routes.** `ProviderRoute` and `ProviderRoutes` in `api.agent`, resolved by
+  `StoredProviderRoutes` from the same store the keys live in, per request — so a key added
+  while the game is running takes effect on the next question. A request goes straight to a
+  platform when an address is known for it *and* a key is stored for it; everything else is
+  the gateway, exactly as before. The gateway is sent the whole `openai/gpt-4o-mini` and a
+  platform is sent `gpt-4o-mini`, both built from one stored name, which is why moving a model
+  between routes changes no stored data. A direct request omits `usage.include`, the
+  `cache_control` content part and the attribution headers, because a platform's own API
+  rejects the entire request over an argument it does not recognise.
+* **Stored API keys encrypted at rest.** `TokenCipher` encrypts with AES-256-GCM under a fresh
+  nonce per write, so the same key stored twice produces two unrelated strings and nothing in
+  the database says two rows hold one secret — the property a hash of any kind cannot give.
+  The key comes from `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in the environment and from
+  nowhere else: nothing ships in the jar or the repository. Keys already held in the clear are
+  encrypted once, at open, in a transaction. **An unset variable is not an error** — keys are
+  then stored as they always were, and the console says which of the two states the machine is
+  in rather than implying the stronger one. Because the ciphertext is randomised, no key is
+  looked up in SQL: the repository scans and decrypts, and a deterministic column to search on
+  is forbidden precisely because it would be a fingerprint of the key. A row this machine
+  cannot open is skipped with one warning and **never deleted** — putting the right variable
+  back brings it back.
+  * This replaces the paragraph in `.agents/security/api-keys.md` that forbade encryption
+    outright. That rule was about a key shipped in the same jar; this key is not. The override
+    is recorded in `.agents/memory/decisions/token-encryption-at-rest.md`.
+* **The console's key page became the page about reaching a platform.** A platform box beside
+  the key box, the platform shown against each stored key, a panel giving every platform's
+  address and whether it is on the direct route or the gateway, and a note saying whether keys
+  are encrypted on this machine. An address that is neither https nor loopback is refused
+  rather than stored. In game, the key screen gained the same platform box.
+* **71 further tests** across `common/` and `website/` — 512 in total — among them the
+  database file being read with its own connection to prove no token is legible in it, and the
+  same token encrypting differently on two writes.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
@@ -267,6 +315,24 @@ project is developed under.
   only** — no screen has been opened in a real client, and no join event has ever fired, so
   which of single player, a server, a joined LAN world, and a realm report what is still
   unobserved.
+* Stored API keys are encrypted only when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set;
+  with it unset they are stored as pasted, which is what every earlier version did. That is a
+  deliberate fallback, not an oversight — a mod that refused to start without an environment
+  variable would be a worse mod for almost every player. What it protects is a database file
+  that leaves the machine, never a machine an attacker is already running code on: the mod has
+  to send the key to a provider, so anything that can read the environment can read the keys.
+* **Direct platform routes have never been exercised against a real provider.** The address,
+  the bare model id, the dropped extensions, the per-platform key and the rotation are all
+  asserted against a stub transport; no request has actually reached `api.openai.com`. The
+  addresses this release ships for six platforms are from their published documentation and
+  have not been called.
+* The key page was driven in Chromium against a live console — the platform badges, the route
+  badges, adding a key turning its platform direct, an address refused and then accepted and
+  then cleared, and no horizontal scroll at 1280, 900, 620 and 380 px. That found one defect
+  the Java suite could not: the encryption note's forty-character variable name has nothing to
+  break on, and pushed the whole page sideways on a narrow screen. **Neither the in-game key
+  screen's platform box nor the encryption of a real player's database has been seen in a
+  running client.**
 * The environment note is sent by default and has no switch, which sets aside the clause in
   `.agents/api/openrouter.md` reserving context injection for something the player turns on.
   It was done on an explicit instruction and mitigated by disclosure rather than by silence:

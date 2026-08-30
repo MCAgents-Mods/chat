@@ -70,9 +70,32 @@ data goes to `platforms/fabric/run/MCAgents/`:
 | `data.db` | SQLite — chat sessions, messages, API keys, downloaded Knowledge Packs |
 | `AGENTS.md` | The agent persona and instructions, editable by the player |
 
-Both are player data. `run/` is generated and is not committed. **`data.db` stores
-OpenRouter API keys in the clear — never attach it to an issue and never copy it into the
-repository.**
+Both are player data. `run/` is generated and is not committed. **`data.db` holds API keys —
+never attach it to an issue and never copy it into the repository**, encrypted or not.
+
+## Encrypting stored API keys
+
+Set `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in the environment the game runs in, and the
+mod encrypts every stored key with it:
+
+```bash
+export MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
+./gradlew :mcagents-fabric:runClient
+```
+
+Anything works as a value — a passphrase, a random string — because it is hashed to a
+256-bit key. Three things are worth knowing before you set one:
+
+* **Keys already stored are encrypted on the next start**, once, in place. Nothing is lost.
+* **Keep the value.** Change it or lose it and the mod cannot read those keys back. It does
+  not delete them — put the same value back and they return — but nothing else can recover
+  them.
+* **Leaving it unset is supported.** Keys are then stored as you pasted them, which is what
+  the mod did before this existed. The console's key page says which of the two you are in.
+
+It protects a database file that leaves the machine — a backup, a synced folder, a bug
+report. It is not a defence against something already running on your machine, which can read
+the variable as easily as the mod does.
 
 ## Working offline
 
