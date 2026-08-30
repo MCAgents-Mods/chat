@@ -1,5 +1,6 @@
 package io.github.mcagents.clientfabric.common.agent.openrouter;
 
+import io.github.mcagents.clientfabric.api.agent.ProviderRoutes;
 import io.github.mcagents.clientfabric.common.agent.StubKeySource;
 import io.github.mcagents.clientfabric.common.agent.StubTransport;
 
@@ -29,11 +30,17 @@ final class TestAccess {
     }
 
     static OpenRouterClient client(StubTransport transport, StubKeySource keys) {
+        return client(transport, keys, ProviderRoutes.throughOpenRouter());
+    }
+
+    /** A client whose routing is under the test's control, for the direct-route cases. */
+    static OpenRouterClient client(StubTransport transport, StubKeySource keys,
+                                   ProviderRoutes routes) {
         ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, runnable -> {
             Thread thread = new Thread(runnable, "test-openrouter-retry");
             thread.setDaemon(true);
             return thread;
         });
-        return new OpenRouterClient(transport, keys, scheduler, true, TEST_BACKOFF);
+        return new OpenRouterClient(transport, keys, routes, scheduler, true, TEST_BACKOFF);
     }
 }

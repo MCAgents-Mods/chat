@@ -5,6 +5,8 @@ import io.github.mcagents.clientfabric.api.agent.ChatCompletion;
 import io.github.mcagents.clientfabric.api.agent.ChatRequest;
 import io.github.mcagents.clientfabric.api.agent.ModelClient;
 import io.github.mcagents.clientfabric.api.agent.ModelException;
+import io.github.mcagents.clientfabric.api.agent.ProviderRoute;
+import io.github.mcagents.clientfabric.api.agent.ProviderRoutes;
 import io.github.mcagents.clientfabric.common.agent.HttpCall;
 import io.github.mcagents.clientfabric.common.agent.HttpReply;
 import io.github.mcagents.clientfabric.common.agent.HttpTransport;
@@ -25,7 +27,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
- * The OpenRouter implementation of {@link ModelClient}.
+ * The {@link ModelClient} that speaks the wire format OpenRouter defines.
+ *
+ * <p>That format is OpenAI's — {@code POST {base}/chat/completions} and
+ * {@code POST {base}/embeddings}, a bearer token, the same request and response shapes — which
+ * is why one client covers both routes a request can take. A {@link ProviderRoutes} decides
+ * which: through the gateway, where the whole {@code {platform}/{model}} name travels and the
+ * gateway's own extensions are welcome, or straight to a platform's own API, where the bare
+ * model id travels and those extensions would be a 400. The default is the gateway, for every
+ * request, which is what this client did before it could route at all.
  *
  * <p>Three behaviours live here so that no caller has to think about them:
  *
@@ -45,9 +55,6 @@ public final class OpenRouterClient implements ModelClient {
 
     private static final Logger LOGGER = System.getLogger(OpenRouterClient.class.getName());
 
-    private static final String CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
-    private static final String EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings";
-
     /** Attempts per request, including the first. Three is enough to ride out a blip. */
     private static final int MAX_ATTEMPTS = 3;
 
@@ -58,20 +65,32 @@ public final class OpenRouterClient implements ModelClient {
 
     private final HttpTransport transport;
     private final ApiKeySource keys;
+    private final ProviderRoutes routes;
     private final ScheduledExecutorService scheduler;
     private final boolean ownsScheduler;
     private final Duration initialBackoff;
 
+    /** A client that sends everything through the gateway. */
     public OpenRouterClient(HttpTransport transport, ApiKeySource keys) {
-        this(transport, keys, defaultScheduler(), true, DEFAULT_INITIAL_BACKOFF);
+        this(transport, keys, ProviderRoutes.throughOpenRouter());
+    }
+
+    /**
+     * A client that asks {@code routes} where each request goes.
+     *
+     * @param routes resolves a stored model id to the address and the key that serve it
+     */
+    public OpenRouterClient(HttpTransport transport, ApiKeySource keys, ProviderRoutes routes) {
+        this(transport, keys, routes, defaultScheduler(), true, DEFAULT_INITIAL_BACKOFF);
     }
 
     /** Test seam: the backoff is injectable so retry tests do not sleep for real. */
-    OpenRouterClient(HttpTransport transport, ApiKeySource keys,
+    OpenRouterClient(HttpTransport transport, ApiKeySource keys, ProviderRoutes routes,
                      ScheduledExecutorService scheduler, boolean ownsScheduler,
                      Duration initialBackoff) {
         this.transport = Objects.requireNonNull(transport, "transport");
         this.keys = Objects.requireNonNull(keys, "keys");
+        this.routes = Objects.requireNonNull(routes, "routes");
         this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
         this.ownsScheduler = ownsScheduler;
         this.initialBackoff = Objects.requireNonNull(initialBackoff, "initialBackoff");
@@ -91,8 +110,16 @@ public final class OpenRouterClient implements ModelClient {
     @Override
     public CompletableFuture<ChatCompletion> complete(ChatRequest request) {
         Objects.requireNonNull(request, "request");
-        String body = OpenRouterPayloads.chatRequestBody(request);
-        return withKeyRotation(CHAT_URL, body, OpenRouterPayloads::readChatCompletion, 0);
+        return routes.route(request.model()).thenCompose(route -> {
+            // The route decides what the model is called on the wire: the whole stored name
+            // through the gateway, the platform's own id when the platform is called directly.
+            ChatRequest routed = route.isThroughOpenRouter()
+                    ? request
+                    : new ChatRequest(route.modelId(), request.messages(), request.tools());
+            String body = OpenRouterPayloads.chatRequestBody(routed, route.isThroughOpenRouter());
+            return withKeyRotation(route, route.chatUrl(), body,
+                    OpenRouterPayloads::readChatCompletion, 0);
+        });
     }
 
     @Override
@@ -103,8 +130,11 @@ public final class OpenRouterClient implements ModelClient {
             return CompletableFuture.failedFuture(new ModelException(
                     ModelException.Kind.REQUEST, "An embedding request needs a model"));
         }
-        String body = OpenRouterPayloads.embeddingRequestBody(model, text);
-        return withKeyRotation(EMBEDDINGS_URL, body, OpenRouterPayloads::readEmbedding, 0);
+        return routes.route(model).thenCompose(route -> {
+            String body = OpenRouterPayloads.embeddingRequestBody(route.modelId(), text);
+            return withKeyRotation(route, route.embeddingsUrl(), body,
+                    OpenRouterPayloads::readEmbedding, 0);
+        });
     }
 
     /**
@@ -113,25 +143,26 @@ public final class OpenRouterClient implements ModelClient {
      * @param keysTried how many keys have already been rejected for this request
      */
     private <T> CompletableFuture<T> withKeyRotation(
-            String url, String body, Function<String, T> reader, int keysTried) {
+            ProviderRoute route, String url, String body, Function<String, T> reader,
+            int keysTried) {
 
         if (keysTried >= MAX_KEYS_PER_REQUEST) {
             return CompletableFuture.failedFuture(new ModelException(ModelException.Kind.NO_KEY,
                     "Every stored API key was rejected"));
         }
 
-        return keys.next().thenCompose(maybeKey -> {
+        return keys.next(route.platform()).thenCompose(maybeKey -> {
             Optional<String> key = maybeKey;
             if (key.isEmpty()) {
                 return CompletableFuture.<T>failedFuture(new ModelException(
                         ModelException.Kind.NO_KEY,
                         keysTried == 0
-                                ? "No OpenRouter API key is configured"
+                                ? "No API key is configured for " + route.platform()
                                 : "Every stored API key was rejected"));
             }
             String apiKey = key.get();
 
-            return attempt(url, body, apiKey, reader, 1).handle((result, failure) -> {
+            return attempt(route, url, body, apiKey, reader, 1).handle((result, failure) -> {
                 if (failure == null) {
                     return CompletableFuture.completedFuture(result);
                 }
@@ -143,16 +174,18 @@ public final class OpenRouterClient implements ModelClient {
                 // without the player seeing a failure that another key would have served.
                 LOGGER.log(Level.WARNING, "An API key was rejected; rotating to the next");
                 return keys.reject(apiKey)
-                        .thenCompose(ignored -> withKeyRotation(url, body, reader, keysTried + 1));
+                        .thenCompose(ignored ->
+                                withKeyRotation(route, url, body, reader, keysTried + 1));
             }).thenCompose(Function.identity());
         });
     }
 
     /** One send, retrying the same key while the failure is worth retrying. */
     private <T> CompletableFuture<T> attempt(
-            String url, String body, String apiKey, Function<String, T> reader, int attempt) {
+            ProviderRoute route, String url, String body, String apiKey,
+            Function<String, T> reader, int attempt) {
 
-        HttpCall call = HttpCall.post(url, headers(apiKey), body);
+        HttpCall call = HttpCall.post(url, headers(apiKey, route), body);
 
         return transport.send(call)
                 .handle((reply, failure) -> {
@@ -177,19 +210,24 @@ public final class OpenRouterClient implements ModelClient {
                         return CompletableFuture.<T>failedFuture(error);
                     }
                     return delay(backoffFor(attempt))
-                            .thenCompose(ignored -> attempt(url, body, apiKey, reader, attempt + 1));
+                            .thenCompose(ignored ->
+                                    attempt(route, url, body, apiKey, reader, attempt + 1));
                 })
                 .thenCompose(Function.identity());
     }
 
-    private static Map<String, String> headers(String apiKey) {
+    private static Map<String, String> headers(String apiKey, ProviderRoute route) {
         Map<String, String> headers = new LinkedHashMap<>();
-        // The one place a key value leaves this mod.
+        // The one place a key value leaves this mod — and it goes to the platform the key was
+        // stored for, never to another one.
         headers.put("Authorization", "Bearer " + apiKey);
         headers.put("Content-Type", "application/json");
-        // OpenRouter uses these for attribution; neither identifies the player.
-        headers.put("HTTP-Referer", "https://mcagents.mcrealms.space");
-        headers.put("X-Title", "MCAgentsClient");
+        if (route.isThroughOpenRouter()) {
+            // OpenRouter uses these for attribution; neither identifies the player. They mean
+            // nothing to a platform's own API, so they are not sent there.
+            headers.put("HTTP-Referer", "https://mcagents.mcrealms.space");
+            headers.put("X-Title", "MCAgentsClient");
+        }
         return headers;
     }
 
