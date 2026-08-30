@@ -1,5 +1,6 @@
 ---
 name: memory-task-claude-md-import
+status: done
 description: Making Claude Code read this repository's AGENTS.md through an import rather than a copy — the plan, and why the file is one line of content.
 ---
 
@@ -20,9 +21,9 @@ Nothing is added to it, and nothing from `AGENTS.md` is pasted into it.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/claude-md-import-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | The import | The file itself, and the structure page that lists what exists | `MCAgents/client-fabric` | `docs/claude-md-import` | `.claude/`, `.agents/wiki/context/repository-map.md` | |
-| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/claude-md-release` | `wiki/logs/` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/claude-md-import-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #81 |
+| 2 | The import | The file itself, and the structure page that lists what exists | `MCAgents/client-fabric` | `docs/claude-md-import` | `.claude/`, `.agents/wiki/context/repository-map.md` | #82 |
+| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/claude-md-release` | `wiki/logs/` | #83 |
 
 ## Decisions not to relitigate
 
@@ -76,3 +77,9 @@ here was able to observe it. The test is one session: open this repository in Cl
 check whether the `AGENTS.md` content is present in its context. If it is not, the fix is to
 move the file to the repository root and keep the same one-line import, which changes nothing
 else in this record.
+
+## Closed
+
+Merged into `master` in order, tasks 1 to 3, as pull requests #81 to #83. Each was re-targeted
+to `master` before it was merged rather than after, so the default branch could not end up
+behind a chain of pull requests that all read as merged.
