@@ -47,3 +47,31 @@ whole stack.
 ## Decisions not to relitigate
 
 *(each task appends below as it lands)*
+
+### Task 2 — model naming
+
+**`ModelName` is a type, not a convention people remember.** `{platform}/{model}` lowercase
+now has a parser, a builder that refuses a doubled prefix, and one `normalise` that every
+write goes through. The rule came from the shared set's `model-naming-convention`, read
+through the connector rather than copied here.
+
+**An unqualified id is kept, not completed.** `openrouter/gpt-4o-mini` is not a longer
+spelling of `gpt-4o-mini`; it is a model nobody serves. So `parse` returns empty for a bare
+id, `normalise` only trims and lowercases it, and such a request goes through the gateway.
+The alternative — invent the platform — would have made the mod reject or misroute an id the
+player typed, which `.agents/api/openrouter.md` forbids.
+
+**Lowercasing happens at the write and nowhere else.** `ModelPreferences.of` is the last
+point before storage and already normalised blanks and retirements, so it took the case rule
+too. `ModelCatalog.resolve` normalises before it looks a retirement up, which is why a
+retired id pasted back in a different case is still retired.
+
+**`ModelPlatform` is separate from `ModelName`** because it answers a different question:
+not what a model is called, but where its platform answers and whether a key may be sent
+there. It carries the gateway constant, the addresses this release ships, the setting key
+that overrides one, and the https-or-loopback test.
+
+**Anthropic and Google are deliberately absent from the shipped addresses.** Their own APIs
+are not the OpenAI shape this client speaks — different path, different auth header,
+different body — so listing them would have produced requests they reject. They work through
+the gateway, which is where they stay until something speaks their format.
