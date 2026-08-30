@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.common.storage.sqlite;
 
 import io.github.mcagents.clientfabric.api.model.ApiKey;
+import io.github.mcagents.clientfabric.api.model.ModelPlatform;
 import io.github.mcagents.clientfabric.api.storage.ApiKeyRepository;
 import io.github.mcagents.clientfabric.api.storage.DataAccessException;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Storing, rotating, and masking OpenRouter API keys. */
+/** Storing, rotating, and masking API keys, and keeping one platform's keys off another. */
 class SqliteApiKeyRepositoryTest {
 
     @TempDir
@@ -106,6 +107,79 @@ class SqliteApiKeyRepositoryTest {
         assertFalse(await(keys.remove("sk-or-v1-first")));
         assertTrue(await(keys.findAll()).isEmpty());
     }
+
+    // ----------------------------------------------------------------- platforms
+
+    @Test
+    void storesAKeyForTheGatewayWhenNoPlatformIsNamed() {
+        // The fallback that keeps every database written before this column exactly as it
+        // was: an unqualified key is an OpenRouter key, which is what every key used to be.
+        ApiKey stored = await(keys.add("sk-or-v1-first"));
+
+        assertEquals(ModelPlatform.OPENROUTER, stored.platform());
+        assertTrue(stored.isForOpenRouter());
+    }
+
+    @Test
+    void storesAKeyForThePlatformItWasGiven() {
+        ApiKey stored = await(keys.add("sk-openai-first", "OpenAI"));
+
+        assertEquals("openai", stored.platform(), "a platform is lowercased before the write");
+    }
+
+    @Test
+    void neverOffersOnePlatformsKeyToAnother() {
+        // The rule the whole column exists for: a gateway key is not valid at OpenAI's own
+        // door, and sending it there would disclose it to somewhere it does not belong.
+        await(keys.add("sk-or-v1-first"));
+        await(keys.add("sk-openai-first", "openai"));
+
+        assertEquals("sk-or-v1-first", await(keys.findNextActive()).orElseThrow().value());
+        assertEquals("sk-openai-first",
+                await(keys.findNextActive("openai")).orElseThrow().value());
+        assertTrue(await(keys.findNextActive("anthropic")).isEmpty(),
+                "a platform with no key of its own must not borrow one");
+    }
+
+    @Test
+    void rotatesWithinOnePlatformOnly() {
+        await(keys.add("sk-openai-first", "openai"));
+        await(keys.add("sk-openai-second", "openai"));
+        await(keys.add("sk-or-v1-first"));
+
+        assertTrue(await(keys.deactivate("sk-openai-first")));
+
+        assertEquals("sk-openai-second",
+                await(keys.findNextActive("openai")).orElseThrow().value());
+        assertEquals("sk-or-v1-first", await(keys.findNextActive()).orElseThrow().value(),
+                "deactivating one platform's key must not touch another's");
+    }
+
+    @Test
+    void movesAKeyWhenItIsAddedAgainUnderADifferentPlatform() {
+        // Pasting it again is how a player corrects a key they filed in the wrong place. A
+        // second row holding the same secret would be worse than moving the one that exists.
+        await(keys.add("sk-openai-first", "openrouter"));
+
+        ApiKey moved = await(keys.add("sk-openai-first", "openai"));
+
+        assertEquals("openai", moved.platform());
+        assertEquals(1, await(keys.findAll()).size());
+        assertTrue(await(keys.findNextActive()).isEmpty(),
+                "the key no longer answers for the platform it was moved off");
+    }
+
+    @Test
+    void takesAPlatformNobodyHasHeardOf() {
+        // Same rule as a model id: the mod does not keep a whitelist of providers.
+        ApiKey stored = await(keys.add("sk-somewhere-first", "some-new-platform"));
+
+        assertEquals("some-new-platform", stored.platform());
+        assertEquals("sk-somewhere-first",
+                await(keys.findNextActive("some-new-platform")).orElseThrow().value());
+    }
+
+    // ----------------------------------------------------------------- masking
 
     @Test
     void neverRendersTheWholeKey() {

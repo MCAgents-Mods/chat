@@ -29,6 +29,13 @@ public final class RepositoryApiKeySource implements ApiKeySource {
     }
 
     @Override
+    public CompletableFuture<Optional<String>> next(String platform) {
+        // Never another platform's key: the repository decides that, and this passes the
+        // question through rather than second-guessing the answer.
+        return repository.findNextActive(platform).thenApply(key -> key.map(ApiKey::value));
+    }
+
+    @Override
     public CompletableFuture<Void> reject(String key) {
         // Deactivated, never deleted: a key that vanishes silently looks like a bug, and a
         // key shown as inactive explains itself.
