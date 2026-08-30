@@ -13,6 +13,7 @@ not what the design documents describe. The design lives in
 
 ```
 AGENTS.md            entry point for agents
+.claude/CLAUDE.md    one import of AGENTS.md, so Claude Code reads the same file
 README.md            human overview
 LICENSE              MCAgents commercial license, 2026
 .agents/             this repository's local instruction set, indexes, agent wiki, memory
