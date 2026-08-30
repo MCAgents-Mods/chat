@@ -1,5 +1,6 @@
 ---
 name: memory-task-claude-md-import
+status: done
 description: Making Claude Code read this repository's AGENTS.md through an import rather than a copy — the plan, and why the file is one line of content.
 ---
 
@@ -20,9 +21,9 @@ Nothing is added to it, and nothing from `AGENTS.md` is pasted into it.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/claude-md-import-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | The import | The file itself, and the structure page that lists what exists | `MCAgents/client-fabric` | `docs/claude-md-import` | `.claude/`, `.agents/wiki/context/repository-map.md` | |
-| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/claude-md-release` | `wiki/logs/` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/claude-md-import-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #81 |
+| 2 | The import | The file itself, and the structure page that lists what exists | `MCAgents/client-fabric` | `docs/claude-md-import` | `.claude/`, `.agents/wiki/context/repository-map.md` | #82 |
+| 3 | The release | Changelog and the closing entry on this record | `MCAgents/client-fabric` | `docs/claude-md-release` | `wiki/logs/` | #83 |
 
 ## Decisions not to relitigate
 
@@ -57,3 +58,28 @@ a directory the next session does not know about.
 **Nothing else in the repository points at this file.** It is read by a tool, not routed to by
 the trigger table, so it needs no index row and no trigger. `AGENTS.md` stays the entry point
 for everything, which is the entire point of the file being an import.
+
+### Task 3 — the release
+
+**Recorded in the changelog**, because which file an agent loads its instructions from is part
+of how this repository is developed, and `0.0.0`'s log already covers those conventions.
+
+## What is proven, and what is not
+
+**Proven.** The file's bytes match what was asked for, checked by diff before the commit. The
+repository map lists the new directory. `.claude/` is not in `.gitignore`, so the file is
+committed rather than silently local.
+
+**Not proven.** That Claude Code actually loads it from `.claude/CLAUDE.md` on this repository.
+The canonical project location is a `CLAUDE.md` at the repository root, and whether the
+`.claude/` variant is picked up is a property of the tool, not of this repository — nothing
+here was able to observe it. The test is one session: open this repository in Claude Code and
+check whether the `AGENTS.md` content is present in its context. If it is not, the fix is to
+move the file to the repository root and keep the same one-line import, which changes nothing
+else in this record.
+
+## Closed
+
+Merged into `master` in order, tasks 1 to 3, as pull requests #81 to #83. Each was re-targeted
+to `master` before it was merged rather than after, so the default branch could not end up
+behind a chain of pull requests that all read as merged.
