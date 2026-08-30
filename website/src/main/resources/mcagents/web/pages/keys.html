@@ -5,6 +5,10 @@
   Keys are shown masked and never in full — the page is given a mask to recognise one by and
   an opaque handle to act on it with. Adding one sends the value inward over loopback, the
   same direction it travels when typed into the game; nothing sends one back out.
+
+  A key also carries the platform it opens, and each platform carries the address it is called
+  at. Both are shown, because neither is a secret and a player with two masked keys cannot
+  otherwise tell which is which.
 -->
 <html lang="en">
 <head>
@@ -27,28 +31,51 @@
 <main>
   <div class="container narrow">
     <section class="hero">
-      <p class="eyebrow">OpenRouter</p>
+      <p class="eyebrow">OpenRouter and direct APIs</p>
       <h1>API keys</h1>
-      <p class="lead">The keys this mod uses to answer your questions. Stored on this
-        machine only.</p>
+      <p class="lead">The keys this mod uses to answer your questions, and where each one is
+        sent. Stored on this machine only.</p>
     </section>
 
     <div class="callout callout--warn">
       <span class="callout__icon" aria-hidden="true">&#128273;</span>
       <span>A stored key is only ever shown shortened, here and in the game. Keep the full
-        value to yourself — anyone who has it can spend your OpenRouter credit.</span>
+        value to yourself — anyone who has it can spend your credit.</span>
+    </div>
+
+    <div class="callout callout--info" id="encryption-note" hidden>
+      <span class="callout__icon" aria-hidden="true">&#128274;</span>
+      <span id="encryption-text"></span>
     </div>
 
     <section class="panel">
       <h2>Add a key</h2>
       <form class="key-form" id="add-form" autocomplete="off">
-        <label class="visually-hidden" for="key-value">Paste an OpenRouter key</label>
+        <label class="visually-hidden" for="key-value">Paste a key</label>
         <input class="field" id="key-value" type="password" autocomplete="off"
-               spellcheck="false" placeholder="Paste an OpenRouter key…">
+               spellcheck="false" placeholder="Paste a key…">
+        <label class="visually-hidden" for="key-platform">Which platform it opens</label>
+        <input class="field field--platform" id="key-platform" list="platform-options"
+               autocomplete="off" spellcheck="false" value="openrouter"
+               placeholder="openrouter">
+        <datalist id="platform-options"></datalist>
         <button class="btn btn--primary" type="submit" id="add-key" disabled>Add</button>
       </form>
-      <p class="muted key-note" id="add-note">The mod uses the oldest working key and moves
-        on to the next when one is rejected.</p>
+      <p class="muted key-note" id="add-note">The mod uses the oldest working key for the
+        platform a question is routed to, and moves on to the next when one is rejected.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Where each platform is called</h2>
+      <p class="muted">A platform is called directly when it has an address <em>and</em> you
+        hold a key for it. Everything else goes through OpenRouter, which is how the mod has
+        always worked. Clear a box to go back to the built-in address.</p>
+      <div id="route-list"></div>
+      <!-- The scheme is spelled without its separator on purpose: the page guard rejects any
+           literal URL in served markup, and a sentence about addresses must not be the thing
+           that trips it. -->
+      <p class="muted key-note" id="route-note">An address must be an <code>https</code>
+        address, or a loopback one for a gateway you run yourself.</p>
     </section>
 
     <div class="toolbar">

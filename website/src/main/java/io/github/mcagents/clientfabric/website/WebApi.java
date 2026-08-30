@@ -6,12 +6,14 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import io.github.mcagents.clientfabric.api.agent.Agent;
 import io.github.mcagents.clientfabric.api.agent.PersonaStore;
+import io.github.mcagents.clientfabric.api.model.ApiKey;
 import io.github.mcagents.clientfabric.api.model.ChatMessage;
 import io.github.mcagents.clientfabric.api.model.ChatRole;
 import io.github.mcagents.clientfabric.api.model.ContentAvailability;
 import io.github.mcagents.clientfabric.api.model.ContentQuery;
 import io.github.mcagents.clientfabric.api.model.KnowledgeContent;
 import io.github.mcagents.clientfabric.api.model.ModelCatalog;
+import io.github.mcagents.clientfabric.api.model.ModelPlatform;
 import io.github.mcagents.clientfabric.api.model.ModelPreferences;
 import io.github.mcagents.clientfabric.api.model.PageRequest;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
@@ -19,6 +21,7 @@ import io.github.mcagents.clientfabric.api.wallet.ChainPlatform;
 import io.github.mcagents.clientfabric.api.wallet.Wallet;
 import io.github.mcagents.clientfabric.api.wallet.WalletBinding;
 import io.github.mcagents.clientfabric.common.agent.EmbeddingBackfill;
+import io.github.mcagents.clientfabric.common.security.TokenCipher;
 import io.github.mcagents.clientfabric.common.service.CentralService;
 import io.github.mcagents.clientfabric.common.service.ContentNotPublishedException;
 import io.github.mcagents.clientfabric.common.service.KnowledgeSync;
@@ -322,10 +325,99 @@ final class WebApi {
         if (value.isEmpty()) {
             throw new IllegalArgumentException("Paste a key first.");
         }
+        // A missing platform is an OpenRouter key, which is what every key was before the mod
+        // could call a platform directly — so an older page, or a request that predates this
+        // field, keeps storing exactly what it always stored.
+        String platform = ModelPlatform.normalise(string(body, "platform"));
         // Deliberately not validated against a provider's format. OpenRouter has changed its
         // prefix before, and a mod that refuses a working key because it looks unfamiliar is
-        // worse than one that lets the provider reject it.
-        return WebJson.apiKey(await(database.apiKeys().add(value)));
+        // worse than one that lets the provider reject it. The platform is not validated
+        // against a list either, for the same reason.
+        return WebJson.apiKey(await(database.apiKeys().add(value, platform)));
+    }
+
+    /**
+     * Which platforms are reachable directly, and where each one's API is.
+     *
+     * <p>Every platform the player holds a key for, plus every platform this release knows an
+     * address for, so the page can show both what is configured and what could be. A row is
+     * only {@code direct} when both halves are there: an address to send to, and a key for that
+     * platform to send with. Everything else goes through the gateway, which is what the page
+     * says rather than leaving the player to infer it.
+     */
+    JsonObject routes() {
+        java.util.Set<String> platforms = new java.util.TreeSet<>();
+        java.util.Set<String> withKeys = new java.util.TreeSet<>();
+        for (ApiKey key : await(database.apiKeys().findAll())) {
+            platforms.add(key.platform());
+            if (key.active()) {
+                withKeys.add(key.platform());
+            }
+        }
+        platforms.addAll(ModelPlatform.knownDirectBaseUrls().keySet());
+        platforms.remove(ModelPlatform.OPENROUTER);
+
+        JsonArray items = new JsonArray();
+        for (String platform : platforms) {
+            String configured = await(database.settings()
+                    .find(ModelPlatform.baseUrlSettingKey(platform))).orElse("").trim();
+            String known = ModelPlatform.knownBaseUrl(platform).orElse("");
+            String effective = ModelPlatform.isUsableBaseUrl(configured) ? configured : known;
+
+            JsonObject item = new JsonObject();
+            item.addProperty("platform", platform);
+            item.addProperty("configuredUrl", configured);
+            item.addProperty("knownUrl", known);
+            item.addProperty("baseUrl", effective);
+            item.addProperty("hasKey", withKeys.contains(platform));
+            item.addProperty("direct", !effective.isEmpty() && withKeys.contains(platform));
+            items.add(item);
+        }
+
+        JsonArray suggested = new JsonArray();
+        // Every platform worth offering as a choice when a key is added: the gateway, the
+        // platforms whose models the mod suggests, and any the player already uses.
+        java.util.Set<String> choices = new java.util.LinkedHashSet<>(
+                ModelCatalog.suggestedPlatforms());
+        choices.addAll(ModelPlatform.knownDirectBaseUrls().keySet());
+        choices.addAll(platforms);
+        choices.forEach(suggested::add);
+
+        JsonObject body = new JsonObject();
+        body.add("items", items);
+        body.add("suggestedPlatforms", suggested);
+        body.addProperty("gatewayUrl", ModelPlatform.OPENROUTER_BASE_URL);
+        body.addProperty("gateway", ModelPlatform.OPENROUTER);
+        // Whether this machine encrypts what it stores, said plainly rather than implied. A
+        // player who has not set the variable is storing keys in the clear, and the page that
+        // takes their key is the right place to tell them so.
+        JsonObject encryption = new JsonObject();
+        encryption.addProperty("enabled", TokenCipher.fromEnvironment().enabled());
+        encryption.addProperty("variable", TokenCipher.KEY_VARIABLE);
+        body.add("encryption", encryption);
+        return body;
+    }
+
+    /**
+     * Sets, or clears, the address one platform's API is called at.
+     *
+     * <p>A blank URL clears the override and puts the platform back on whatever this release
+     * knows — or on the gateway when it knows nothing. A URL that is neither {@code https} nor
+     * loopback is refused rather than stored: the value the player is configuring is where
+     * their API key gets sent, and there is no version of that which is safe in the clear.
+     */
+    JsonObject saveRoute(String body) {
+        String platform = ModelPlatform.normalise(string(body, "platform"));
+        if (ModelPlatform.isOpenRouter(platform)) {
+            throw new IllegalArgumentException("The gateway's own address is not configurable.");
+        }
+        String url = string(body, "baseUrl").trim();
+        if (!url.isEmpty() && !ModelPlatform.isUsableBaseUrl(url)) {
+            throw new IllegalArgumentException(
+                    "A base URL must start with https://, or be a loopback address.");
+        }
+        await(database.settings().put(ModelPlatform.baseUrlSettingKey(platform), url));
+        return routes();
     }
 
     /**

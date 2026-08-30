@@ -158,6 +158,75 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void storesThePlatformAKeyWasAddedFor() {
+        assertEquals(201, post(url("/api/keys"),
+                "{\"value\":\"sk-openai-added-here\",\"platform\":\"OpenAI\"}").statusCode());
+
+        assertEquals("openai", await(database.apiKeys().findAll()).get(0).platform(),
+                "lowercased before the write, like every other half of a model name");
+        assertEquals("openai", JsonParser.parseString(body(url("/api/keys")))
+                .getAsJsonObject().getAsJsonArray("items").get(0).getAsJsonObject()
+                .get("platform").getAsString(),
+                "and shown back, because two masked keys are otherwise indistinguishable");
+    }
+
+    @Test
+    void treatsAKeyAddedWithNoPlatformAsAGatewayKey() {
+        // The fallback an older page, or a player who ignores the box, relies on.
+        assertEquals(201, post(url("/api/keys"), "{\"value\":\"sk-or-v1-added-here\"}")
+                .statusCode());
+
+        assertEquals("openrouter", await(database.apiKeys().findAll()).get(0).platform());
+    }
+
+    @Test
+    void saysWhichPlatformsAreReachedDirectlyAndWhichAreNot() {
+        await(database.apiKeys().add("sk-openai-first", "openai"));
+
+        JsonObject routes = json(url("/api/routes"));
+        JsonObject openai = routeFor(routes, "openai");
+
+        assertTrue(openai.get("direct").getAsBoolean(),
+                "an address it ships plus a key the player stored is a direct route");
+        assertTrue(openai.get("hasKey").getAsBoolean());
+        assertFalse(routeFor(routes, "together").get("direct").getAsBoolean(),
+                "a platform with no key stays on the gateway, and the page says so");
+        assertTrue(routes.getAsJsonObject("encryption").has("enabled"),
+                "the page that takes a key says whether keys are encrypted here");
+    }
+
+    @Test
+    void storesAndClearsThePlatformsAddress() {
+        assertEquals(200, putJson("/api/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"https://openai.example.test/v1\"}")
+                .statusCode());
+        assertEquals("https://openai.example.test/v1",
+                routeFor(json(url("/api/routes")), "openai").get("baseUrl").getAsString());
+
+        assertEquals(200, putJson("/api/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"\"}").statusCode());
+        assertEquals("https://api.openai.com/v1",
+                routeFor(json(url("/api/routes")), "openai").get("baseUrl").getAsString(),
+                "clearing it goes back to the address the mod ships");
+    }
+
+    @Test
+    void refusesToStoreAnAddressAKeyWouldTravelToInTheClear() {
+        assertEquals(400, putJson("/api/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"http://openai.example.test/v1\"}")
+                .statusCode());
+        assertEquals("", routeFor(json(url("/api/routes")), "openai")
+                .get("configuredUrl").getAsString());
+    }
+
+    @Test
+    void refusesToRepointTheGatewayItself() {
+        assertEquals(400, putJson("/api/routes",
+                "{\"platform\":\"openrouter\",\"baseUrl\":\"https://elsewhere.example.test\"}")
+                .statusCode());
+    }
+
+    @Test
     void servesKeysAWindowAtATime() {
         for (int i = 0; i < 23; i++) {
             await(database.apiKeys().add("sk-or-v1-fake-" + i));
@@ -595,6 +664,24 @@ class LocalWebConsoleTest {
 
     private JsonObject json(HttpResponse<String> response) {
         return JsonParser.parseString(response.body()).getAsJsonObject();
+    }
+
+    /** One route row from the routing payload, by platform. */
+    private JsonObject routeFor(JsonObject routes, String platform) {
+        for (var item : routes.getAsJsonArray("items")) {
+            JsonObject row = item.getAsJsonObject();
+            if (platform.equals(row.get("platform").getAsString())) {
+                return row;
+            }
+        }
+        throw new AssertionError("no route row for " + platform + " in " + routes);
+    }
+
+    private HttpResponse<String> putJson(String path, String body) {
+        return send(HttpRequest.newBuilder()
+                .uri(URI.create(url(path)))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(body)));
     }
 
     private HttpResponse<String> post(String uri, String body) {

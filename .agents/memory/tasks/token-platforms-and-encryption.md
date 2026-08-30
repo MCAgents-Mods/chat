@@ -160,3 +160,25 @@ speaks and why that is not a contradiction.
 **A configured address that is neither https nor loopback is ignored, not used.** The value
 being configured is where an API key gets sent. Loopback is allowed so a player can point at
 a gateway they run themselves.
+
+### Task 6 — the console
+
+**The key page became the page about reaching a platform.** A key box, a platform box beside
+it, and a panel giving each platform's address and saying which of the two routes it is
+actually on — "Direct", "No address", or "Via OpenRouter". A URL with no key is as useless as
+a key with no URL, so the badge says which half is missing.
+
+**The platform is shown; the key still never is.** A platform is a provider's name, not a
+secret, and without it two masked keys are indistinguishable. The handle mechanism is
+untouched: no value reaches the browser, and a browser run asserts that again.
+
+**The page says whether keys are encrypted on this machine.** A player who has not set the
+variable is storing keys in the clear, and the page that takes their key is the right place
+to say so rather than implying the stronger state.
+
+**An address is refused, not warned about, when it is neither https nor loopback**, and a
+blank one clears the override back to the address the mod ships.
+
+**The platform box is a datalist, not a select.** The mod does not keep a whitelist of
+providers any more than it keeps one of models, so the box suggests and still accepts
+anything typed.
