@@ -45,6 +45,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/agents-activation-sync.md`](../memory/tasks/agents-activation-sync.md) | Why the branching rule never fired, which shared consumer actions were outstanding, and what the duplicate audit found. |
 | [`../memory/tasks/claude-md-import.md`](../memory/tasks/claude-md-import.md) | Making Claude Code read `AGENTS.md` through an import rather than a copy, and why the path is `../AGENTS.md`. |
 | [`../memory/tasks/provider-selectors.md`](../memory/tasks/provider-selectors.md) | Two provider selectors in the console: which platform a key opens, which platform answers a question, and why the page called "/api" is `/keys/`. |
+| [`../memory/tasks/game-provider-selector.md`](../memory/tasks/game-provider-selector.md) | Provider selection in the game GUI: the key screen's platform dropdown, the model screen's provider row, and why the offered list lives in `api/`. |
 
 ## Maintenance
 
