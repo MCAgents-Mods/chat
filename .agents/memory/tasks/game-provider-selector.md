@@ -1,6 +1,6 @@
 ---
 name: memory-task-game-provider-selector
-status: in-progress
+status: done
 description: Bringing provider selection into the game GUI — the key screen's platform dropdown, the model screen's provider row, and why the offered list moved into api/.
 ---
 
@@ -117,3 +117,44 @@ starts, and a short window keeping the heading rather than losing it off the top
 before `init` runs again, and two reads that each rebuilt would rebuild twice. Only platform
 names are taken from the keys — no value is read, and this screen could not show one if it
 were.
+
+### Task 5 — the release
+
+**What was updated.** [`../../../wiki/information/overview.md`](../../../wiki/information/overview.md)
+— the in-game paragraph: the key screen's dropdown, the model screen's provider row, what each
+choice does to the model id, and the route line. `README.md` — the quick start said "the box
+beside it" and now says the dropdown, and the gear now picks the provider as well as the
+models. [`../../../wiki/information/web-console.md`](../../../wiki/information/web-console.md)
+— one sentence, so a reader of the console page knows the game has the same row behind the
+gear. The changelog, under `0.0.0`; the version carrier is untouched.
+[`../state/repository-state.md`](../state/repository-state.md) — 533 tests, and the new work
+marked compile-verified only.
+
+**`.agents/wiki/context/repository-map.md` was read and left alone.** It describes `common.ui`
+as "the screen arithmetic that can be tested without Minecraft", which is exactly what
+`ModelSettingsRows` is; the sentence needed no edit to stay true.
+
+## What is proven, and what is not
+
+**Proven by the Java suites** — 533 tests, 7 new: the offered list's order, its deduplication
+and its lowercasing of a platform the player supplied; the gateway's absence from the
+model-platform list; and the model screen's five layout invariants — every row below the one
+before it, no label inside its field, the switch against the field it switches, a height that
+does not depend on where the block starts, and a short window keeping the heading.
+
+**Proven by the compiler.** `./gradlew build` produces the mod jar with both screens in it. The
+compile task was checked against a deliberate error first, so "it compiles" is a claim about
+this code rather than about a task that skipped it.
+
+**Not proven, and this is the important line.** **No screen has been opened in a real client.**
+Nothing here has been clicked: not the key screen's dropdown, not the provider row, not the
+route line, not the layout at any window size. This repository has already been caught twice
+believing a green suite meant a working screen —
+[`gui-play-testing.md`](gui-play-testing.md) — and `runClient` needs a display, which this
+environment has not got. The console halves of the same feature were driven in a browser; the
+game halves have not been driven at all.
+
+## Closed
+
+Five branches, stacked `chore/game-provider-selector-plan` → `feat/offered-platforms` →
+`feat/key-screen-provider` → `feat/model-screen-provider` → `docs/game-provider-release`.

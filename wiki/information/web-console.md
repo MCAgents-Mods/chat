@@ -125,7 +125,9 @@ takes a provider this release has never heard of. OpenRouter itself is not on th
 route rather than a provider of models, and `openrouter/gpt-4o-mini` is a model nobody serves.
 
 The choice is the same one `/model/` and the in-game model screen show, in force from your next
-question onward wherever you ask it.
+question onward wherever you ask it. The game screen has the same row, on the settings screen
+behind the gear rather than beside the prompt — see
+[`overview.md`](overview.md) — so a player who never opens a browser chooses a provider too.
 
 **AGENTS.md** opens your instructions in a modal with the file's text in it — the same file
 the in-game editor writes and the same one every answer starts from. Save writes it and it

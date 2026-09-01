@@ -67,6 +67,14 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   address, the bare model id, the dropped gateway extensions and the per-platform key are
   asserted against a stub transport; **no request has ever reached a platform's real API**,
   and the six shipped addresses have not been called.
+* **Provider selection in the game GUI.** The key screen picks a platform from an
+  `EditableDropdown`; the model screen has a provider row that rewrites the chat model through
+  `ModelCatalog.chatModelOn` and a line saying whether that provider is called directly, from
+  `StoredProviderRoutes`. Both offer `ModelCatalog.offeredPlatforms`, the same list the console
+  offers. **Compile-verified only** — `./gradlew build` produces the jar and the layout
+  arithmetic is tested in `common.ui.ModelSettingsRows`, but no screen has been opened in a
+  real client, which this repository has been caught by before —
+  `.agents/memory/tasks/gui-play-testing.md`.
 * **Provider selectors in the console.** `/keys/` picks the platform a key opens from a
   selector with an "Other…" box behind it; `/chat/` picks the provider that answers, above the
   composer, with a badge saying whether it is reached directly or through the gateway.
@@ -96,7 +104,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 526 tests across `common/` and `website/`.
+* Every I/O method returns `CompletableFuture`. 533 tests across `common/` and `website/`.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to the console, so a save from either
   interface is the persona the next question uses. It generates the file when it is missing

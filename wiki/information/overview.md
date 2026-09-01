@@ -137,13 +137,22 @@ be undone.
 If the agent cannot answer — no key, a model the provider does not serve, a rate limit — the
 reason appears in the conversation itself, in the provider's own words.
 
-The key button opens API key management — add your key there, with the platform it opens in
-the box beside it (`openrouter` unless you say otherwise); stored keys are only ever shown
-masked. Where each platform is called is configured in the web console. The gear button opens
-the model settings: pick a chat model and an embedding model from the suggested lists, or
-type any model id you like. The
-lists are a convenience, not a limit, because OpenRouter adds models faster than this mod
-ships. The **Embedding** button on that screen turns retrieval on and off — green for on,
+The key button opens API key management — add your key there, and pick the platform it opens
+from the dropdown beside it (`openrouter` unless you say otherwise). The list holds the
+platforms the mod knows and the ones you already hold keys for, and the field still takes
+anything you type, so a platform this release has never heard of needs no update to use.
+Stored keys are only ever shown masked. Where each platform is called is configured in the web
+console. The gear button opens the model settings: a **Provider** row, then a chat model and an
+embedding model, each from the suggested lists or typed as any id you like. The lists are a
+convenience, not a limit, because OpenRouter adds models faster than this mod ships.
+
+Picking a provider rewrites the chat model, because a model id names both who serves it and
+which model it is: staying on the provider you are already on changes nothing, a provider that
+cannot serve your current model moves you to its own suggested one, and a provider the mod
+suggests nothing for carries your model id over for that provider to accept or refuse. The line
+under the row says whether that provider is **called directly** or **through OpenRouter**, and
+it is answered by the same code the real request goes through. Typing a model id directly moves
+the provider row to match it and keeps the id you typed. The **Embedding** button on that screen turns retrieval on and off — green for on,
 red for off.
 
 The globe button beside the key button starts the web console and opens your browser at it.
