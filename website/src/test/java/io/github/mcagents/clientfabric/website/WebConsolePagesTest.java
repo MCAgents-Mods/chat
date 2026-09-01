@@ -141,6 +141,20 @@ class WebConsolePagesTest {
     }
 
     @Test
+    void asksForAKeysPlatformWithASelectorThatStillTakesAnythingTyped() {
+        String markup = body(url("/keys/"));
+
+        assertTrue(markup.contains("<select class=\"field field--platform\" id=\"key-platform\">"),
+                "the platform is picked from a list, not spelled from memory");
+        assertFalse(markup.contains("<datalist"),
+                "the datalist it replaced is gone — invisible until typed into, and it read "
+                        + "as a closed list while being nothing of the kind");
+        assertTrue(markup.contains("id=\"key-platform-other\""),
+                "and the list is still not a whitelist: a platform this release has never "
+                        + "heard of is typed into the box beside it");
+    }
+
+    @Test
     void putsNoPlayerDataInTheMarkupItself() {
         // The pages are static and fetch what they show, which is what keeps player text
         // out of a file nobody escapes.

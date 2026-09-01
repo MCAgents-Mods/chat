@@ -196,6 +196,23 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void offersEveryPlatformTheSelectorHasToShow() {
+        // The page picks a platform from this list rather than asking the player to spell one,
+        // so a platform they already use has to be on it — otherwise adding a second key for
+        // it means typing the name again, under "Other…", and a typo files it somewhere new.
+        await(database.apiKeys().add("sk-fireworks-first", "fireworks"));
+
+        var offered = json(url("/api/routes")).getAsJsonArray("suggestedPlatforms").asList()
+                .stream().map(element -> element.getAsString()).toList();
+
+        assertTrue(offered.contains("openrouter"), "the gateway, and the default choice");
+        assertTrue(offered.contains("openai"), "a platform this release ships an address for");
+        assertTrue(offered.contains("deepseek"), "a platform whose models the mod suggests");
+        assertTrue(offered.contains("fireworks"),
+                "and one the mod has never heard of, because the player holds a key for it");
+    }
+
+    @Test
     void storesAndClearsThePlatformsAddress() {
         assertEquals(200, putJson("/api/routes",
                 "{\"platform\":\"openai\",\"baseUrl\":\"https://openai.example.test/v1\"}")

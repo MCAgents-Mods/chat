@@ -73,10 +73,14 @@
   .key-row__when { width: 100%; }
 }
 
-/* The platform box sits beside the key box rather than under it: the two are one answer —
- * which key, and which door it opens — and splitting them across lines reads as two steps. */
+/* The platform control sits beside the key box rather than under it: the two are one answer —
+ * which key, and which door it opens — and splitting them across lines reads as two steps.
+ *
+ * It shrinks rather than holding 11rem outright, because "Other…" puts a second one in the
+ * same row and the key box must not be the thing that gives way to it. */
 .field--platform {
-  flex: 0 0 11rem;
+  flex: 0 1 11rem;
+  min-width: 7.5rem;
   font-family: var(--mono);
   font-size: .85rem;
 }

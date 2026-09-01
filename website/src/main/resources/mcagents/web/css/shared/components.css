@@ -227,6 +227,24 @@ textarea.field {
   line-height: 1.5;
 }
 
+/* A native <select> in the field's shape.
+ *
+ * Only the box is styled; the popup stays the browser's own. That is deliberate rather than
+ * lazy: the list a select opens is the one overlay on the page the design system's opaque
+ * rule cannot reach, and a hand-built listbox would have to re-earn the keyboard handling,
+ * the touch behaviour and the screen-reader semantics a native select already has. The
+ * arrow is the browser's too, which is why appearance is left alone.
+ */
+select.field {
+  cursor: pointer;
+  padding-right: .7rem;
+}
+
+select.field:disabled {
+  cursor: default;
+  color: var(--ink-400);
+}
+
 .search {
   position: relative;
   flex: 1;

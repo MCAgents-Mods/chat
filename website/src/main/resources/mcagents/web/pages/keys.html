@@ -8,7 +8,8 @@
 
   A key also carries the platform it opens, and each platform carries the address it is called
   at. Both are shown, because neither is a secret and a player with two masked keys cannot
-  otherwise tell which is which.
+  otherwise tell which is which. The platform is picked from a selector — the platforms this
+  release knows, the ones the player already holds a key for, and "Other…" for the rest.
 -->
 <html lang="en">
 <head>
@@ -55,10 +56,13 @@
         <input class="field" id="key-value" type="password" autocomplete="off"
                spellcheck="false" placeholder="Paste a key…">
         <label class="visually-hidden" for="key-platform">Which platform it opens</label>
-        <input class="field field--platform" id="key-platform" list="platform-options"
-               autocomplete="off" spellcheck="false" value="openrouter"
-               placeholder="openrouter">
-        <datalist id="platform-options"></datalist>
+        <!-- A selector with an "Other…" row, rather than a closed list: the platforms worth
+             offering are named so a player never has to know how one is spelled, and the box
+             that appears beside it still takes a platform this release has never heard of. -->
+        <select class="field field--platform" id="key-platform"></select>
+        <label class="visually-hidden" for="key-platform-other">Name the platform</label>
+        <input class="field field--platform" id="key-platform-other" hidden
+               autocomplete="off" spellcheck="false" placeholder="Name it…">
         <button class="btn btn--primary" type="submit" id="add-key" disabled>Add</button>
       </form>
       <p class="muted key-note" id="add-note">The mod uses the oldest working key for the

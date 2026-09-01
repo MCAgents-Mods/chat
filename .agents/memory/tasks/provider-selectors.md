@@ -49,3 +49,39 @@ is waiting to be filled.
 ## Decisions not to relitigate
 
 *(each task appends below as it lands)*
+
+### Task 2 — the key provider selector
+
+**The datalist is now a select, which reverses a decision taken eight days ago.**
+[`token-platforms-and-encryption.md`](token-platforms-and-encryption.md) task 6 chose a
+datalist so the box would suggest without becoming a whitelist. The property was right and
+is kept; the control was wrong. A datalist is invisible until you type, so a player who has
+never seen a platform id has nothing to type to reveal one — the same objection
+[`../../design/web-design-system.md`](../../design/web-design-system.md) already had the
+model page act on when it dropped its datalist for visible chips.
+
+**"Other…" is what keeps the list from becoming a whitelist.** Choosing it reveals a plain
+text box whose contents are sent exactly as typed, so a platform that shipped after this
+release is still one keypress further away than a listed one, not impossible. Nothing on the
+server changed: `addKey` still refuses to validate a platform against any list.
+
+**The blank value means "Other…", and that is safe only because blank is never a platform.**
+A blank platform is stored as the gateway, so it can never arrive from the list meaning
+anything else — and the page refuses to send a blank rather than filing a key under a
+platform the player just declined to pick.
+
+**The choice is held as a value, not read back off the element.** An empty `<select>` reads
+as `''`, which is the "Other…" row, so the element alone cannot tell "no options yet" from
+"typing my own" — and the first fill happens before the player has touched anything, which
+is exactly when those two must not be confused. Reading it off the DOM put the page on
+"Other…" on first load; that is why `platformChoice` exists.
+
+**The selection survives the list being rebuilt.** The routes are re-fetched after every add,
+and a selector that reset itself would file the second key of a pair under the wrong
+platform — the same reason the game screen keeps its platform box after a save.
+
+**`select.field` went into the shared component layer, not the page's stylesheet.** It is a
+form control, the chat page takes the same one in task 3, and the design system reserves a
+per-section stylesheet for page-specific layout. The popup is left to the browser: it is the
+one overlay the design system's opaque-overlay rule cannot reach, and a hand-built listbox
+would have to re-earn keyboard, touch and screen-reader behaviour a native select has.
