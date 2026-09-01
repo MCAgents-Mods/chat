@@ -108,6 +108,25 @@ conversation changes, from either side. The browser polls it; the game checks it
 A message typed in Minecraft appears in the browser within a few seconds, and one typed in
 the browser appears in the game the same way.
 
+**Answered by** sits on the line above the box you type into: the provider that answers your
+questions, picked from a list of the ones the mod knows an address for, the ones its suggested
+models come from, and any you hold a key for. Choosing one changes which model is used, because
+a model id names both halves — who serves it, and which model it is:
+
+| What you had | What you pick | What you get |
+|---|---|---|
+| `deepseek/deepseek-v4-flash` | `deepseek` | the same model — picking the provider you are on is not a change |
+| `deepseek/deepseek-v4-flash` | `openai` | `openai/gpt-4o-mini` — OpenAI does not serve the DeepSeek model, so OpenAI's own suggestion is used |
+| `deepseek/deepseek-v4-flash` | `groq` | `groq/deepseek-v4-flash` — nothing is suggested for Groq, so your model id is carried over and Groq gets to say whether it serves it |
+
+The note beside it names the model that resulted, and the badge says whether that provider is
+reached **Direct** or **Via openrouter** — the same two routes `/keys/` explains. **Other…**
+takes a provider this release has never heard of. OpenRouter itself is not on the list: it is a
+route rather than a provider of models, and `openrouter/gpt-4o-mini` is a model nobody serves.
+
+The choice is the same one `/model/` and the in-game model screen show, in force from your next
+question onward wherever you ask it.
+
 **AGENTS.md** opens your instructions in a modal with the file's text in it — the same file
 the in-game editor writes and the same one every answer starts from. Save writes it and it
 takes effect on the next question, in the browser and in the game alike; Cancel writes
@@ -131,6 +150,11 @@ It applies on **Save**, like everything else on this page. It was in the chat he
 one setting with two homes is one setting that can be shown two ways — the chat copy even had
 to behave differently, applying at once because that page has no Save button. The in-game
 model screen keeps its own copy, for a player who never opens a browser.
+
+**The chat page's provider selector writes the chat model this page shows.** That is one
+setting with one home, reached two ways rather than copied: `/chat/` sends the provider and the
+mod decides the id, so what appears in the box above is what was stored, whichever page it was
+chosen from.
 
 ### `/wallets/`
 
@@ -167,9 +191,16 @@ and the mod resolves it back to a key internally. Adding a key sends it *inward*
 loopback, the same direction it travels when you type it into the game. Nothing sends one
 outward.
 
-**What the page does show is the platform each key opens** — `openrouter`, `openai`,
-whatever you typed when you added it. A provider's name is not a secret, and without it two
-masked keys look identical.
+**What the page does show is the platform each key opens** — `openrouter`, `openai`, whichever
+you chose when you added it. A provider's name is not a secret, and without it two masked keys
+look identical.
+
+**The platform is picked from a selector** beside the key box: the gateway, the platforms the
+mod ships an address for, the ones its suggested models come from, and any you already hold a
+key for. It is a list of suggestions and not a limit — **Other…** reveals a box that takes a
+platform this release has never heard of, and stores it exactly as you typed it. Adding a
+second key for a platform does not mean choosing it again: the selector keeps your last
+answer.
 
 **Where each platform is called** lists every platform you hold a key for, plus the ones the
 mod knows an address for. Each row has the address in use and a badge saying which route it
