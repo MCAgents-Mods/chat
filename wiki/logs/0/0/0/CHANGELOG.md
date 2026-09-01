@@ -325,6 +325,32 @@ project is developed under.
   answered by the **Direct** / **Via openrouter** badge beside the selector instead. The choice
   is the same stored preference `/model/` and the in-game screen read.
 
+* **Provider selection in the game GUI, and one offered list behind both interfaces.** The
+  console had both selectors and the game had neither: a platform was typed from memory on the
+  key screen, and the provider that answers could only be changed by hand-editing the first
+  segment of a model id.
+
+  `ModelCatalog.offeredPlatforms` now computes the platforms worth offering — the gateway, the
+  platforms the suggested models name, the ones this release ships an address for, and the
+  player's own — and `WebApi.routes()` calls it instead of building the same set inline, so the
+  browser and the game cannot drift apart on what they offer. `offeredModelPlatforms` is the
+  same list without the gateway, for the one question the gateway is not an answer to.
+
+  In game, the key screen's platform box became an `EditableDropdown` — the control that
+  suggests without constraining, which is what the console reaches with a selector plus
+  "Other…" — offering the platforms the player already holds keys for alongside the shipped
+  ones. The model settings screen gained a **Provider** row above the chat model, applying
+  `ModelCatalog.chatModelOn` on the spot so the resulting model id is visible before anything
+  is saved, with the provider and the id kept in step both ways. Under it, a line saying
+  whether that provider is called directly or through OpenRouter, answered by
+  `StoredProviderRoutes` — the same code the real request routes through, so it cannot claim a
+  direct call the mod would not make.
+
+  That screen's row positions moved into `common.ui.ModelSettingsRows`, built on `StackedRows`
+  and covered by five tests that run without Minecraft. Adding a row lengthened the chain of
+  offsets that has twice drawn a label inside the box below it, and a longer chain in a class
+  no test can reach is that defect waiting for a third turn.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.

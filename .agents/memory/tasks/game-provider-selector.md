@@ -1,6 +1,6 @@
 ---
 name: memory-task-game-provider-selector
-status: in-progress
+status: done
 description: Bringing provider selection into the game GUI — the key screen's platform dropdown, the model screen's provider row, and why the offered list moved into api/.
 ---
 
@@ -31,18 +31,20 @@ this work does not reopen.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/game-provider-selector-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | — |
-| 2 | One offered list | The platforms worth offering, computed once in `api/` | `MCAgents/client-fabric` | `feat/offered-platforms` | `api.model.ModelCatalog`, `website.WebApi` | — |
-| 3 | The key screen | Picking the platform a key opens, in game | `MCAgents/client-fabric` | `feat/key-screen-provider` | `platforms/fabric` — `ApiKeyScreen` | — |
-| 4 | The model screen | Picking the provider that answers, and saying how it is reached | `MCAgents/client-fabric` | `feat/model-screen-provider` | `platforms/fabric` — `ModelSettingsScreen`, `common.ui` | — |
-| 5 | The release | Both wikis, the README, the changelog, the closing entry | `MCAgents/client-fabric` | `docs/game-provider-release` | `wiki/`, `README.md`, `.agents/` | — |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/game-provider-selector-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #88 |
+| 2 | One offered list | The platforms worth offering, computed once in `api/` | `MCAgents/client-fabric` | `feat/offered-platforms` | `api.model.ModelCatalog`, `website.WebApi` | #89 |
+| 3 | The key screen | Picking the platform a key opens, in game | `MCAgents/client-fabric` | `feat/key-screen-provider` | `platforms/fabric` — `ApiKeyScreen` | #90 |
+| 4 | The model screen | Picking the provider that answers, and saying how it is reached | `MCAgents/client-fabric` | `feat/model-screen-provider` | `platforms/fabric` — `ModelSettingsScreen`, `common.ui` | #91 |
+| 5 | The release | Both wikis, the README, the changelog, the closing entry | `MCAgents/client-fabric` | `docs/game-provider-release` | `wiki/`, `README.md`, `.agents/` | #92 |
 
 Ordered by dependency and stacked that way: task 1 branches from `master`, task `k` from task
 `k-1`. Tasks 3 and 4 both need task 2's list; task 5 describes all of them.
 
-**The pull request gate is open from the last chain**: the user asked for pull requests and an
-in-order merge there, and asked for this work in the same breath. It is asked again at the end
-rather than assumed — permission for one chain is not permission for the next.
+**The pull request gate was asked again rather than carried over.** Permission for the previous
+chain was not permission for this one, so the branches were pushed first and the pull requests
+opened only when the user asked for them a second time. The `PR` column below was filled by the
+release task, on the branch that already contained every branch under it — the same reason it
+is filled there and not on branch 1, where the edit would have rebased the whole stack.
 
 ## Decisions not to relitigate
 
@@ -117,3 +119,50 @@ starts, and a short window keeping the heading rather than losing it off the top
 before `init` runs again, and two reads that each rebuilt would rebuild twice. Only platform
 names are taken from the keys — no value is read, and this screen could not show one if it
 were.
+
+### Task 5 — the release
+
+**What was updated.** [`../../../wiki/information/overview.md`](../../../wiki/information/overview.md)
+— the in-game paragraph: the key screen's dropdown, the model screen's provider row, what each
+choice does to the model id, and the route line. `README.md` — the quick start said "the box
+beside it" and now says the dropdown, and the gear now picks the provider as well as the
+models. [`../../../wiki/information/web-console.md`](../../../wiki/information/web-console.md)
+— one sentence, so a reader of the console page knows the game has the same row behind the
+gear. The changelog, under `0.0.0`; the version carrier is untouched.
+[`../state/repository-state.md`](../state/repository-state.md) — 533 tests, and the new work
+marked compile-verified only.
+
+**`.agents/wiki/context/repository-map.md` was read and left alone.** It describes `common.ui`
+as "the screen arithmetic that can be tested without Minecraft", which is exactly what
+`ModelSettingsRows` is; the sentence needed no edit to stay true.
+
+## What is proven, and what is not
+
+**Proven by the Java suites** — 533 tests, 7 new: the offered list's order, its deduplication
+and its lowercasing of a platform the player supplied; the gateway's absence from the
+model-platform list; and the model screen's five layout invariants — every row below the one
+before it, no label inside its field, the switch against the field it switches, a height that
+does not depend on where the block starts, and a short window keeping the heading.
+
+**Proven by the compiler.** `./gradlew build` produces the mod jar with both screens in it. The
+compile task was checked against a deliberate error first, so "it compiles" is a claim about
+this code rather than about a task that skipped it.
+
+**Not proven, and this is the important line.** **No screen has been opened in a real client.**
+Nothing here has been clicked: not the key screen's dropdown, not the provider row, not the
+route line, not the layout at any window size. This repository has already been caught twice
+believing a green suite meant a working screen —
+[`gui-play-testing.md`](gui-play-testing.md) — and `runClient` needs a display, which this
+environment has not got. The console halves of the same feature were driven in a browser; the
+game halves have not been driven at all.
+
+## Closed
+
+Five branches, stacked `chore/game-provider-selector-plan` → `feat/offered-platforms` →
+`feat/key-screen-provider` → `feat/model-screen-provider` → `docs/game-provider-release`,
+opened as pull requests #88 to #92 and merged into `master` in that order.
+
+**The thing to pick up next is a client run.** Everything in this chain is compile-verified and
+nothing in it has been clicked; the caveat is on #92 and in
+[`../state/repository-state.md`](../state/repository-state.md) so that it is not discovered by a
+player instead.

@@ -80,9 +80,10 @@ do not share your `data.db`.
 ## Quick start
 
 Press `G` in game. The chat screen opens with your conversations on the left and a prompt
-along the bottom. Add an API key with the key button before asking anything — the box beside
-it is the platform the key opens, and `openrouter` is the default. The gear picks models, the
-globe opens the web console, and **Wallets** is in the bottom-left corner.
+along the bottom. Add an API key with the key button before asking anything — the dropdown
+beside it is the platform the key opens, and `openrouter` is the default. The gear picks the
+provider and the models, the globe opens the web console, and **Wallets** is in the bottom-left
+corner.
 
 ## Where the project lives
 
