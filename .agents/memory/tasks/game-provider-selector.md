@@ -47,3 +47,20 @@ rather than assumed — permission for one chain is not permission for the next.
 ## Decisions not to relitigate
 
 *(each task appends below as it lands)*
+
+### Task 2 — one offered list
+
+**The list moved into `api/` before either screen was touched.** `ModelCatalog.offeredPlatforms`
+takes the platforms the player is already on and returns the gateway, the platforms the
+suggested models name, the ones this release ships an address for, and the player's own — in
+that order, deduplicated. `WebApi.routes()` now calls it instead of building the same set
+inline. Doing this first is what stops the game screen from growing a second list: two lists
+computed in two places from the same three sources are equal exactly until one of them is
+edited.
+
+**`offeredModelPlatforms` is a second method rather than a flag.** It is the same list without
+the gateway, for the one question the gateway is not an answer to: who serves a model.
+`openrouter/gpt-4o-mini` is a model nobody serves, so the control that picks a model's platform
+must not offer it — while the control that files a key under a platform must, since the gateway
+is what most keys are for. A boolean argument would have made those two questions look like one
+question with a setting.

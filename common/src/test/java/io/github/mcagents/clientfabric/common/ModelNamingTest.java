@@ -196,6 +196,30 @@ class ModelNamingTest {
     }
 
     @Test
+    void offersTheGatewayTheShippedPlatformsAndThePlayersOwn() {
+        java.util.List<String> offered = ModelCatalog.offeredPlatforms(
+                java.util.List.of("Fireworks", "", "openai"));
+
+        assertEquals(ModelPlatform.OPENROUTER, offered.get(0),
+                "the gateway leads: it is the default a key is filed under");
+        assertTrue(offered.contains("deepseek"), "a platform the suggested models name");
+        assertTrue(offered.contains("groq"), "a platform this release ships an address for");
+        assertEquals("fireworks", offered.get(offered.size() - 1),
+                "and the player's own platform last, lowercased");
+        assertEquals(offered.size(), java.util.Set.copyOf(offered).size(),
+                "a platform the player already uses and the mod also ships is offered once");
+    }
+
+    @Test
+    void leavesTheGatewayOutOfTheListOfWhoServesAModel() {
+        // openrouter/gpt-4o-mini is a model nobody serves, so the gateway is not a choice
+        // where a model's platform is being picked.
+        assertFalse(ModelCatalog.offeredModelPlatforms(java.util.List.of())
+                .contains(ModelPlatform.OPENROUTER));
+        assertTrue(ModelCatalog.offeredModelPlatforms(java.util.List.of()).contains("openai"));
+    }
+
+    @Test
     void namesTheSettingThatOverridesAPlatformsAddress() {
         assertEquals("api.base-url.openai", ModelPlatform.baseUrlSettingKey("OpenAI"));
     }

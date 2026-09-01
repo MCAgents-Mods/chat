@@ -375,13 +375,10 @@ final class WebApi {
         }
 
         JsonArray suggested = new JsonArray();
-        // Every platform worth offering as a choice when a key is added: the gateway, the
-        // platforms whose models the mod suggests, and any the player already uses.
-        java.util.Set<String> choices = new java.util.LinkedHashSet<>(
-                ModelCatalog.suggestedPlatforms());
-        choices.addAll(ModelPlatform.knownDirectBaseUrls().keySet());
-        choices.addAll(platforms);
-        choices.forEach(suggested::add);
+        // Every platform worth offering as a choice when a key is added. Built in api/ rather
+        // than here, because the game's key screen offers the same list and two lists computed
+        // in two places stay equal only until one of them is edited.
+        ModelCatalog.offeredPlatforms(platforms).forEach(suggested::add);
 
         JsonObject body = new JsonObject();
         body.add("items", items);
