@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.fabric.client.gui;
 
 import io.github.mcagents.clientfabric.api.model.ApiKey;
+import io.github.mcagents.clientfabric.api.model.ModelCatalog;
 import io.github.mcagents.clientfabric.api.model.ModelPlatform;
 import io.github.mcagents.clientfabric.api.storage.LocalDatabase;
 import net.minecraft.ChatFormatting;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +26,16 @@ import java.util.function.Consumer;
  *
  * <h2>A key carries the platform it opens</h2>
  *
- * <p>The second box is which platform the key authenticates to, and it defaults to
- * {@code openrouter} — what every key was, and what a player who ignores the box keeps
- * getting. A key stored for a platform the mod knows an address for is what turns a direct
- * call on; the address itself is configured in the web console, because typing a URL into a
- * Minecraft text box is a worse experience than the console's, not because the game cannot do
- * it.
+ * <p>The second control is which platform the key authenticates to, and it defaults to
+ * {@code openrouter} — what every key was, and what a player who ignores it keeps getting. It
+ * is a dropdown that can also be typed into, offering the same platforms the console's key
+ * page offers, from the same list in {@link ModelCatalog#offeredPlatforms}. The list suggests
+ * and never constrains: a platform this release has never heard of is typed straight into the
+ * field and stored exactly as typed.
+ *
+ * <p>A key stored for a platform the mod knows an address for is what turns a direct call on;
+ * the address itself is configured in the web console, because typing a URL into a Minecraft
+ * text box is a worse experience than the console's, not because the game cannot do it.
  *
  * <h2>Keys are never shown in full</h2>
  *
@@ -66,7 +72,7 @@ public final class ApiKeyScreen extends Screen {
     private final WaitingIndicator waiting = new WaitingIndicator();
 
     private EditBox entryBox;
-    private EditBox platformBox;
+    private EditableDropdown platformPicker;
     private List<ApiKey> keys = List.of();
 
     /**
@@ -113,15 +119,19 @@ public final class ApiKeyScreen extends Screen {
                 .bounds(left + FIELD_WIDTH - 56, top, 56, LINE)
                 .build());
 
-        // Which platform the key opens. Never validated against a list: the mod does not
-        // reject a model id the player types and it does not reject a platform either.
-        platformBox = new EditBox(font, left, top + ROW_HEIGHT, FIELD_WIDTH - 60, LINE,
+        // Which platform the key opens. The list is a suggestion and never a limit: the mod
+        // does not reject a model id the player types and it does not reject a platform
+        // either, so this is the dropdown that can be typed into rather than a cycling button.
+        //
+        // Built from the keys already read, so a platform the player is using is offered even
+        // when this release has never heard of it. On the first init there are none yet; the
+        // read below rebuilds the screen once they arrive.
+        platformPicker = new EditableDropdown(font, ModelCatalog.offeredPlatforms(platformsInUse()),
                 Component.translatable("gui.mcagents.keys.platform"));
-        platformBox.setHint(Component.translatable("gui.mcagents.keys.platform"));
-        platformBox.setMaxLength(64);
-        platformBox.setValue(pendingPlatform);
-        platformBox.setResponder(text -> pendingPlatform = text);
-        addRenderableWidget(platformBox);
+        platformPicker.setBounds(left, top + ROW_HEIGHT, FIELD_WIDTH - 60, LINE);
+        platformPicker.setValue(pendingPlatform);
+        platformPicker.field().setResponder(text -> pendingPlatform = text);
+        addRenderableWidget(platformPicker.field());
 
         // One row per stored key, each with its own remove button.
         int rowTop = LIST_TOP;
@@ -143,6 +153,17 @@ public final class ApiKeyScreen extends Screen {
         if (!loaded) {
             loadKeys();
         }
+    }
+
+    /**
+     * The platforms the player already holds a key for.
+     *
+     * <p>Offered alongside the ones this release knows, so a player who filed a key under a
+     * platform the mod has never heard of does not have to type that name again — and cannot
+     * mistype it into a second platform nobody serves.
+     */
+    private List<String> platformsInUse() {
+        return keys.stream().map(ApiKey::platform).distinct().toList();
     }
 
     /**
@@ -168,9 +189,9 @@ public final class ApiKeyScreen extends Screen {
         if (value.isEmpty()) {
             return;
         }
-        // A blank box is the gateway, not an error: ModelPlatform.normalise says so, and that
-        // is the fallback a player who never touched the box relies on.
-        String platform = ModelPlatform.normalise(platformBox.getValue());
+        // A blank field is the gateway, not an error: ModelPlatform.normalise says so, and that
+        // is the fallback a player who never touched it relies on.
+        String platform = ModelPlatform.normalise(platformPicker.value());
         // Cleared immediately: the key must not sit in a visible text box after it has been
         // stored, where it would survive into a screenshot or a stream. The platform is not
         // cleared — it is not a secret, and a player adding two keys for one platform should
@@ -247,6 +268,24 @@ public final class ApiKeyScreen extends Screen {
             graphics.centeredText(font, waiting.label(Component.translatable("gui.mcagents.waiting")),
                     width / 2, height - 52, 0xFFFFFFFF);
         }
+
+        platformPicker.render(graphics, mouseX, mouseY);
+        // Last, and over the key rows it covers: an open list floats above the screen rather
+        // than sitting inside it.
+        platformPicker.renderOverlay(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        // Before super, so an open list gets the click rather than the remove button beneath
+        // it. A row that was picked is read back here rather than relied upon to notify: the
+        // dropdown writes into the field directly, and this screen keeps the pending value
+        // across the rebuild that a stored key triggers.
+        if (platformPicker.clickedOverlay(event)) {
+            pendingPlatform = platformPicker.value();
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
     }
 
     /**
