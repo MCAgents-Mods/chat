@@ -32,10 +32,10 @@ the player named.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/provider-selectors-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | — |
-| 2 | The key provider selector | Picking the platform a pasted key opens, on `/keys/` | `MCAgents/client-fabric` | `feat/key-provider-selector` | `website/` — `pages/keys.html`, `js/keys.js`, `css/keys/keys.css` | — |
-| 3 | The chat provider selector | Picking the platform that answers, on `/chat/` | `MCAgents/client-fabric` | `feat/chat-provider-selector` | `api/model`, `website/` — `WebApi`, `pages/chat.html`, `js/chat.js`, `css/chat/chat.css` | — |
-| 4 | The release | The console's documentation, the changelog, and the closing entry | `MCAgents/client-fabric` | `docs/provider-selectors-release` | `wiki/`, `.agents/` | — |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/provider-selectors-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #84 |
+| 2 | The key provider selector | Picking the platform a pasted key opens, on `/keys/` | `MCAgents/client-fabric` | `feat/key-provider-selector` | `website/` — `pages/keys.html`, `js/keys.js`, `css/keys/keys.css` | #85 |
+| 3 | The chat provider selector | Picking the platform that answers, on `/chat/` | `MCAgents/client-fabric` | `feat/chat-provider-selector` | `api/model`, `website/` — `WebApi`, `pages/chat.html`, `js/chat.js`, `css/chat/chat.css` | #86 |
+| 4 | The release | The console's documentation, the changelog, and the closing entry | `MCAgents/client-fabric` | `docs/provider-selectors-release` | `wiki/`, `.agents/` | #87 |
 
 Ordered by dependency and stacked that way: task 1 branches from `master`, task `k` from
 task `k-1`. Tasks 2 and 3 both extend the console's page tests, and task 4 describes both,
@@ -157,12 +157,16 @@ unproven, and the test count, now 526.
 screen, whose platform box is a text field and is untouched by this work. Editing them to
 mention a selector would have made them wrong.
 
-**No pull request was opened, and none is pending.** The user asked for the branches to be
-pushed and nothing more, so the `PR` column stays empty as a fact rather than as a gap. All
-four branches are on `origin`, stacked in order.
+**The `PR` column was filled here, on the release branch.** It is the last branch and already
+contains every branch below it, so writing the numbers into it rebases nothing — where the
+same edit on branch 1 would have invalidated the whole stack. The pull requests were opened
+only after every branch was pushed, which is why the column could not have been filled any
+earlier.
 
 ## Closed
 
-Four branches pushed, stacked `chore/provider-selectors-plan` → `feat/key-provider-selector` →
-`feat/chat-provider-selector` → `docs/provider-selectors-release`. Nothing merged: merging is
-the user's call and was not asked for.
+Four branches, stacked `chore/provider-selectors-plan` → `feat/key-provider-selector` →
+`feat/chat-provider-selector` → `docs/provider-selectors-release`, opened as pull requests #84
+to #87 and merged into `master` in that order. Both gates in
+`{shared}/planning/task-workflow.md` §F were answered by the user explicitly: first "push
+only, no pr", then the instruction to open the pull requests and merge them in order.
