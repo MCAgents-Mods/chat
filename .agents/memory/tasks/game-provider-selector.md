@@ -83,3 +83,37 @@ writes into the field directly, and this screen keeps `pendingPlatform` across t
 storing a key triggers. Relying on the field's responder to fire on a programmatic `setValue`
 would have made a kept value depend on a vanilla implementation detail; reading it where the
 click is handled does not.
+
+### Task 4 — the model screen
+
+**The provider row sits above the chat model, not on the chat screen.** The console put its
+selector beside the composer because that page has no Save button and the model page is a
+click away in a browser. In game the relationship is reversed: the chat screen is where a
+question is typed and the gear is one keypress from it, and the provider is the same stored
+preference the model screen already owns. Putting it anywhere else would have made one setting
+have two homes — the objection this screen already recorded against the embedding switch.
+
+**Picking a provider rewrites the model id immediately, and typing an id moves the provider.**
+The binding runs both ways on purpose. Because the provider field mirrors the id's platform as
+it is typed, a provider that differs from that platform can only mean the player edited the
+provider box — so the save path can honour a typed provider without any tie-break, and a player
+who types a model id directly keeps it, since nothing rewrites the field behind them.
+`ModelCatalog.chatModelOn` is the rule in both interfaces; the screen contributes no policy.
+
+**The route line is answered by `StoredProviderRoutes`, not by the screen.** It is the same
+code the real request goes through, so the line cannot claim a direct call the mod would not
+actually make. The console recomputes the equivalent badge inside `WebApi`; this is the better
+of the two, and worth copying back if that ever disagrees with a request.
+
+**The layout moved into `common.ui.ModelSettingsRows`.** Adding a row made the screen's chain
+of offsets longer, and that chain is exactly what drew a label inside a box twice already —
+[`screen-layout.md`](screen-layout.md). The sums are now a record built on `StackedRows`, with
+five tests that run without Minecraft: every row below the one before it, no label inside its
+field, the switch against the field it switches, the height independent of where the block
+starts, and a short window keeping the heading rather than losing it off the top.
+
+**One read, one rebuild.** The preferences and the key platforms are fetched with
+`thenCombine` because a dropdown's list is fixed when it is built: the platforms must be known
+before `init` runs again, and two reads that each rebuilt would rebuild twice. Only platform
+names are taken from the keys — no value is read, and this screen could not show one if it
+were.
