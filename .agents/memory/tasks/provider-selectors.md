@@ -41,10 +41,12 @@ Ordered by dependency and stacked that way: task 1 branches from `master`, task 
 task `k-1`. Tasks 2 and 3 both extend the console's page tests, and task 4 describes both,
 so nothing here is independent of what precedes it.
 
-**No pull request is opened for any of them.** The user asked for the branches to be pushed
-and nothing more, which is the `{shared}/planning/task-workflow.md` §F gate
-answered rather than skipped. The `PR` column stays empty for that reason, not because it
-is waiting to be filled.
+**The pull request gate was answered twice, explicitly, by the user.** First "push only, no
+pr", so the four branches were pushed and nothing was opened; then, once they were up, the
+instruction to open the pull requests and merge them in order. Both are the
+`{shared}/planning/task-workflow.md` §F gate answered rather than assumed. The `PR` column
+below was filled by the release task, on the branch that already contained every branch under
+it.
 
 ## Decisions not to relitigate
 
