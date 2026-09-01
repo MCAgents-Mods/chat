@@ -443,6 +443,9 @@ final class WebApi {
 
         JsonObject body = new JsonObject();
         body.addProperty("chatModel", current.chatModel());
+        // Which platform answers, read out of the id by the type that owns its shape rather
+        // than by a page splitting a string at a slash.
+        body.addProperty("chatPlatform", current.chatPlatform().orElse(""));
         body.addProperty("embeddingModel", current.embeddingModel());
         body.addProperty("embeddingEnabled", current.embeddingEnabled());
         body.addProperty("defaultChatModel", ModelCatalog.DEFAULT_CHAT_MODEL);
@@ -478,14 +481,24 @@ final class WebApi {
         // reset both models to the defaults every time somebody flipped it.
         ModelPreferences current = await(database.settings().loadModelPreferences());
 
+        // chatPlatform is the chat page asking a smaller question: not "use this id" but
+        // "have this platform answer". Both cannot be honoured at once, and an explicit id
+        // wins because it says strictly more — a platform on its own leaves the model to
+        // ModelCatalog, which is the only place that rule lives.
+        String chatModel = member(body, "chatModel").orElseGet(() ->
+                member(body, "chatPlatform")
+                        .map(platform -> ModelCatalog.chatModelOn(platform, current.chatModel()))
+                        .orElse(current.chatModel()));
+
         ModelPreferences requested = ModelPreferences.of(
-                member(body, "chatModel").orElse(current.chatModel()),
+                chatModel,
                 member(body, "embeddingModel").orElse(current.embeddingModel()),
                 flag(body, "embeddingEnabled").orElse(current.embeddingEnabled()));
         ModelPreferences stored = await(database.settings().saveModelPreferences(requested));
 
         JsonObject result = new JsonObject();
         result.addProperty("chatModel", stored.chatModel());
+        result.addProperty("chatPlatform", stored.chatPlatform().orElse(""));
         result.addProperty("embeddingModel", stored.embeddingModel());
         result.addProperty("embeddingEnabled", stored.embeddingEnabled());
         return result;

@@ -28,6 +28,19 @@
   var deleteButton;
   var renameButton;
   var countLabel;
+  var providerBox;
+  var providerOtherBox;
+  var providerRoute;
+  var providerNote;
+
+  /* The "Other…" row, and the same bargain the key page makes: blank is never a platform, so
+   * it can stand for "I will name one" without colliding with an answer. It also stands for
+   * the state a stored model id can genuinely be in — one with no platform half at all, which
+   * is a model going through the gateway with nobody named. */
+  var PROVIDER_OTHER = '';
+
+  /* Held as a value, because an empty select reads as '' and '' is the "Other…" row. */
+  var providerChoice = PROVIDER_OTHER;
 
   var state = {
     query: '',
@@ -338,6 +351,130 @@
     await resetList();
   }
 
+  /* ---------------------------------------------------------- who answers */
+
+  /*
+   * The provider selector.
+   *
+   * A model id names both halves of the answer — who serves it and which model it is — so
+   * choosing a provider here cannot leave the model alone. The rule for what the id becomes
+   * is ModelCatalog's, applied by the console: this page sends the platform and is told the
+   * id that resulted, which is why the note under the box says what was stored rather than
+   * what was asked for.
+   *
+   * The gateway is not on the list. OpenRouter is a route, not a model's platform, and
+   * openrouter/gpt-4o-mini is a model nobody serves — so the list offers platforms that
+   * serve models, and the badge beside it says whether this one is reached directly or
+   * through the gateway.
+   */
+  function fillProviders(platforms, gateway) {
+    var offered = (platforms || []).filter(function (platform) {
+      return platform !== gateway;
+    });
+    providerBox.textContent = '';
+
+    offered.forEach(function (platform) {
+      var option = document.createElement('option');
+      option.value = platform;
+      option.textContent = platform;
+      providerBox.appendChild(option);
+    });
+
+    var other = document.createElement('option');
+    other.value = PROVIDER_OTHER;
+    other.textContent = 'Other…';
+    providerBox.appendChild(other);
+
+    if (providerChoice !== PROVIDER_OTHER && offered.indexOf(providerChoice) < 0) {
+      var option = document.createElement('option');
+      option.value = providerChoice;
+      option.textContent = providerChoice;
+      providerBox.insertBefore(option, providerBox.firstChild);
+    }
+    providerBox.value = providerChoice;
+    paintProviderOther();
+  }
+
+  function paintProviderOther() {
+    var typing = providerChoice === PROVIDER_OTHER;
+    providerOtherBox.hidden = !typing;
+    if (!typing) {
+      providerOtherBox.value = '';
+    }
+  }
+
+  /* Direct or through the gateway, for the platform now chosen. Both are working states, so
+   * neither is an error — the badge says which one, the way the key page does. */
+  function paintRoute(routes, platform) {
+    var direct = false;
+    (routes.items || []).forEach(function (item) {
+      if (item.platform === platform && item.direct) {
+        direct = true;
+      }
+    });
+    providerRoute.hidden = !platform;
+    providerRoute.textContent = direct ? 'Direct' : 'Via ' + routes.gateway;
+    providerRoute.className = 'badge' + (direct ? ' badge--ok' : '');
+  }
+
+  function sayProvider(message, kind) {
+    providerNote.textContent = message || '';
+    providerNote.className = 'muted composer-meta__note' + (kind ? ' is-' + kind : '');
+  }
+
+  async function loadProviders() {
+    var M = window.MCAgents;
+    try {
+      /* Two questions with one answer between them: which model is stored, and how its
+       * platform is reached. Asked together so the badge cannot describe a platform the
+       * selector is no longer showing. */
+      var answers = await Promise.all([M.api('/models'), M.api('/routes')]);
+      var models = answers[0];
+      var routes = answers[1];
+
+      providerChoice = models.chatPlatform || PROVIDER_OTHER;
+      fillProviders(routes.suggestedPlatforms, routes.gateway);
+      paintRoute(routes, models.chatPlatform);
+      sayProvider(models.chatPlatform
+        ? models.chatModel
+        : models.chatModel + ' names no provider — pick one to route it.');
+    } catch (error) {
+      sayProvider(error.message, 'error');
+    }
+  }
+
+  async function saveProvider(platform) {
+    var M = window.MCAgents;
+    if (!platform) {
+      sayProvider('Name the provider that should answer, or pick one from the list.', 'error');
+      providerOtherBox.focus();
+      return;
+    }
+
+    providerBox.disabled = true;
+    try {
+      /* The platform, not an id: the console decides what the model becomes, so this page
+       * and the game screen cannot disagree about the rule. */
+      var stored = await M.api('/models', {
+        method: 'PUT',
+        body: { chatPlatform: platform }
+      });
+      providerChoice = stored.chatPlatform || PROVIDER_OTHER;
+      /* The badge is repainted before the note is written, not after.
+       *
+       * Re-read rather than adjusted, because a platform that just gained its first key is
+       * reached differently than it was a moment ago — and written first, because in the
+       * other order a browser sees the note announce the new provider while the badge beside
+       * it still describes the one just left. The two are one sentence; they land together. */
+      paintRoute(await M.api('/routes'), stored.chatPlatform);
+      sayProvider(stored.chatModel + ' answers from your next question on.', 'ok');
+    } catch (error) {
+      sayProvider(error.message, 'error');
+    } finally {
+      providerBox.disabled = false;
+    }
+  }
+
   document.addEventListener('mcagents:ready', async function () {
     var M = window.MCAgents;
 
@@ -351,6 +488,26 @@
     deleteButton = document.getElementById('delete-chat');
     renameButton = document.getElementById('rename-chat');
     countLabel = document.getElementById('chat-count');
+    providerBox = document.getElementById('chat-provider');
+    providerOtherBox = document.getElementById('chat-provider-other');
+    providerRoute = document.getElementById('chat-route');
+    providerNote = document.getElementById('chat-provider-note');
+
+    providerBox.addEventListener('change', function () {
+      providerChoice = providerBox.value;
+      paintProviderOther();
+      if (providerChoice === PROVIDER_OTHER) {
+        providerOtherBox.focus();
+        sayProvider('Name the provider that should answer.');
+        return;
+      }
+      saveProvider(providerChoice);
+    });
+    /* change, not input: it fires on Enter and on leaving the box, which is when a name is
+     * finished being typed rather than while it is still half-written. */
+    providerOtherBox.addEventListener('change', function () {
+      saveProvider(providerOtherBox.value.trim());
+    });
 
     searchBox.addEventListener('input', M.debounce(function () {
       state.query = searchBox.value.trim();
@@ -557,6 +714,8 @@
     /* Counting is free — it reads the local table and one setting — so the page can say so
      * on load rather than waiting for the player to wonder why the agent knows nothing. */
     await showEmbeddingStatus();
+
+    await loadProviders();
 
     await syncRevision();
     await resetList();

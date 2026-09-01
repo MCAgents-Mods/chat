@@ -5,6 +5,10 @@
   Writes as well as reads: a question asked here goes to the same store and the same agent
   the in-game screen uses. The page polls a revision counter so a message typed in Minecraft
   appears without a refresh.
+
+  It also chooses who answers. The provider selector beside the composer writes the same
+  model preference the model page and the game screen read, so the choice is one choice
+  wherever it is made.
 -->
 <html lang="en">
 <head>
@@ -59,6 +63,19 @@
 
         <div class="messages" id="messages">
           <div class="state">Pick a chat on the left, or start a new one.</div>
+        </div>
+
+        <!-- Who answers, chosen next to the box the question is typed into rather than on
+             the model page: it is a decision about the question in front of you, and it is
+             the same stored choice the game reads, in force from the next question on. -->
+        <div class="composer-meta">
+          <label class="composer-meta__label" for="chat-provider">Answered by</label>
+          <select class="field chat-provider" id="chat-provider"></select>
+          <label class="visually-hidden" for="chat-provider-other">Name the provider</label>
+          <input class="field chat-provider" id="chat-provider-other" hidden
+                 autocomplete="off" spellcheck="false" placeholder="Name it…">
+          <span class="badge" id="chat-route" hidden></span>
+          <span class="muted composer-meta__note" id="chat-provider-note"></span>
         </div>
 
         <div class="composer">

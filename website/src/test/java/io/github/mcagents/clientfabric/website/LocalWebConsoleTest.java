@@ -196,6 +196,60 @@ class LocalWebConsoleTest {
     }
 
     @Test
+    void switchesTheChatModelToThePlatformTheChatPageChose() {
+        assertEquals("deepseek/deepseek-v4-flash",
+                json(url("/api/models")).get("chatModel").getAsString(), "the default, to start");
+
+        JsonObject stored = JsonParser.parseString(
+                putJson("/api/models", "{\"chatPlatform\":\"openai\"}").body()).getAsJsonObject();
+
+        assertEquals("openai/gpt-4o-mini", stored.get("chatModel").getAsString(),
+                "OpenAI does not serve deepseek-v4-flash, so its own suggestion is used");
+        assertEquals("openai", stored.get("chatPlatform").getAsString());
+        assertEquals("openai/gpt-4o-mini",
+                await(database.settings().loadModelPreferences()).chatModel(),
+                "and it is stored, so the game reads the same choice");
+    }
+
+    @Test
+    void leavesTheEmbeddingChoiceAloneWhenOnlyTheProviderChanges() {
+        // The chat page sends one field. A handler that read the absent ones as blanks would
+        // reset the embedding model and its switch every time a provider was picked.
+        assertEquals(200, putJson("/api/models",
+                "{\"embeddingModel\":\"qwen/qwen3-embedding-8b\",\"embeddingEnabled\":false}")
+                .statusCode());
+
+        assertEquals(200, putJson("/api/models", "{\"chatPlatform\":\"openai\"}").statusCode());
+
+        JsonObject models = json(url("/api/models"));
+        assertEquals("qwen/qwen3-embedding-8b", models.get("embeddingModel").getAsString());
+        assertFalse(models.get("embeddingEnabled").getAsBoolean());
+    }
+
+    @Test
+    void letsAnExplicitModelIdOutrankAPlatform() {
+        // Both name the chat model, and the id says strictly more than the platform does.
+        JsonObject stored = JsonParser.parseString(putJson("/api/models",
+                "{\"chatModel\":\"groq/llama-4-70b\",\"chatPlatform\":\"openai\"}").body())
+                .getAsJsonObject();
+
+        assertEquals("groq/llama-4-70b", stored.get("chatModel").getAsString());
+        assertEquals("groq", stored.get("chatPlatform").getAsString());
+    }
+
+    @Test
+    void takesAProviderTheModDoesNotShipAnAddressFor() {
+        // The selector's "Other…" box. The lists are suggestions, so a platform this release
+        // has never heard of is stored exactly as typed and routed through the gateway.
+        JsonObject stored = JsonParser.parseString(
+                putJson("/api/models", "{\"chatPlatform\":\"Fireworks\"}").body())
+                .getAsJsonObject();
+
+        assertEquals("fireworks/deepseek-v4-flash", stored.get("chatModel").getAsString(),
+                "lowercased, with the model the player already had carried over");
+    }
+
+    @Test
     void offersEveryPlatformTheSelectorHasToShow() {
         // The page picks a platform from this list rather than asking the player to spell one,
         // so a platform they already use has to be on it — otherwise adding a second key for
