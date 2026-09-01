@@ -31,18 +31,20 @@ this work does not reopen.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/game-provider-selector-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | — |
-| 2 | One offered list | The platforms worth offering, computed once in `api/` | `MCAgents/client-fabric` | `feat/offered-platforms` | `api.model.ModelCatalog`, `website.WebApi` | — |
-| 3 | The key screen | Picking the platform a key opens, in game | `MCAgents/client-fabric` | `feat/key-screen-provider` | `platforms/fabric` — `ApiKeyScreen` | — |
-| 4 | The model screen | Picking the provider that answers, and saying how it is reached | `MCAgents/client-fabric` | `feat/model-screen-provider` | `platforms/fabric` — `ModelSettingsScreen`, `common.ui` | — |
-| 5 | The release | Both wikis, the README, the changelog, the closing entry | `MCAgents/client-fabric` | `docs/game-provider-release` | `wiki/`, `README.md`, `.agents/` | — |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/game-provider-selector-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #88 |
+| 2 | One offered list | The platforms worth offering, computed once in `api/` | `MCAgents/client-fabric` | `feat/offered-platforms` | `api.model.ModelCatalog`, `website.WebApi` | #89 |
+| 3 | The key screen | Picking the platform a key opens, in game | `MCAgents/client-fabric` | `feat/key-screen-provider` | `platforms/fabric` — `ApiKeyScreen` | #90 |
+| 4 | The model screen | Picking the provider that answers, and saying how it is reached | `MCAgents/client-fabric` | `feat/model-screen-provider` | `platforms/fabric` — `ModelSettingsScreen`, `common.ui` | #91 |
+| 5 | The release | Both wikis, the README, the changelog, the closing entry | `MCAgents/client-fabric` | `docs/game-provider-release` | `wiki/`, `README.md`, `.agents/` | #92 |
 
 Ordered by dependency and stacked that way: task 1 branches from `master`, task `k` from task
 `k-1`. Tasks 3 and 4 both need task 2's list; task 5 describes all of them.
 
-**The pull request gate is open from the last chain**: the user asked for pull requests and an
-in-order merge there, and asked for this work in the same breath. It is asked again at the end
-rather than assumed — permission for one chain is not permission for the next.
+**The pull request gate was asked again rather than carried over.** Permission for the previous
+chain was not permission for this one, so the branches were pushed first and the pull requests
+opened only when the user asked for them a second time. The `PR` column below was filled by the
+release task, on the branch that already contained every branch under it — the same reason it
+is filled there and not on branch 1, where the edit would have rebased the whole stack.
 
 ## Decisions not to relitigate
 
@@ -157,4 +159,10 @@ game halves have not been driven at all.
 ## Closed
 
 Five branches, stacked `chore/game-provider-selector-plan` → `feat/offered-platforms` →
-`feat/key-screen-provider` → `feat/model-screen-provider` → `docs/game-provider-release`.
+`feat/key-screen-provider` → `feat/model-screen-provider` → `docs/game-provider-release`,
+opened as pull requests #88 to #92 and merged into `master` in that order.
+
+**The thing to pick up next is a client run.** Everything in this chain is compile-verified and
+nothing in it has been clicked; the caveat is on #92 and in
+[`../state/repository-state.md`](../state/repository-state.md) so that it is not discovered by a
+player instead.
