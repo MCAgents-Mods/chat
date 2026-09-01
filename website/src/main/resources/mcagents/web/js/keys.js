@@ -22,13 +22,30 @@
   var countLabel;
   var valueBox;
   var platformBox;
-  var platformOptions;
+  var otherPlatformBox;
   var addButton;
   var noteEl;
   var routeList;
   var routeNote;
   var encryptionNote;
   var encryptionText;
+
+  /* The value of the "Other…" row.
+   *
+   * Blank is safe as the sentinel precisely because it is never a platform: a blank platform
+   * is stored as the gateway, so it cannot arrive from the list meaning anything else, and
+   * this page refuses to send one rather than filing a key under a platform nobody chose.
+   */
+  var OTHER = '';
+  var DEFAULT_PLATFORM = 'openrouter';
+
+  /* The answer, held as a value rather than read back off the select.
+   *
+   * An empty select reads as '' and '' is the "Other…" row, so the element on its own cannot
+   * tell "no options yet" from "typing my own" — and the first fill happens before the player
+   * has touched anything, which is precisely when those two must not be confused.
+   */
+  var platformChoice = DEFAULT_PLATFORM;
 
   var state = {
     offset: 0,
@@ -56,6 +73,58 @@
     row.appendChild(remove);
 
     return row;
+  }
+
+  /* The platforms the selector offers, rebuilt whenever the routes are.
+   *
+   * A select rather than the datalist that was here first. A datalist is invisible until you
+   * type, so a player who has never seen a platform id has nothing to type to reveal one —
+   * the same objection the model page already made to datalists — and it looked like a closed
+   * list while being nothing of the kind. The list is still not a whitelist: "Other…" reveals
+   * a plain box, and what it holds is sent exactly as typed.
+   *
+   * The choice survives the rebuild, including "Other…" mid-typing: the list is refreshed
+   * after every key is added, and a selector that reset itself would file the second key of a
+   * pair under the wrong platform.
+   */
+  function fillPlatforms(platforms) {
+    var offered = platforms || [];
+    platformBox.textContent = '';
+
+    offered.forEach(function (platform) {
+      var option = document.createElement('option');
+      option.value = platform;
+      option.textContent = platform;
+      platformBox.appendChild(option);
+    });
+
+    var other = document.createElement('option');
+    other.value = OTHER;
+    other.textContent = 'Other…';
+    platformBox.appendChild(other);
+
+    if (platformChoice !== OTHER && offered.indexOf(platformChoice) < 0) {
+      platformChoice = offered.indexOf(DEFAULT_PLATFORM) >= 0
+        ? DEFAULT_PLATFORM
+        : (offered[0] || OTHER);
+    }
+    platformBox.value = platformChoice;
+    paintOtherBox();
+  }
+
+  /* The box is there only while "Other…" is the answer, and is emptied on the way out so a
+   * platform typed and abandoned cannot come back on a later add. */
+  function paintOtherBox() {
+    var typing = platformChoice === OTHER;
+    otherPlatformBox.hidden = !typing;
+    if (!typing) {
+      otherPlatformBox.value = '';
+    }
+  }
+
+  /* What to send: the row that is selected, or what was typed beside "Other…". */
+  function chosenPlatform() {
+    return platformChoice === OTHER ? otherPlatformBox.value.trim() : platformChoice;
   }
 
   function scrollRoot() {
@@ -128,11 +197,20 @@
       return;
     }
 
+    var platform = chosenPlatform();
+    if (!platform) {
+      /* Only reachable from "Other…" with an empty box. Sending it would store the key
+       * against the gateway, which is a platform the player just declined to pick. */
+      note('Name the platform this key opens, or pick one from the list.', 'error');
+      otherPlatformBox.focus();
+      return;
+    }
+
     addButton.disabled = true;
     try {
       await M.api('/keys', {
         method: 'POST',
-        body: { value: value, platform: platformBox.value.trim() }
+        body: { value: value, platform: platform }
       });
       /* Cleared the moment it is stored: a key left sitting in a visible field is a key
        * that survives into a screenshot or a stream. */
@@ -212,12 +290,7 @@
         body.items.forEach(function (item) { routeList.appendChild(routeRow(item)); });
       }
 
-      platformOptions.textContent = '';
-      (body.suggestedPlatforms || []).forEach(function (platform) {
-        var option = document.createElement('option');
-        option.value = platform;
-        platformOptions.appendChild(option);
-      });
+      fillPlatforms(body.suggestedPlatforms);
 
       var encryption = body.encryption || {};
       encryptionText.textContent = encryption.enabled
@@ -256,7 +329,7 @@
     countLabel = document.getElementById('key-count');
     valueBox = document.getElementById('key-value');
     platformBox = document.getElementById('key-platform');
-    platformOptions = document.getElementById('platform-options');
+    otherPlatformBox = document.getElementById('key-platform-other');
     addButton = document.getElementById('add-key');
     noteEl = document.getElementById('add-note');
     routeList = document.getElementById('route-list');
@@ -274,6 +347,15 @@
 
     valueBox.addEventListener('input', function () {
       addButton.disabled = valueBox.value.trim().length === 0;
+    });
+    platformBox.addEventListener('change', function () {
+      platformChoice = platformBox.value;
+      paintOtherBox();
+      if (platformChoice === OTHER) {
+        otherPlatformBox.focus();
+      }
+      note('The mod uses the oldest working key for the platform a question is routed to, '
+        + 'and moves on to the next when one is rejected.');
     });
     document.getElementById('add-form').addEventListener('submit', addKey);
 
