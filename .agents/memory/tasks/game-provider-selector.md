@@ -64,3 +64,22 @@ the gateway, for the one question the gateway is not an answer to: who serves a 
 must not offer it — while the control that files a key under a platform must, since the gateway
 is what most keys are for. A boolean argument would have made those two questions look like one
 question with a setting.
+
+### Task 3 — the key screen
+
+**The platform box became an `EditableDropdown`, which already existed for exactly this.** It
+is a field with a list attached: it suggests without constraining, which is the property the
+console reaches with a selector plus an "Other…" row. The game needed no new control and no new
+rule — the class was written for model ids, and "pick a known one or type one nobody here has
+heard of" is the same question a platform asks.
+
+**The list includes the platforms the player already holds keys for.** They are read for the
+list of stored keys anyway, so `platformsInUse()` costs nothing, and it means a player who
+filed a key under a platform this release never heard of does not retype that name — and
+cannot mistype it into a second platform nobody serves.
+
+**A picked row is read back in `mouseClicked` rather than trusted to notify.** The dropdown
+writes into the field directly, and this screen keeps `pendingPlatform` across the rebuild that
+storing a key triggers. Relying on the field's responder to fire on a programmatic `setValue`
+would have made a kept value depend on a vanilla implementation detail; reading it where the
+click is handled does not.
