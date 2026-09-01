@@ -85,3 +85,59 @@ form control, the chat page takes the same one in task 3, and the design system 
 per-section stylesheet for page-specific layout. The popup is left to the browser: it is the
 one overlay the design system's opaque-overlay rule cannot reach, and a hand-built listbox
 would have to re-earn keyboard, touch and screen-reader behaviour a native select has.
+
+### Task 3 — the chat provider selector
+
+**A model id names both halves of the answer, so choosing a provider cannot leave the model
+alone.** `ModelCatalog.chatModelOn` is that rule, in one place: the platform already serving
+the model keeps it; a platform the mod suggests a model for, and that cannot serve the current
+one, gets its own first suggestion; anything else carries the model half over. Putting it in
+`api/` rather than in the page is what stops the console and the game screen from ever
+disagreeing about what picking OpenAI means.
+
+**The gateway is not on the chat list.** OpenRouter is a route, not a model's platform —
+`openrouter/gpt-4o-mini` is a model nobody serves, which `ModelName` has said since it was
+written. So `chatModelOn` returns the current id untouched when handed the gateway, the page
+filters it out of the selector, and how a platform is reached is answered by the badge beside
+the box instead.
+
+**`chatPlatform` is a smaller way of saying the same thing, and an explicit id wins.**
+`PUT /api/models` takes either; when both arrive the id is used, because it says strictly more.
+The endpoint's absent-versus-blank rule is untouched, so a page sending only a platform still
+leaves the embedding model and its switch exactly as they were.
+
+**The selector sits beside the composer, not in the header.** It is a decision about the
+question in front of you. It writes the same stored preference `/model/` and the game screen
+read, so there is one choice wherever it is made — proven in a browser by picking a provider on
+`/chat/` and reading the new id back off `/model/`.
+
+**What the browser found that the Java suite could not.** The note under the selector was
+written before the route badge was re-read, so for the length of one request the note announced
+the new provider while the badge beside it still described the one just left. The badge is
+painted first now and the note second: they are one sentence, and they land together. That is
+the fourth defect a browser run has caught in this console with the Java suite green —
+[`web-console.md`](web-console.md), [`console-dialogs.md`](console-dialogs.md).
+
+## What is proven, and what is not
+
+**Proven by the Java suites**: the three switch rules, with retirement and lowercasing applied;
+that the gateway never qualifies a model; that a platform the mod ships nothing for is stored
+as typed; that an explicit id outranks a platform; that picking a provider leaves the embedding
+choice alone; that the offered list carries the gateway, the addressed platforms, the suggested
+ones, and any the player already holds a key for; and that both pages serve their controls.
+
+**Proven in a browser**, against a live console on a real database — 28 checks, Chromium: the
+key selector's contents, its default, its hidden "Other…" box, a key filed under a listed
+platform, the choice surviving the list's rebuild, a blank "Other…" refused, and a platform the
+mod never heard of stored as typed and turning its row direct; on the chat page, the gateway
+absent from the list, the stored provider selected, the model re-qualified on switch, the route
+badge agreeing with it, an unlisted provider accepted and shown as reached through the gateway,
+the same choice read back on `/model/`, and that provider still selected after a reload; no
+horizontal scroll at 360, 620, 900 and 1280px on either page; no page errors, and no native
+dialog.
+
+**Not proven.** No question has been answered through a provider chosen this way — the harness
+agent replies without calling anybody, so nothing here proves a request reaches OpenAI or
+anyone else. Nothing has run inside Minecraft: the game screen keeps its own platform box and
+is untouched by this work, and `platforms/fabric/` remains compile-verified only —
+[`gui-play-testing.md`](gui-play-testing.md).

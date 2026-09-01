@@ -155,6 +155,18 @@ class WebConsolePagesTest {
     }
 
     @Test
+    void asksWhoAnswersOnTheChatPageItself() {
+        String markup = body(url("/chat/"));
+
+        assertTrue(markup.contains("id=\"chat-provider\""),
+                "the provider that answers is chosen beside the question, not only on /model/");
+        assertTrue(markup.contains("id=\"chat-provider-other\""),
+                "and a provider this release has never heard of can still be named");
+        assertTrue(markup.contains("id=\"chat-route\""),
+                "with the badge that says whether it is reached directly or through the gateway");
+    }
+
+    @Test
     void putsNoPlayerDataInTheMarkupItself() {
         // The pages are static and fetch what they show, which is what keeps player text
         // out of a file nobody escapes.

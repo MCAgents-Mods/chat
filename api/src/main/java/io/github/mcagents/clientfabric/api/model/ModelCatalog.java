@@ -1,6 +1,7 @@
 package io.github.mcagents.clientfabric.api.model;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The models the interface offers, and the ones it falls back to.
@@ -95,6 +96,73 @@ public final class ModelCatalog {
     /** Presentation counterpart of {@link #isSuggestedChatModel(String)}. */
     public static boolean isSuggestedEmbeddingModel(String model) {
         return SUGGESTED_EMBEDDING_MODELS.contains(model);
+    }
+
+    /**
+     * The suggested chat models {@code platform} serves, in the order they are offered.
+     *
+     * <p>Empty for a platform the lists say nothing about, which is not a statement that it
+     * serves nothing — the lists are suggestions. It is the difference between "here is one to
+     * start from" and "there is nothing to suggest", and {@link #chatModelOn} needs to tell
+     * those apart.
+     */
+    public static List<String> suggestedChatModelsFor(String platform) {
+        String owner = ModelPlatform.normalise(platform);
+        return SUGGESTED_CHAT_MODELS.stream()
+                .filter(id -> ModelName.parse(id)
+                        .filter(name -> name.platform().equals(owner)).isPresent())
+                .toList();
+    }
+
+    /**
+     * The chat model to use once the player has chosen {@code platform} to answer them.
+     *
+     * <p>Choosing a platform is not the same as choosing a model, and the two cannot be kept
+     * independent: a stored id names both. So the choice is resolved in one place, by three
+     * rules applied in order.
+     *
+     * <ol>
+     *   <li><strong>The platform already serves this model</strong> — nothing changes. Picking
+     *       the platform you are already on is not an instruction to switch models.</li>
+     *   <li><strong>The mod suggests a model for that platform, and the current one is not
+     *       among them</strong> — its first suggestion is used. Carrying
+     *       {@code deepseek-v4-flash} over to OpenAI would name a model OpenAI does not serve,
+     *       and the player asked for an answer, not for a request that fails.</li>
+     *   <li><strong>Otherwise the model half is carried over.</strong> For a platform the mod
+     *       suggests nothing for there is no better guess than the id the player chose, and
+     *       inventing one would be the mod overruling them. If that platform does not serve it,
+     *       the platform says so — which is the rule this class has always followed.</li>
+     * </ol>
+     *
+     * <p>The result is normalised and retirement-resolved like any other stored id.
+     *
+     * @param platform     who should answer; blank means the gateway, which serves no model of
+     *                     its own, so the current id is returned untouched
+     * @param currentModel the stored chat model, qualified or not
+     */
+    public static String chatModelOn(String platform, String currentModel) {
+        String owner = ModelPlatform.normalise(platform);
+        String current = resolve(currentModel);
+        if (current == null || current.isBlank() || ModelPlatform.isOpenRouter(owner)) {
+            // The gateway is a route, never a model's platform: openrouter/gpt-4o-mini is not
+            // a longer spelling of gpt-4o-mini, it is a model nobody serves.
+            return current;
+        }
+
+        Optional<ModelName> parsed = ModelName.parse(current);
+        if (parsed.filter(name -> name.platform().equals(owner)).isPresent()) {
+            return current;
+        }
+
+        String bare = parsed.map(ModelName::bare).orElse(current);
+        List<String> suggestions = suggestedChatModelsFor(owner);
+        boolean suggested = suggestions.stream()
+                .anyMatch(id -> ModelName.parse(id)
+                        .filter(name -> name.bare().equals(bare)).isPresent());
+        if (!suggestions.isEmpty() && !suggested) {
+            return suggestions.get(0);
+        }
+        return ModelName.of(owner, bare).qualified();
     }
 
     /**

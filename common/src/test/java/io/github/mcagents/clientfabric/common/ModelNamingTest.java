@@ -144,6 +144,58 @@ class ModelNamingTest {
     }
 
     @Test
+    void keepsTheModelWhenThePlatformChosenAlreadyServesIt() {
+        // Picking the platform you are already on is not an instruction to switch models.
+        assertEquals("deepseek/deepseek-v4-pro",
+                ModelCatalog.chatModelOn("DeepSeek", "deepseek/deepseek-v4-pro"));
+    }
+
+    @Test
+    void movesToThePlatformsOwnSuggestionWhenItCannotServeTheCurrentModel() {
+        // openai/deepseek-v4-flash is a model OpenAI does not serve. The player asked for an
+        // answer, not for a request that fails.
+        assertEquals("openai/gpt-4o-mini",
+                ModelCatalog.chatModelOn("openai", "deepseek/deepseek-v4-flash"));
+    }
+
+    @Test
+    void carriesTheModelOverToAPlatformItSuggestsNothingFor() {
+        // No suggestion to fall back on, so there is no better guess than the id the player
+        // chose — and inventing one would be the mod overruling them.
+        assertEquals("groq/deepseek-v4-flash",
+                ModelCatalog.chatModelOn("groq", "deepseek/deepseek-v4-flash"));
+    }
+
+    @Test
+    void qualifiesABareModelIdWithThePlatformChosenForIt() {
+        assertEquals("openai/gpt-4o-mini", ModelCatalog.chatModelOn("openai", "gpt-4o-mini"));
+    }
+
+    @Test
+    void neverQualifiesAModelWithTheGateway() {
+        // openrouter/gpt-4o-mini is not a longer spelling of gpt-4o-mini; it is a model
+        // nobody serves. The gateway is a route, and a route is not a model's platform.
+        assertEquals("deepseek/deepseek-v4-flash",
+                ModelCatalog.chatModelOn("openrouter", "deepseek/deepseek-v4-flash"));
+        assertEquals("deepseek/deepseek-v4-flash",
+                ModelCatalog.chatModelOn("", "deepseek/deepseek-v4-flash"));
+    }
+
+    @Test
+    void resolvesARetiredIdWhileSwitchingPlatform() {
+        assertEquals("deepseek/deepseek-v4-flash",
+                ModelCatalog.chatModelOn("deepseek", "DeepSeek/DeepSeek-V4-Flash-Latest"));
+    }
+
+    @Test
+    void saysWhichSuggestedModelsAPlatformServes() {
+        assertEquals(java.util.List.of("deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-pro"),
+                ModelCatalog.suggestedChatModelsFor("DeepSeek"));
+        assertTrue(ModelCatalog.suggestedChatModelsFor("groq").isEmpty(),
+                "nothing suggested is not the same as nothing served");
+    }
+
+    @Test
     void namesTheSettingThatOverridesAPlatformsAddress() {
         assertEquals("api.base-url.openai", ModelPlatform.baseUrlSettingKey("OpenAI"));
     }
