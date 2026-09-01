@@ -67,6 +67,14 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   address, the bare model id, the dropped gateway extensions and the per-platform key are
   asserted against a stub transport; **no request has ever reached a platform's real API**,
   and the six shipped addresses have not been called.
+* **Provider selectors in the console.** `/keys/` picks the platform a key opens from a
+  selector with an "Other…" box behind it; `/chat/` picks the provider that answers, above the
+  composer, with a badge saying whether it is reached directly or through the gateway.
+  `ModelCatalog.chatModelOn` is the single rule for what the stored model id becomes, and
+  `PUT /api/models` takes `chatPlatform` as the smaller way of saying it. Driven in Chromium
+  against a live console — 28 checks, including the choice being read back on `/model/`. **No
+  question has been answered through a provider chosen this way**, and the in-game key screen
+  still has its own text box, untouched and compile-verified only.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
@@ -88,7 +96,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
   dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 441 tests across `common/` and `website/`.
+* Every I/O method returns `CompletableFuture`. 526 tests across `common/` and `website/`.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to the console, so a save from either
   interface is the persona the next question uses. It generates the file when it is missing

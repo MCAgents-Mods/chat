@@ -1,6 +1,6 @@
 ---
 name: memory-task-provider-selectors
-status: in-progress
+status: done
 description: Two provider selectors in the console — one choosing the platform a pasted key opens, one choosing the platform that answers a question — the plan, the decisions, and what is proven.
 ---
 
@@ -32,19 +32,21 @@ the player named.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/provider-selectors-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | — |
-| 2 | The key provider selector | Picking the platform a pasted key opens, on `/keys/` | `MCAgents/client-fabric` | `feat/key-provider-selector` | `website/` — `pages/keys.html`, `js/keys.js`, `css/keys/keys.css` | — |
-| 3 | The chat provider selector | Picking the platform that answers, on `/chat/` | `MCAgents/client-fabric` | `feat/chat-provider-selector` | `api/model`, `website/` — `WebApi`, `pages/chat.html`, `js/chat.js`, `css/chat/chat.css` | — |
-| 4 | The release | Both wikis, the changelog, and the closing entry | `MCAgents/client-fabric` | `docs/provider-selectors-release` | `wiki/`, `.agents/` | — |
+| 1 | The record | This file, written before the work is committed | `MCAgents/client-fabric` | `chore/provider-selectors-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #84 |
+| 2 | The key provider selector | Picking the platform a pasted key opens, on `/keys/` | `MCAgents/client-fabric` | `feat/key-provider-selector` | `website/` — `pages/keys.html`, `js/keys.js`, `css/keys/keys.css` | #85 |
+| 3 | The chat provider selector | Picking the platform that answers, on `/chat/` | `MCAgents/client-fabric` | `feat/chat-provider-selector` | `api/model`, `website/` — `WebApi`, `pages/chat.html`, `js/chat.js`, `css/chat/chat.css` | #86 |
+| 4 | The release | The console's documentation, the changelog, and the closing entry | `MCAgents/client-fabric` | `docs/provider-selectors-release` | `wiki/`, `.agents/` | #87 |
 
 Ordered by dependency and stacked that way: task 1 branches from `master`, task `k` from
 task `k-1`. Tasks 2 and 3 both extend the console's page tests, and task 4 describes both,
 so nothing here is independent of what precedes it.
 
-**No pull request is opened for any of them.** The user asked for the branches to be pushed
-and nothing more, which is the `{shared}/planning/task-workflow.md` §F gate
-answered rather than skipped. The `PR` column stays empty for that reason, not because it
-is waiting to be filled.
+**The pull request gate was answered twice, explicitly, by the user.** First "push only, no
+pr", so the four branches were pushed and nothing was opened; then, once they were up, the
+instruction to open the pull requests and merge them in order. Both are the
+`{shared}/planning/task-workflow.md` §F gate answered rather than assumed. The `PR` column
+below was filled by the release task, on the branch that already contained every branch under
+it.
 
 ## Decisions not to relitigate
 
@@ -141,3 +143,32 @@ agent replies without calling anybody, so nothing here proves a request reaches 
 anyone else. Nothing has run inside Minecraft: the game screen keeps its own platform box and
 is untouched by this work, and `platforms/fabric/` remains compile-verified only —
 [`gui-play-testing.md`](gui-play-testing.md).
+
+### Task 4 — the release
+
+**What was updated, and why each was not optional.**
+[`../../../wiki/information/web-console.md`](../../../wiki/information/web-console.md) — the
+page describing both consoles pages: the key page's selector and its "Other…" box, the chat
+page's "Answered by" row with the table of what each choice does to the stored model id, and
+the note on `/model/` that the chat selector writes the same setting rather than a copy of it.
+The changelog — one entry under `0.0.0`, because the version carrier is untouched.
+[`../state/repository-state.md`](../state/repository-state.md) — what is live and what is still
+unproven, and the test count, now 526.
+
+**`README.md` and `overview.md` were read and left alone.** Both describe the *in-game* key
+screen, whose platform box is a text field and is untouched by this work. Editing them to
+mention a selector would have made them wrong.
+
+**The `PR` column was filled here, on the release branch.** It is the last branch and already
+contains every branch below it, so writing the numbers into it rebases nothing — where the
+same edit on branch 1 would have invalidated the whole stack. The pull requests were opened
+only after every branch was pushed, which is why the column could not have been filled any
+earlier.
+
+## Closed
+
+Four branches, stacked `chore/provider-selectors-plan` → `feat/key-provider-selector` →
+`feat/chat-provider-selector` → `docs/provider-selectors-release`, opened as pull requests #84
+to #87 and merged into `master` in that order. Both gates in
+`{shared}/planning/task-workflow.md` §F were answered by the user explicitly: first "push
+only, no pr", then the instruction to open the pull requests and merge them in order.

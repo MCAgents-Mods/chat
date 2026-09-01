@@ -302,6 +302,29 @@ project is developed under.
   `@AGENTS.md` would name `.claude/AGENTS.md` and fail silently, with no file, no error, and no
   instructions loaded; the reason is written into the file rather than left to be rediscovered.
 
+* **Provider selectors in the console, on `/keys/` and on `/chat/`.** Both replace typing a
+  platform id with picking one, and neither turns a suggestion list into a whitelist.
+
+  On `/keys/` the platform a pasted key opens is chosen from a selector carrying the gateway,
+  the platforms the mod ships an address for, the ones its suggested models come from, and any
+  the player already holds a key for; **Other…** reveals a box that takes a platform this
+  release has never heard of and stores it exactly as typed. The datalist it replaces was
+  invisible until typed into, which is the same objection the model page acted on when it
+  dropped its own. `select.field` is styled in the shared component layer and leaves the popup
+  to the browser.
+
+  On `/chat/`, **Answered by** sits above the composer and chooses the provider that answers.
+  Because a stored model id names both who serves it and which model it is, choosing a provider
+  resolves a new id through one rule in `ModelCatalog.chatModelOn`: the platform already serving
+  the model keeps it, a platform that suggests models and cannot serve the current one gets its
+  own first suggestion, and anything else carries the model half over for the platform to accept
+  or refuse. `PUT /api/models` now takes `chatPlatform` as well as `chatModel`, with the
+  explicit id outranking the platform, and `GET` reports the platform in force. The gateway is
+  deliberately absent from that list: OpenRouter is a route rather than a provider of models,
+  and `openrouter/gpt-4o-mini` is a model nobody serves — which route a provider is on is
+  answered by the **Direct** / **Via openrouter** badge beside the selector instead. The choice
+  is the same stored preference `/model/` and the in-game screen read.
+
 ## Notes
 
 * Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
