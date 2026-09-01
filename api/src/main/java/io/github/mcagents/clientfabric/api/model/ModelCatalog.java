@@ -1,6 +1,9 @@
 package io.github.mcagents.clientfabric.api.model;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -163,6 +166,53 @@ public final class ModelCatalog {
             return suggestions.get(0);
         }
         return ModelName.of(owner, bare).qualified();
+    }
+
+    /**
+     * Every platform worth offering as a choice, in the order they should be shown.
+     *
+     * <p>Three sources, in this order: the gateway and the platforms this mod's suggested
+     * models name, the platforms it ships an address for, and the ones the player is already
+     * using. Duplicates collapse and the first appearance wins the position.
+     *
+     * <p><strong>This is the one list both interfaces offer.</strong> The console built it
+     * inline and the game screen would have had to build it again; two lists computed in two
+     * places from the same three sources stay equal exactly until one of them is edited. The
+     * same reasoning already keeps the suggested model ids in this class rather than in the
+     * screens that show them.
+     *
+     * <p>Like every list here it is a suggestion. A platform absent from it is not rejected —
+     * both interfaces let one be typed, and it is stored exactly as typed.
+     *
+     * @param alreadyInUse platforms the player holds keys for, or is otherwise already on;
+     *                     normalised here, and blanks ignored
+     */
+    public static List<String> offeredPlatforms(Collection<String> alreadyInUse) {
+        Objects.requireNonNull(alreadyInUse, "alreadyInUse");
+
+        LinkedHashSet<String> offered = new LinkedHashSet<>(suggestedPlatforms());
+        offered.addAll(ModelPlatform.knownDirectBaseUrls().keySet());
+        for (String platform : alreadyInUse) {
+            if (platform != null && !platform.isBlank()) {
+                offered.add(ModelPlatform.normalise(platform));
+            }
+        }
+        return List.copyOf(offered);
+    }
+
+    /**
+     * The same list with the gateway removed, for asking <em>who serves a model</em>.
+     *
+     * <p>OpenRouter answers a different question from the rest of the list: it is the route
+     * everything falls back to, not a platform that serves models of its own. Offering it
+     * where a model's platform is chosen would produce {@code openrouter/gpt-4o-mini}, which
+     * {@link ModelName} has always said is a model nobody serves rather than a longer spelling
+     * of {@code gpt-4o-mini}.
+     */
+    public static List<String> offeredModelPlatforms(Collection<String> alreadyInUse) {
+        return offeredPlatforms(alreadyInUse).stream()
+                .filter(platform -> !ModelPlatform.isOpenRouter(platform))
+                .toList();
     }
 
     /**
