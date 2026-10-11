@@ -4,6 +4,10 @@ pluginManagement {
             name = 'Fabric'
             url = 'https://maven.fabricmc.net/'
         }
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases/'
+        }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -44,3 +48,6 @@ project(':mcagents-chat-shared').projectDir = file('platforms/shared')
 
 include 'mcagents-chat-fabric'
 project(':mcagents-chat-fabric').projectDir = file('platforms/fabric')
+
+include 'mcagents-chat-neoforge'
+project(':mcagents-chat-neoforge').projectDir = file('platforms/neoforge')

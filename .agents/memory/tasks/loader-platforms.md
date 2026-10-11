@@ -74,3 +74,24 @@ The classpath is the guard against loader types: neither loader's API is on it.
 
 Not proven in a real game. `./gradlew build` passes, and the Fabric jar carries the 34 shared
 classes and the language file.
+
+## Task 4 — feat/neoforge-platform
+
+`platforms/neoforge` (`mcagents-chat-neoforge`) builds `MCAgentsChatNeoforge-{version}.jar` with
+ModDevGradle 2.0.148 on NeoForge 26.2.0.90, the versions core uses.
+
+| Concern | Fabric | NeoForge |
+|---|---|---|
+| Entry point | `MCAgentsClientMod`, `ClientModInitializer` | `MCAgentsNeoForgeClient`, `@Mod(dist = CLIENT)` |
+| Key category and key | `KeyMapping.Category.register`, `KeyMappingHelper` | `RegisterKeyMappingsEvent.registerCategory` and `register` on the mod bus — NeoForge deprecates `Category.register` for mods |
+| End of tick | `ClientTickEvents.END_CLIENT_TICK` | `ClientTickEvent.Post` |
+| Join and leave | `ClientPlayConnectionEvents.JOIN`, `DISCONNECT` | `ClientPlayerNetworkEvent.LoggingIn`, `LoggingOut` |
+| Game directory | `FabricLoader.getGameDir()` | `FMLPaths.GAMEDIR` |
+| SQLite | Loom `include`, `META-INF/jars/` | `jarJar`, `META-INF/jarjar/`, range `[3.53.2.1,)` |
+| Manifest | `fabric.mod.json` | `META-INF/neoforge.mods.toml`, every dependency `side = "CLIENT"`, `mcagents_core` `[${coreVersion},)` |
+
+The APIs were read from the cached `neoforge-26.2.0.90` sources and FML 11.0.16 before
+writing. **Not proven in a real game**: in particular, whether NeoForge loads the nested
+`sqlite-jdbc` and its native library as a plain library has not been run.
+
+`./gradlew build publishToMavenLocal` passes with six publications.

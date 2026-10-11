@@ -1,5 +1,8 @@
 plugins {
+    // Both loader toolchains are declared once, here, so they load into one shared build
+    // classloader instead of one per module.
     alias(libs.plugins.fabric.loom) apply false
+    alias(libs.plugins.moddevgradle) apply false
 }
 
 allprojects {
