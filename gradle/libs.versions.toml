@@ -27,8 +27,8 @@ fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-l
 fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-core-api = { module = "io.github.mcagentsmods:core-api", version.ref = "mcagents-core" }
-core-common = { module = "io.github.mcagentsmods:core-common", version.ref = "mcagents-core" }
+core-api = { module = "io.github.mcagentsmods:mcagents-core-api", version.ref = "mcagents-core" }
+core-common = { module = "io.github.mcagentsmods:mcagents-core-common", version.ref = "mcagents-core" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 

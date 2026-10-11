@@ -41,15 +41,15 @@ diagram and the reasoning.
 
 | Module | Directory | Gradle name | May depend on |
 |---|---|---|---|
-| API | `api/` | `mcagents-fabric-api` | The JDK and MCAgents core's API. |
-| Common | `common/` | `mcagents-fabric-common` | `api/`, MCAgents core, and plain JVM libraries. |
-| Website | `website/` | `mcagents-fabric-website` | `api/`, `common/`, plain JVM libraries. |
-| Fabric platform | `platforms/fabric/` | `mcagents-fabric` | all of the above, Minecraft, Fabric. |
+| API | `api/` | `mcagents-chat-api` | The JDK and MCAgents core's API. |
+| Common | `common/` | `mcagents-chat-common` | `api/`, MCAgents core, and plain JVM libraries. |
+| Website | `website/` | `mcagents-chat-website` | `api/`, `common/`, plain JVM libraries. |
+| Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Minecraft, Fabric. |
 
 * `api/` holds **contracts only** — interfaces, records, enums, sealed types, abstract
   classes. No implementation logic, no I/O, no third-party dependency. MCAgents core is not
   third-party: its types are the shared vocabulary every MCAgents mod speaks.
-* **Core is compiled against, never bundled.** `core-api` and `core-common` are
+* **Core is compiled against, never bundled.** `mcagents-core-api` and `mcagents-core-common` are
   `compileOnlyApi`, and the `mcagents_core` mod provides them in game. A chat jar that
   carries a core class would load a second copy beside the one every other mod uses.
 * **What core already does is not written again here.** The model client, its transport, the

@@ -22,13 +22,13 @@ settings.gradle      module map and plugin repositories
 build.gradle         group and version for every module
 gradle.properties    project identity only — organization, repository, version
 gradle/              the wrapper and libs.versions.toml
-api/                 mcagents-fabric-api
-common/              mcagents-fabric-common
-platforms/fabric/    mcagents-fabric
+api/                 mcagents-chat-api
+common/              mcagents-chat-common
+platforms/fabric/    mcagents-chat-fabric
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
-`./gradlew :mcagents-fabric-common:test` runs the suite. Storage, the OpenRouter client,
+`./gradlew :mcagents-chat-common:test` runs the suite. Storage, the OpenRouter client,
 retrieval, and the interface are all implemented. Do not assume a source file exists
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
@@ -37,13 +37,13 @@ three documents for a long time before any code called `ModelClient.embed`.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`), and the tool-calling contracts in `api.agent` (`ToolBroker`, `ToolOutcome`). The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-fabric-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, and `McpToolRouter`, which routes a model's tool call to the server that owns the tool. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
-| `website/` | `mcagents-fabric-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
-| `platforms/fabric/` | `mcagents-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Mixins, further context injection, the content browser. |
+| `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`), and the tool-calling contracts in `api.agent` (`ToolBroker`, `ToolOutcome`). The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, and `McpToolRouter`, which routes a model's tool call to the server that owns the tool. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
+| `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Mixins, further context injection, the content browser. |
 
-**MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:core-api` and
-`core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
+**MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
+`mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
 provides them in game, and `fabric.mod.json` depends on it. `settings.gradle` builds a
 checkout of `MCAgents-Mods/core` at `../core` (or `-Pcore-build=…`) together with chat when
 one is there; without one, the published artifacts are resolved, and the build needs a
@@ -212,10 +212,10 @@ these.
 | Goal | Command |
 |---|---|
 | Build everything | `./gradlew build` |
-| Run the tests | `./gradlew :mcagents-fabric-common:test` — seconds, no Minecraft needed |
-| Compile one module | `./gradlew :mcagents-fabric-common:build` |
-| Run the client | `./gradlew :mcagents-fabric:runClient` |
-| Produce the mod jar | `./gradlew :mcagents-fabric:build` — output in `platforms/fabric/build/libs/` |
+| Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
+| Compile one module | `./gradlew :mcagents-chat-common:build` |
+| Run the client | `./gradlew :mcagents-chat-fabric:runClient` |
+| Produce the mod jar | `./gradlew :mcagents-chat-fabric:build` — output in `platforms/fabric/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
 its classpath. Put a test there whenever you can; a behaviour that can only be checked by

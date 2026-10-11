@@ -19,25 +19,25 @@ rootProject.name = 'chat'
 // MCAgents core — the model client and the web console chat runs on. With a checkout of
 // MCAgents-Mods/core beside this one (or wherever -Pcore-build points), Gradle builds chat
 // against that source, so a change to core is tested here before it is published. Without
-// one, the published core-api and core-common are resolved instead.
+// one, the published mcagents-core-api and mcagents-core-common are resolved instead.
 def coreBuild = file(providers.gradleProperty('core-build').getOrElse('../core'))
 if (new File(coreBuild, 'settings.gradle').isFile()) {
     includeBuild(coreBuild) {
         dependencySubstitution {
-            substitute module('io.github.mcagentsmods:core-api') using project(':api')
-            substitute module('io.github.mcagentsmods:core-common') using project(':common')
+            substitute module('io.github.mcagentsmods:mcagents-core-api') using project(':api')
+            substitute module('io.github.mcagentsmods:mcagents-core-common') using project(':common')
         }
     }
 }
 
-include 'mcagents-fabric-api'
-project(':mcagents-fabric-api').projectDir = file('api')
+include 'mcagents-chat-api'
+project(':mcagents-chat-api').projectDir = file('api')
 
-include 'mcagents-fabric-common'
-project(':mcagents-fabric-common').projectDir = file('common')
+include 'mcagents-chat-common'
+project(':mcagents-chat-common').projectDir = file('common')
 
-include 'mcagents-fabric-website'
-project(':mcagents-fabric-website').projectDir = file('website')
+include 'mcagents-chat-website'
+project(':mcagents-chat-website').projectDir = file('website')
 
-include 'mcagents-fabric'
-project(':mcagents-fabric').projectDir = file('platforms/fabric')
+include 'mcagents-chat-fabric'
+project(':mcagents-chat-fabric').projectDir = file('platforms/fabric')
