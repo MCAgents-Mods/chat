@@ -47,6 +47,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/provider-selectors.md`](../memory/tasks/provider-selectors.md) | Two provider selectors in the console: which platform a key opens, which platform answers a question, and why the page called "/api" is `/keys/`. |
 | [`../memory/tasks/game-provider-selector.md`](../memory/tasks/game-provider-selector.md) | Provider selection in the game GUI: the key screen's platform dropdown, the model screen's provider row, and why the offered list lives in `api/`. |
 | [`../memory/tasks/repository-move.md`](../memory/tasks/repository-move.md) | Moving to MCAgents-Mods/chat: the new namespace, the MIT license, what was deliberately not renamed, and the plan. |
+| [`../memory/tasks/central-service-removal.md`](../memory/tasks/central-service-removal.md) | Removing the client for the deleted central service: what goes, what stays, and the plan. |
 
 ## Maintenance
 
