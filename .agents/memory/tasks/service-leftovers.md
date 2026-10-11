@@ -1,6 +1,6 @@
 ---
 name: memory-task-service-leftovers
-status: open
+status: done
 description: Removing the code the central service client left behind, ignoring the plans folder, and moving the release branch back to the tip of the stack.
 ---
 
@@ -70,3 +70,25 @@ outside the historical records.
 
 **Kept.** `HttpTransport`, `HttpReply`, `JdkHttpTransport`, and `saveCategory`/`save`; see the
 decisions above.
+
+### Task 4 — release/0.0.0
+
+**Landed.** `release/0.0.0` was moved forward by fast-forward from the end of the repository-move
+chain to the end of this one, so it is the tip and holds all three chains' work: the repository
+move, the central service removal, and these leftovers. Nothing was force-pushed or rewritten.
+The release commit on top corrects one line of the `0.0.0` changelog — it still described the
+stored-version map, which no longer exists — and closes this record. The version is unchanged.
+
+## What is proven, and what is not
+
+**Proven.** `./gradlew build` passes on the tip with the tests. `git check-ignore` reports the
+plans rule. The only mention of the removed code left in the documents is in the historical
+records.
+
+**Not proven.** The mod loading in a running client; nothing in this chain launched Minecraft.
+
+## Closed
+
+Four branches in order — `chore/service-leftovers-plan`, `chore/ignore-plans`,
+`refactor/service-leftovers`, `release/0.0.0` — stacked on `docs/central-service-removal`. Not
+pushed, and no pull requests are open, so the `PR` column is empty.

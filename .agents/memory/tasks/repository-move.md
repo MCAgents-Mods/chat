@@ -150,3 +150,6 @@ own license metadata, description and topics set; those are repository settings,
 Five branches stacked in order — `chore/repository-move-plan`, `refactor/package-namespace`,
 `docs/mit-license`, `docs/repository-move`, `release/0.0.0` — each from the one before. No pull
 requests are open, so the `PR` column is empty; fill it when they are opened.
+
+`release/0.0.0` was later moved forward to the tip of the stack, so it carries this work too;
+see [`service-leftovers.md`](service-leftovers.md).

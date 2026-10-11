@@ -66,7 +66,7 @@ project is developed under.
 * **A cache layer.** `TtlCache` — a bounded LRU whose entries also expire — behind the
   `Cache` contract, and `CachingContentRepository` decorating the SQLite repository. Pack
   bodies and the category list are cached because they are read far more often than they
-  change; searches, the stored-version map, and absent packs deliberately are not. Writes
+  change; searches and absent packs deliberately are not. Writes
   invalidate in the same call, so a stored pack is visible immediately rather than when
   a timer expires. The database stays the record: everything cached can be dropped at any
   moment without changing what the mod knows.

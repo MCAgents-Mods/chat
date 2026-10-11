@@ -127,3 +127,6 @@ afterwards — see task 2. Task 3 changes documents only.
 Three branches stacked on `release/0.0.0` — `chore/central-service-removal-plan`,
 `refactor/central-service-removal`, `docs/central-service-removal`. Not pushed, and no pull
 requests are open, so the `PR` column is empty.
+
+`release/0.0.0` was later moved forward to the tip of the stack, so it carries this work too;
+see [`service-leftovers.md`](service-leftovers.md).
