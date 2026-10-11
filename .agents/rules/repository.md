@@ -35,7 +35,7 @@ else it improves.
 
 ## Module boundaries
 
-Four Gradle modules, and the dependency direction is one-way. See
+Five Gradle modules, and the dependency direction is one-way. See
 [`../../wiki/information/architecture.md`](../../wiki/information/architecture.md) for the
 diagram and the reasoning.
 
@@ -44,7 +44,8 @@ diagram and the reasoning.
 | API | `api/` | `mcagents-chat-api` | The JDK and MCAgents core's API. |
 | Common | `common/` | `mcagents-chat-common` | `api/`, MCAgents core, and plain JVM libraries. |
 | Website | `website/` | `mcagents-chat-website` | `api/`, `common/`, plain JVM libraries. |
-| Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Minecraft, Fabric. |
+| Shared platform | `platforms/shared/` | `mcagents-chat-shared` | all of the above and vanilla Minecraft — no loader. |
+| Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric. |
 
 * `api/` holds **contracts only** — interfaces, records, enums, sealed types, abstract
   classes. No implementation logic, no I/O, no third-party dependency. MCAgents core is not
@@ -63,12 +64,14 @@ diagram and the reasoning.
   serving a page means reading storage, driving the agent, syncing knowledge and filing
   wallets, so it depends on those implementations and **nothing in `common/` may depend
   back on it**.
-* `platforms/fabric/` holds everything Minecraft-specific — the mod initializer, screens,
-  key bindings, mixins, event listeners, and the resolution of filesystem paths from the
-  game directory.
-* Nothing in `api/`, `common/`, or `website/` imports `net.minecraft.*` or
-  `net.fabricmc.*`. Nothing in `platforms/fabric/` re-implements logic that belongs below
-  it.
+* `platforms/shared/` holds everything Minecraft-specific that every loader shares — the
+  client start-up, screens, the key and the factories — compiled against vanilla Minecraft.
+  No loader type may appear in it.
+* A loader module — `platforms/fabric/` — holds only what that loader needs: the entry
+  point, the key and category registration, the tick and connection events, and the game
+  directory it hands to `ChatRuntime.start`.
+* Nothing in `api/`, `common/`, or `website/` imports `net.minecraft.*` or a loader's
+  packages. Nothing in `platforms/` re-implements logic that belongs below it.
 
 **A contract stays in `api/` even when only one module implements it.** `api/` is where
 contracts go, and a contract that follows its implementation out is a rule that has stopped
@@ -97,7 +100,7 @@ Minecraft's client thread renders the game. Blocking it freezes the game.
 ## Local data
 
 * The local database is SQLite at `{minecraft_dir}/MCAgents/data.db`. The game directory is
-  resolved in `platforms/fabric/` only; `common/` receives a path.
+  resolved by the loader module and handed to `platforms/shared/`; `common/` receives a path.
 * Player-facing configuration lives beside it at `{minecraft_dir}/MCAgents/AGENTS.md` —
   the player's own agent personas and instructions. It is read at runtime and must never
   be overwritten by an update without the player asking.

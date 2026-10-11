@@ -119,7 +119,7 @@ flipping the switch never costs you an uncached turn.
 |---|---|
 | `api/` | `ModelPreferences` — the two model ids and the switch, loaded together |
 | `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement), `EmbeddingBackfill` (giving packs a vector) |
-| `platforms/fabric/` | the toggle on `ModelSettingsScreen` |
+| `platforms/shared/` | the toggle on `ModelSettingsScreen` |
 
 ## Related
 

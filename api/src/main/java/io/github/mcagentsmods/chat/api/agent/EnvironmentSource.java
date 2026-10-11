@@ -3,8 +3,8 @@ package io.github.mcagentsmods.chat.api.agent;
 /**
  * Answers "where is the player right now" at the moment a question is asked.
  *
- * <p>This is the seam the environment crosses. {@code platforms/fabric} implements it by
- * listening to the game's connection events; {@code common/} calls it while assembling a
+ * <p>This is the seam the environment crosses. {@code platforms/shared} implements it from
+ * the connection events each loader forwards; {@code common/} calls it while assembling a
  * prompt and never learns that Minecraft exists.
  *
  * <h2>Why this one is not a {@code CompletableFuture}</h2>

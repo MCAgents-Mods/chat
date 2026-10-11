@@ -1,10 +1,10 @@
-package io.github.mcagentsmods.chat.fabric.client.gui;
+package io.github.mcagentsmods.chat.shared.client.gui;
 
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ui.StackedRows;
 import io.github.mcagentsmods.chat.common.wallet.SystemBrowser;
-import io.github.mcagentsmods.chat.fabric.MCAgentsClientMod;
-import io.github.mcagentsmods.chat.fabric.client.WebConsoleHolder;
+import io.github.mcagentsmods.chat.shared.ChatRuntime;
+import io.github.mcagentsmods.chat.shared.client.WebConsoleHolder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -179,7 +179,7 @@ public final class WebConsoleScreen extends Screen {
         Optional<URI> running = WebConsoleHolder.address();
         if (running.isEmpty()) {
             try {
-                WebConsoleHolder.start(database, MCAgentsClientMod.paths());
+                WebConsoleHolder.start(database, ChatRuntime.paths());
                 failed = false;
                 status = Component.translatable("gui.mcagents.console.started");
                 // Rebuilt so the Copy and Stop buttons stop being dead controls — and so the

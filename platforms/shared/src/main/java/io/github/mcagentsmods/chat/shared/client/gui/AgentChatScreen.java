@@ -1,4 +1,4 @@
-package io.github.mcagentsmods.chat.fabric.client.gui;
+package io.github.mcagentsmods.chat.shared.client.gui;
 
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
@@ -6,9 +6,9 @@ import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.fabric.MCAgentsClientMod;
-import io.github.mcagentsmods.chat.fabric.client.AgentFactory;
-import io.github.mcagentsmods.chat.fabric.client.PlayerAccounts;
+import io.github.mcagentsmods.chat.shared.ChatRuntime;
+import io.github.mcagentsmods.chat.shared.client.AgentFactory;
+import io.github.mcagentsmods.chat.shared.client.PlayerAccounts;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 import io.github.mcagentsmods.core.api.model.ModelException;
 import net.minecraft.ChatFormatting;
@@ -98,11 +98,11 @@ public final class AgentChatScreen extends Screen {
      * reopening it.
      */
     private void bindStorage() {
-        LocalDatabase opened = MCAgentsClientMod.database().orElse(null);
+        LocalDatabase opened = ChatRuntime.database().orElse(null);
         this.database = opened;
         this.agent = opened == null
                 ? null
-                : AgentFactory.create(opened, MCAgentsClientMod.paths());
+                : AgentFactory.create(opened, ChatRuntime.paths());
     }
 
     private boolean hasStorage() {
@@ -281,7 +281,7 @@ public final class AgentChatScreen extends Screen {
      * exist yet — clear themselves.
      */
     private void retryStorage() {
-        onClientThread(waiting.track(MCAgentsClientMod.reopenDatabase()), opened -> {
+        onClientThread(waiting.track(ChatRuntime.reopenDatabase()), opened -> {
             bindStorage();
             rebuildWidgets();
             if (hasStorage()) {
@@ -369,7 +369,7 @@ public final class AgentChatScreen extends Screen {
         if (minecraft == null) {
             return;
         }
-        ClientPaths paths = MCAgentsClientMod.paths();
+        ClientPaths paths = ChatRuntime.paths();
         minecraft.setScreenAndShow(new PersonaScreen(
                 AgentFactory.personaStore(paths), paths.instructions(), this));
     }
@@ -577,7 +577,7 @@ public final class AgentChatScreen extends Screen {
         if (!hasStorage()) {
             // Say what is wrong where the conversation would be, so the screen explains
             // itself instead of just looking empty.
-            MCAgentsClientMod.storageFailure().ifPresent(failure -> graphics.text(font,
+            ChatRuntime.storageFailure().ifPresent(failure -> graphics.text(font,
                     font.plainSubstrByWidth(failure, width - statusX - MARGIN),
                     statusX, MARGIN + HEADER_HEIGHT + 8, 0xFFFF8080));
         }
@@ -590,7 +590,7 @@ public final class AgentChatScreen extends Screen {
         if (hasStorage()) {
             return title;
         }
-        return switch (MCAgentsClientMod.storageState()) {
+        return switch (ChatRuntime.storageState()) {
             case OPENING -> Component.translatable("gui.mcagents.storage.opening")
                     .withStyle(ChatFormatting.YELLOW);
             default -> Component.translatable("gui.mcagents.storage.failed")

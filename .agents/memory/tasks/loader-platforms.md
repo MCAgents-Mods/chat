@@ -53,3 +53,24 @@ and the Fabric module publishes its mod jar alone through `tasks.named('jar')` �
 the old names as history.
 
 `./gradlew build publishToMavenLocal` passes against core's `refactor/artifact-names`.
+
+## Task 3 — refactor/shared-platform
+
+`platforms/shared` (`mcagents-chat-shared`, package `io.github.mcagentsmods.chat.shared`) now
+holds every screen, `ChatScreenLauncher`, the factories, `PlayerAccounts`, `WebConsoleHolder`
+and the language file. Only three Fabric calls existed, so the split was a move:
+
+| Was, in `platforms/fabric` | Now |
+|---|---|
+| `MCAgentsClientMod.onInitializeClient` — storage, MCP, persona, shutdown hook | `ChatRuntime.start(Path gameDirectory)` in shared; the Fabric class keeps only registration |
+| `MCAgentsKeyMappings.register()` with `KeyMappingHelper` and `ClientTickEvents` | `create(category)` and `onEndTick(client)` in shared; the loader registers the category, the key and the tick |
+| `KeyMappingHelper.getBoundKeyOf` in `/mcagents status` | vanilla `isUnbound()` and `getTranslatedKeyMessage()` |
+| `GameEnvironment.register()` with `ClientPlayConnectionEvents` | `onJoin(client)` and `onLeave()`; the loader forwards its events |
+
+`platforms/shared` is built with Loom and the vanilla game alone. Without fabric-loader on its
+classpath javac warns once per class about Fabric's `@Environment` enum in the game jar, and no
+lint switch covers that warning, so the module compiles with warnings off; errors still fail.
+The classpath is the guard against loader types: neither loader's API is on it.
+
+Not proven in a real game. `./gradlew build` passes, and the Fabric jar carries the 34 shared
+classes and the language file.

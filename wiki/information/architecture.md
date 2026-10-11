@@ -1,6 +1,6 @@
 # Architecture
 
-MCAgentsClient is split into four Gradle modules with a one-way dependency chain. The
+MCAgentsClient is split into five Gradle modules with a one-way dependency chain. The
 split exists so that the logic that matters — storage, retrieval, the model client — can be
 compiled, tested, and reasoned about without Minecraft anywhere near it.
 
@@ -14,7 +14,10 @@ common/  |  |               implementations, no Minecraft
 website/ |  |               everything a browser sees
    ^     |  |
    |     |  |
-platforms/fabric/           the mod: GUI, mixins, events, paths
+platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the key
+   ^
+   |
+platforms/fabric/           Fabric's entry point, key registration, events, paths
 ```
 
 | Directory | Gradle module | Depends on | Contains |
@@ -22,13 +25,17 @@ platforms/fabric/           the mod: GUI, mixins, events, paths
 | `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
 | `website/` | `mcagents-chat-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
+| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the key, the factories that wire `common/` and `website/` together. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: registers the key, the tick and connection events, and passes the game directory to `ChatRuntime`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-`mcagents-chat-website` to `website/`, and `mcagents-chat-fabric` to `platforms/fabric/`. The
-`platforms/` folder is where a second loader — Forge, NeoForge, Quilt — would go without
-disturbing anything else.
+`mcagents-chat-website` to `website/`, `mcagents-chat-shared` to `platforms/shared/`, and
+`mcagents-chat-fabric` to `platforms/fabric/`. A loader module is a few lines on top of
+`platforms/shared/`, so another loader is one more folder under `platforms/`.
+
+`platforms/shared/` is built with Loom for the vanilla game alone. Minecraft 26.x ships
+unobfuscated, so the classes it compiles link against any loader's game.
 
 The Gradle module name is also the Maven artifact id, so every module publishes as
 `io.github.mcagentsmods:mcagents-chat-{module}`, and the jar it builds is named
@@ -56,8 +63,8 @@ mod's pages. The port, the token, the `Host` check, the content security policy 
 shell — header, footer, `main.css`, `layout.css`, `components.css`, `site.js` — are core's,
 and chat's pages load the shell from `/assets/core/`.
 
-`platforms/fabric` merges all three lower modules into the mod jar rather than nesting them
-as separate Fabric mods, so the split is a build-time and reading-time boundary; the shipped
+Each loader module merges `api/`, `common/`, `website/` and `platforms/shared/` into its mod
+jar rather than nesting them as separate mods, so the split is a build-time and reading-time boundary; the shipped
 jar is unchanged by it.
 
 ## Where external MCP servers sit
@@ -69,8 +76,8 @@ It obeys the same split as everything else. `api/` holds the contracts — `McpH
 `McpSession`, the descriptors, and the tool-calling types the agent loop speaks.
 `common/` holds the implementations: discovery, the stdio and HTTP transports, the
 directory watch, the git cloner, and the router that resolves a tool name back to the
-server that owns it. `platforms/fabric/` resolves the game directory and owns the host's
-lifetime, as it does for storage.
+server that owns it. `platforms/shared/` owns the host's lifetime, as it does for storage,
+from the game directory the loader module hands it.
 
 Two consequences are worth stating because they are easy to undo:
 
@@ -89,12 +96,13 @@ optional thing: an MCP server is not allowed onto the path of anything local.
 * **`common/` never sees Minecraft.** No `net.minecraft.*`, no `net.fabricmc.*`. When
   `common/` needs a value that only the game knows — the game directory, the player's
   inventory, the block being looked at — that value arrives through an `api/` contract that
-  `platforms/fabric/` implements.
+  `platforms/shared/` implements.
 * **`website/` never sees Minecraft either**, and `common/` never sees `website/`. The
   arrow points one way: a page may read anything below it, and nothing below it knows a
   browser exists.
-* **`platforms/fabric/` never re-implements.** It wires, renders, and translates. Logic
-  lives one layer down.
+* **`platforms/` never re-implements.** It wires, renders, and translates. Logic lives in
+  `common/`, and a loader module holds only what `platforms/shared/` cannot: that loader's
+  entry point, registration and events.
 
 ## Test doubles shared between modules
 
@@ -122,7 +130,7 @@ and `getNow()` are never called from render or tick code.
 
 ## Data flow of one question
 
-1. The player types a prompt in the chat screen (`platforms/fabric/`).
+1. The player types a prompt in the chat screen (`platforms/shared/`).
 2. The prompt is embedded and matched against the stored Knowledge Pack embeddings
    (`common/`), returning only the closest content.
 3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
@@ -153,7 +161,7 @@ call, because a platform's API rejects the whole request over an argument it doe
 ## The player's own two inputs
 
 Two things in that request come from the player rather than from a database, and both cross
-the module boundary the same way — as a contract in `api/` that `platforms/fabric`
+the module boundary the same way — as a contract in `api/` that `platforms/shared`
 implements or supplies.
 
 **The persona.** `PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the
@@ -166,7 +174,8 @@ re-reads whenever the file's timestamp or size has moved, which is what keeps th
 editor working without a disk read per question.
 
 **Where the player is.** `EnvironmentSource` answers "single player, a server, or not in a
-world", and `platforms/fabric` records the answer from the game's connection events. It
+world", and `platforms/shared` records the answer from the connection events each loader
+forwards to it. It
 reaches the model as one short system message after the persona rather than inside it: the
 persona is the player's file, and it is also the cached prefix of every request — a player
 walking from one server to another should not invalidate it. Single player is reported as
@@ -190,8 +199,8 @@ fresh nonce each write, so one key stored twice leaves two unrelated rows. The e
 is never in the jar, the repository, or the database. With the variable unset, keys are stored
 as the player pasted them.
 
-The schema is created idempotently at startup. The game directory is resolved in
-`platforms/fabric/`; `common/` is handed a path and knows nothing about Minecraft.
+The schema is created idempotently at startup. The game directory comes from the loader
+module; `common/` is handed a path and knows nothing about Minecraft.
 
 ## The wallet bridge
 

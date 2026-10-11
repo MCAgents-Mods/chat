@@ -1,8 +1,9 @@
-// The Fabric mod itself: initializer, screens, key bindings, mixins, event listeners, and
-// the resolution of paths from the game directory.
+// The Fabric mod jar: the client entry point, which registers the key and the connection
+// events and finds the game directory, plus everything platforms/shared and the modules
+// below it carry.
 //
-// This is the only module that may reference Minecraft or Fabric types. It wires and
-// renders; the logic lives in common/ — see .agents/rules/repository.md.
+// This is the only module that may reference Fabric types. The screens and start-up live in
+// platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
 plugins {
     alias(libs.plugins.fabric.loom)
@@ -44,19 +45,21 @@ dependencies {
     implementation project(':mcagents-chat-api')
     implementation project(':mcagents-chat-common')
     implementation project(':mcagents-chat-website')
+    implementation project(':mcagents-chat-shared')
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
     include libs.sqlite.jdbc
 }
 
-// api/, common/ and website/ are plain JVM modules, so their classes and resources are
-// merged into the mod jar rather than nested as separate Fabric mods. Third-party runtime
-// libraries are bundled with Loom's `include` instead.
+// api/, common/, website/ and platforms/shared are chat's own code, so their classes and
+// resources are merged into the mod jar rather than nested as separate Fabric mods.
+// Third-party runtime libraries are bundled with Loom's `include` instead.
 def bundledModules = [
         ':mcagents-chat-api',
         ':mcagents-chat-common',
-        ':mcagents-chat-website'
+        ':mcagents-chat-website',
+        ':mcagents-chat-shared'
 ]
 
 tasks.named('jar', Jar) {
@@ -90,8 +93,8 @@ tasks.named('jar', Jar) {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // The mod jar alone, with no dependency list: it already carries api, common and
-            // website, nests SQLite, and the loader and mcagents_core supply the rest.
+            // The mod jar alone, with no dependency list: it already carries api, common,
+            // website and shared, nests SQLite, and the loader and mcagents_core supply the rest.
             artifact tasks.named('jar')
 
             pom {

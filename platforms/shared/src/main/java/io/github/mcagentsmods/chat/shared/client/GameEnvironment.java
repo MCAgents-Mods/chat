@@ -1,8 +1,7 @@
-package io.github.mcagentsmods.chat.fabric.client;
+package io.github.mcagentsmods.chat.shared.client;
 
 import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
 import io.github.mcagentsmods.chat.api.agent.PlayerEnvironment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import org.slf4j.Logger;
@@ -14,8 +13,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * Watches where the player is playing, so the agent can be told.
  *
  * <p>This is the mod's half of {@link EnvironmentSource}: the only place that knows what a
- * server list entry is. It records one value when the player joins a world and clears it
- * when they leave; {@code common/} reads that value while assembling a prompt and never
+ * server list entry is. Each loader calls {@link #onJoin} when the player joins a world and
+ * {@link #onLeave} when they leave; it records one value on the first and clears it on the
+ * second, and {@code common/} reads that value while assembling a prompt and never
  * sees a Minecraft type.
  *
  * <h2>Recorded on the event, not read on demand</h2>
@@ -52,18 +52,22 @@ public final class GameEnvironment implements EnvironmentSource {
     }
 
     /**
-     * Starts listening.
+     * The player joined a world. Called on the client thread by the loader's join event.
      *
-     * <p>Called from the client initialiser. Registering an event listener cannot fail and
-     * touches nothing on disk or on the network, so it is safe to do before storage is
-     * open — and it has to be, because a player may be in a world before the database is.
+     * <p>Each loader registers its listener beside the key mapping, before storage is open:
+     * registering a listener cannot fail and touches nothing on disk or on the network, and a
+     * player may be in a world before the database is.
      */
-    public static void register() {
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> record(detect(client)));
-        // Cleared rather than left standing: a question asked at the main menu after a
-        // session must not carry the server the player has just left.
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                record(PlayerEnvironment.unknown()));
+    public static void onJoin(Minecraft client) {
+        record(detect(client));
+    }
+
+    /**
+     * The player left the world. Cleared rather than left standing: a question asked at the
+     * main menu after a session must not carry the server the player has just left.
+     */
+    public static void onLeave() {
+        record(PlayerEnvironment.unknown());
     }
 
     @Override

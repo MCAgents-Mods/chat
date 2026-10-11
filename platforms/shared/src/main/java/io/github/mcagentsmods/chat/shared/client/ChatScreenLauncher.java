@@ -1,6 +1,6 @@
-package io.github.mcagentsmods.chat.fabric.client;
+package io.github.mcagentsmods.chat.shared.client;
 
-import io.github.mcagentsmods.chat.fabric.client.gui.AgentChatScreen;
+import io.github.mcagentsmods.chat.shared.client.gui.AgentChatScreen;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
