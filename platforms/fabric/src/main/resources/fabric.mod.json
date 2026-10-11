@@ -16,7 +16,7 @@
   "environment": "client",
   "entrypoints": {
     "client": [
-      "io.github.mcagents.clientfabric.fabric.MCAgentsClientMod"
+      "io.github.mcagentsmods.chat.fabric.MCAgentsClientMod"
     ]
   },
   "depends": {

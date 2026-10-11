@@ -3,6 +3,6 @@ plugins {
 }
 
 allprojects {
-    group = 'io.github.mcagents'
+    group = 'io.github.mcagentsmods'
     version = providers.gradleProperty('project-version').get()
 }

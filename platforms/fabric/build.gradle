@@ -9,7 +9,7 @@ plugins {
 }
 
 base {
-    archivesName = 'mcagents-client-fabric'
+    archivesName = 'mcagents-chat'
 }
 
 java {
