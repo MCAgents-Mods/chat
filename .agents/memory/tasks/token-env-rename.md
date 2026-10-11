@@ -1,6 +1,6 @@
 ---
 name: memory-task-token-env-rename
-status: open
+status: done
 description: Renaming the token encryption environment variable from MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY to MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY after the repository move.
 ---
 
@@ -60,3 +60,22 @@ documents, styles and pages finds the old name only in the historical records an
 
 **Not proven.** That a game launched with the variable set decrypts a stored key; the cipher
 tests prove the mechanism with a supplied key, not through the process environment.
+
+### Task 3 — release/0.0.0
+
+**Landed.** `release/0.0.0` was moved forward by fast-forward to the end of this chain, so it
+holds this rename on top of the earlier work; nothing was rewritten. The `0.0.0` changelog was
+corrected in task 2, because `0.0.0` has not shipped and its log should state the name the mod
+actually reads, not describe a rename of a name nobody used. The version is unchanged.
+
+## What is proven, and what is not
+
+**Proven.** The build and tests pass on the tip, and the compiled class holds only the new name.
+
+**Not proven.** The mod launched with the variable set, as noted in task 2.
+
+## Closed
+
+Three branches in order — `chore/token-env-rename-plan`, `refactor/token-env-rename`,
+`release/0.0.0` — stacked on `release/0.0.0`. No pull requests are open, so the `PR` column is
+empty.
