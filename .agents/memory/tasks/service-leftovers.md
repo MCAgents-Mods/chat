@@ -44,3 +44,14 @@ tasks; the owner approved it.
 ignore rule and says never to add it unasked; the owner asked.
 
 *(each task appends below as it lands)*
+
+### Task 2 — chore/ignore-plans
+
+**Landed.** `.gitignore` carries `.agents/plans/`, with a comment saying why. Checked with
+`git check-ignore -v .agents/plans/tasks.md`, which printed the matching rule, and with
+`git status`, which did not list a file created there; the scratch file was removed afterwards.
+The rule was checked with git itself rather than by reading the pattern, as the planning
+workflow asks.
+
+**Not done.** No plan files were written: the task records carried the plan for this work, and
+the working-plan folder is optional scratch. The folder does not exist.
