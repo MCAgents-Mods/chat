@@ -49,6 +49,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/repository-move.md`](../memory/tasks/repository-move.md) | Moving to MCAgents-Mods/chat: the new namespace, the MIT license, what was deliberately not renamed, and the plan. |
 | [`../memory/tasks/central-service-removal.md`](../memory/tasks/central-service-removal.md) | Removing the client for the deleted central service: what goes, what stays, and the plan. |
 | [`../memory/tasks/service-leftovers.md`](../memory/tasks/service-leftovers.md) | The code the removed service client left behind, the plans folder ignore, and why `release/0.0.0` moved back to the tip. |
+| [`../memory/tasks/token-env-rename.md`](../memory/tasks/token-env-rename.md) | Renaming the token encryption variable to `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY`, and why the old name is dropped rather than kept. |
 
 ## Maintenance
 
