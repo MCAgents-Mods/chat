@@ -26,9 +26,9 @@ embedding backfill, retrieval, deleting a pack, and every model-provider path. N
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/central-service-removal-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Remove the client | The service client, its callers in all modules, the console routes and page code, and their tests | `MCAgents-Mods/chat` | `refactor/central-service-removal` | `common/service`, `platforms/fabric`, `website`, `api/MCAgents`, tests | |
-| 3 | Docs and changelog | Instructions, README, both wikis, the state file, and the `0.0.0` changelog | `MCAgents-Mods/chat` | `docs/central-service-removal` | `AGENTS.md`, `README.md`, `.agents/`, `wiki/` | |
+| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/central-service-removal-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #5 |
+| 2 | Remove the client | The service client, its callers in all modules, the console routes and page code, and their tests | `MCAgents-Mods/chat` | `refactor/central-service-removal` | `common/service`, `platforms/fabric`, `website`, `api/MCAgents`, tests | #6 |
+| 3 | Docs and changelog | Instructions, README, both wikis, the state file, and the `0.0.0` changelog | `MCAgents-Mods/chat` | `docs/central-service-removal` | `AGENTS.md`, `README.md`, `.agents/`, `wiki/` | #7 |
 
 ## Decisions not to relitigate
 
@@ -125,8 +125,8 @@ afterwards — see task 2. Task 3 changes documents only.
 ## Closed
 
 Three branches stacked on `release/0.0.0` — `chore/central-service-removal-plan`,
-`refactor/central-service-removal`, `docs/central-service-removal`. Not pushed, and no pull
-requests are open, so the `PR` column is empty.
+`refactor/central-service-removal`, `docs/central-service-removal`. Opened as pull
+requests #5 to #7 in one chain of 13 that merges in task order, rebasing the remaining branches onto `master` after each merge.
 
 `release/0.0.0` was later moved forward to the tip of the stack, so it carries this work too;
 see [`service-leftovers.md`](service-leftovers.md).

@@ -22,9 +22,9 @@ lost by dropping it. The owner confirmed that. No version bump.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/token-env-rename-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Rename the variable | The constant, the comment that quotes it, and every document that states the name | `MCAgents-Mods/chat` | `refactor/token-env-rename` | `common/security`, `common/storage/sqlite`, `README.md`, `wiki/`, `.agents/` | |
-| 3 | The release | Changelog, the closing entry, and `release/0.0.0` moved to the tip | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, this file | |
+| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/token-env-rename-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #11 |
+| 2 | Rename the variable | The constant, the comment that quotes it, and every document that states the name | `MCAgents-Mods/chat` | `refactor/token-env-rename` | `common/security`, `common/storage/sqlite`, `README.md`, `wiki/`, `.agents/` | #12 |
+| 3 | The release | Changelog, the closing entry, and `release/0.0.0` moved to the tip | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, this file | #13 |
 
 ## Decisions not to relitigate
 
@@ -77,5 +77,4 @@ actually reads, not describe a rename of a name nobody used. The version is unch
 ## Closed
 
 Three branches in order — `chore/token-env-rename-plan`, `refactor/token-env-rename`,
-`release/0.0.0` — stacked on `release/0.0.0`. No pull requests are open, so the `PR` column is
-empty.
+`release/0.0.0` — stacked on `release/0.0.0`. Opened as pull requests #11 to #13 in one chain of 13 that merges in task order, rebasing the remaining branches onto `master` after each merge.
