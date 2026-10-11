@@ -1,10 +1,17 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
+import io.github.mcagentsmods.chat.api.MCAgents;
+import io.github.mcagentsmods.chat.api.mcp.McpServerSpec;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Stands up a real, runnable MCP server in a directory, for tests that need a live one.
@@ -40,6 +47,34 @@ final class FakeMcpServer {
         Files.createDirectories(repository);
         Files.writeString(repository.resolve("FakeServer.java"), source(toolName));
         Files.writeString(repository.resolve("mcp.json"), manifest());
+    }
+
+    /**
+     * Approves every server on disk under {@code mcpRoot}, as a player would by writing each
+     * fingerprint into the catalog. Replaces any catalog already there.
+     */
+    static void approveEverything(Path mcpRoot) throws IOException {
+        Map<String, String> fingerprints = new LinkedHashMap<>();
+        for (McpServerSpec spec : new McpDiscovery(mcpRoot).discover(new ArrayList<>())) {
+            fingerprints.put(spec.id(), McpApproval.fingerprint(spec));
+        }
+        approve(mcpRoot, fingerprints);
+    }
+
+    /** Writes a catalog approving exactly {@code fingerprints}, by server id. */
+    static void approve(Path mcpRoot, Map<String, String> fingerprints) throws IOException {
+        StringBuilder json = new StringBuilder("{\"mcpServers\":{");
+        fingerprints.forEach((id, fingerprint) -> json
+                .append(json.charAt(json.length() - 1) == '{' ? "" : ",")
+                .append(jsonString(id)).append(":{\"").append(McpApproval.FIELD).append("\":")
+                .append(jsonString(fingerprint)).append('}'));
+        Files.writeString(mcpRoot.resolve(MCAgents.MCP_SERVERS_FILE), json.append("}}").toString());
+    }
+
+    /** The spec discovery derives from what {@link #writeInto} writes at {@code owner/repository}. */
+    static McpServerSpec discoveredSpec(String owner, String repository) {
+        return McpServerSpec.stdio(repository, javaCommand(), List.of("FakeServer.java"),
+                owner + "/" + repository);
     }
 
     /** The manifest a discovered repository would carry. */

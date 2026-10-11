@@ -72,6 +72,7 @@ public final class WatchingMcpHost implements McpHost {
     private volatile McpContextRegistry registry = McpContextRegistry.empty();
     private volatile List<McpServerSpec> configured = List.of();
     private volatile boolean closed;
+    private final Object watchLock = new Object();
     private WatchService watcher;
     private Thread watchThread;
 
@@ -151,7 +152,8 @@ public final class WatchingMcpHost implements McpHost {
             return registry;
         }
         List<String> problems = new ArrayList<>();
-        List<McpServerSpec> specs = discovery.discover(problems);
+        Map<String, String> awaitingApproval = new LinkedHashMap<>();
+        List<McpServerSpec> specs = discovery.discover(problems, awaitingApproval);
         configured = specs;
 
         stopServersNoLongerWanted(specs);
@@ -164,7 +166,10 @@ public final class WatchingMcpHost implements McpHost {
         for (McpServerSpec spec : specs) {
             if (!spec.enabled()) {
                 closeSession(spec.id());
-                statuses.add(McpServerStatus.disabled(spec));
+                String waiting = awaitingApproval.get(spec.id());
+                statuses.add(waiting == null
+                        ? McpServerStatus.disabled(spec)
+                        : McpServerStatus.awaitingApproval(spec, waiting));
                 continue;
             }
             try {
@@ -201,13 +206,27 @@ public final class WatchingMcpHost implements McpHost {
                 return existing;
             }
             closeSession(spec.id());
-            McpSession started = spec.transport() == McpTransport.HTTP
-                    ? HttpMcpSession.connect(spec, transport)
-                    : StdioMcpSession.start(spec, paths.mcpDirectory(), requestTimeout);
+        }
+        if (closed) {
+            throw new IllegalStateException("The MCP host is closed");
+        }
+        // Started outside the lock: a handshake can take the whole request timeout, and
+        // holding the map that long would hold close(), and the game's shutdown, with it.
+        // refresh() is synchronized, so no second start of the same server can interleave.
+        McpSession started = spec.transport() == McpTransport.HTTP
+                ? HttpMcpSession.connect(spec, transport, requestTimeout)
+                : StdioMcpSession.start(spec, paths.mcpDirectory(), requestTimeout);
+        synchronized (sessions) {
+            // close() sets the flag before it empties the map, so a server started while it
+            // ran is either seen here and stopped, or is in the map when close() empties it.
+            if (closed) {
+                started.close();
+                throw new IllegalStateException("The MCP host is closed");
+            }
             sessions.put(spec.id(), started);
             wiring.put(spec.id(), spec);
-            return started;
         }
+        return started;
     }
 
     private void stopServersNoLongerWanted(List<McpServerSpec> specs) {
@@ -288,38 +307,62 @@ public final class WatchingMcpHost implements McpHost {
      * window already handles.
      */
     private void beginWatching() {
-        try {
-            watcher = FileSystems.getDefault().newWatchService();
-            registerWatch(paths.mcpDirectory());
-            try (var owners = Files.list(paths.mcpDirectory())) {
-                owners.filter(Files::isDirectory).forEach(this::registerWatch);
+        synchronized (watchLock) {
+            if (closed) {
+                return;
             }
-        } catch (IOException cannotWatch) {
-            watcher = null;
-            return; // Discovery still works; only automatic pickup is lost.
+            WatchService service;
+            try {
+                service = FileSystems.getDefault().newWatchService();
+            } catch (IOException cannotWatch) {
+                return; // Discovery still works; only automatic pickup is lost.
+            }
+            try {
+                registerWatch(service, paths.mcpDirectory());
+                registerOwners(service);
+            } catch (IOException cannotWatch) {
+                // Nothing else holds the service yet, and an open one keeps its native handles.
+                closeQuietly(service);
+                return;
+            }
+            watcher = service;
+            watchThread = new Thread(() -> watchLoop(service), "MCAgents-mcp-watch");
+            watchThread.setDaemon(true);
+            watchThread.start();
         }
-
-        watchThread = new Thread(this::watchLoop, "MCAgents-mcp-watch");
-        watchThread.setDaemon(true);
-        watchThread.start();
     }
 
-    private void registerWatch(Path directory) {
+    private void registerOwners(WatchService service) throws IOException {
+        try (var owners = Files.list(paths.mcpDirectory())) {
+            owners.filter(Files::isDirectory).forEach(owner -> registerWatch(service, owner));
+        }
+    }
+
+    private static void registerWatch(WatchService service, Path directory) {
         try {
-            directory.register(watcher,
+            directory.register(service,
                     StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_DELETE,
                     StandardWatchEventKinds.ENTRY_MODIFY);
-        } catch (IOException ignored) {
+        } catch (IOException | java.nio.file.ClosedWatchServiceException ignored) {
             // One unwatchable directory does not stop the others.
         }
     }
 
-    private void watchLoop() {
+    private static void closeQuietly(WatchService service) {
+        try {
+            service.close();
+        } catch (IOException ignored) {
+            // Nothing further to do; the thread is a daemon and exits on its own.
+        }
+    }
+
+    /** Takes the service as a parameter so a close that clears the field cannot null it here. */
+    private void watchLoop(WatchService service) {
         while (!closed) {
             WatchKey key;
             try {
-                key = watcher.take();
+                key = service.take();
             } catch (InterruptedException | java.nio.file.ClosedWatchServiceException stopping) {
                 Thread.currentThread().interrupt();
                 return;
@@ -332,7 +375,7 @@ public final class WatchingMcpHost implements McpHost {
                 key.pollEvents();
                 key.reset();
                 try {
-                    WatchKey next = watcher.poll(SETTLE.toMillis(), TimeUnit.MILLISECONDS);
+                    WatchKey next = service.poll(SETTLE.toMillis(), TimeUnit.MILLISECONDS);
                     if (next == null) {
                         settled = true;
                     } else {
@@ -350,9 +393,7 @@ public final class WatchingMcpHost implements McpHost {
             try {
                 // A new owner directory needs its own key; the root's events do not
                 // describe what happens two levels down.
-                try (var owners = Files.list(paths.mcpDirectory())) {
-                    owners.filter(Files::isDirectory).forEach(this::registerWatch);
-                }
+                registerOwners(service);
                 refresh();
             } catch (IOException | RuntimeException reloadFailed) {
                 // Reported through the statuses on the next successful pass.
@@ -360,21 +401,31 @@ public final class WatchingMcpHost implements McpHost {
         }
     }
 
+    /**
+     * Stops watching and stops every server.
+     *
+     * <p>The flag is set before anything is taken apart. The watcher is closed under the lock
+     * {@link #beginWatching} holds, so a start still running either sees the flag or has
+     * finished before this closes what it made; and {@link #sessionFor} checks the flag under
+     * the sessions lock, so no server is started after the map below is emptied.
+     *
+     * <p>It does not wait for a reload in progress. That would hold the game's shutdown for as
+     * long as a slow server's handshake, and the flag already stops the reload starting more.
+     */
     @Override
     public void close() {
         if (closed) {
             return;
         }
         closed = true;
-        if (watcher != null) {
-            try {
-                watcher.close();
-            } catch (IOException ignored) {
-                // Nothing further to do; the thread is a daemon and exits on its own.
+        synchronized (watchLock) {
+            if (watcher != null) {
+                closeQuietly(watcher);
+                watcher = null;
             }
-        }
-        if (watchThread != null) {
-            watchThread.interrupt();
+            if (watchThread != null) {
+                watchThread.interrupt();
+            }
         }
         synchronized (sessions) {
             sessions.values().forEach(McpSession::close);

@@ -46,6 +46,11 @@ public record ChainAddress(
      * is an address they cannot use.
      */
     public String masked() {
+        return masked(address);
+    }
+
+    /** {@link #masked()} for an address not yet stored as one. */
+    public static String masked(String address) {
         if (address.length() <= PREFIX_LENGTH + SUFFIX_LENGTH + 1) {
             return address;
         }

@@ -92,7 +92,8 @@ one before it and four signatures being thrown away.
 A message naming its address is what makes this safe. One shared message would let a single
 signature be posted back beside any *other* address the caller went on to name — a hole that
 only opens once a connection carries more than one of them. The nonce is spent when it is
-redeemed, so a signature captured in flight is not worth a second wallet.
+redeemed, so a signature captured in flight is not worth a second wallet. A nonce is also
+good only for the account and address it was issued for, and only for ten minutes.
 
 **What was proved is kept.** A connection that ends early — the tab closed, a signature
 declined on the third of five — binds the ones already signed rather than discarding them.

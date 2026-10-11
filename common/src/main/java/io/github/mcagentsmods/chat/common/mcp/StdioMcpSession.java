@@ -12,8 +12,10 @@ import io.github.mcagentsmods.chat.api.mcp.McpToolResult;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +48,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * failed, so a wedged server costs one request rather than a leak.
  */
 final class StdioMcpSession implements McpSession {
+
+    /**
+     * The longest reply line kept, in characters: 8 Mi, the same bound core puts on an HTTP
+     * answer. A longer one is read past and dropped.
+     */
+    static final int MAX_LINE_CHARS = 8 * 1024 * 1024;
 
     private final String serverId;
     private final Process process;
@@ -88,6 +96,7 @@ final class StdioMcpSession implements McpSession {
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.directory(workingDirectory.toFile());
+        ChildEnvironment.scrub(builder);
         builder.environment().putAll(spec.environment());
 
         Process process;
@@ -129,11 +138,29 @@ final class StdioMcpSession implements McpSession {
      */
     private void readStandardOutput() {
         Thread reader = new Thread(() -> {
-            try (BufferedReader from = new BufferedReader(
+            try (Reader from = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = from.readLine()) != null) {
-                    deliver(line.trim());
+                StringBuilder line = new StringBuilder();
+                boolean overlong = false;
+                int c;
+                while ((c = from.read()) != -1) {
+                    if (c == '\n') {
+                        if (!overlong) {
+                            deliver(line.toString().trim());
+                        }
+                        line.setLength(0);
+                        overlong = false;
+                    } else if (!overlong) {
+                        line.append((char) c);
+                        // A reply this long is dropped rather than held: one line of a
+                        // misbehaving or hostile server must not be the game's memory. Its
+                        // waiter fails on the request timeout, like any unanswered request.
+                        if (line.length() > MAX_LINE_CHARS) {
+                            overlong = true;
+                            line.setLength(0);
+                            line.trimToSize();
+                        }
+                    }
                 }
             } catch (IOException streamEnded) {
                 // The child closed its output. Handled below, like a clean exit.
@@ -168,9 +195,11 @@ final class StdioMcpSession implements McpSession {
     /** Keeps the child's error pipe empty so it never blocks writing to it. */
     private void drainStandardError() {
         Thread drain = new Thread(() -> {
-            try (BufferedReader errors = new BufferedReader(
-                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
-                while (errors.readLine() != null) {
+            // Bytes, not lines: a line is buffered whole, and a server writing without a
+            // newline would grow that buffer for as long as it ran.
+            try (InputStream errors = process.getErrorStream()) {
+                byte[] discard = new byte[8192];
+                while (errors.read(discard) != -1) {
                     // Discarded on purpose: a server's log is not the mod's to keep, and
                     // it is exactly where a server prints the credentials it was given.
                 }
@@ -275,7 +304,12 @@ final class StdioMcpSession implements McpSession {
         } catch (IOException ignored) {
             // Closing a pipe to a process that has already gone is not a failure.
         }
+        // The whole family, listed before anything is stopped: a server started through
+        // npx, uvx or a shell is a grandchild, and once its parent is gone it is no longer
+        // listed as one. Left alive it keeps the pipes open, and the reader threads with them.
+        List<ProcessHandle> family = process.descendants().toList();
         process.destroy();
+        family.forEach(ProcessHandle::destroy);
         try {
             if (!process.waitFor(2, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
@@ -284,5 +318,6 @@ final class StdioMcpSession implements McpSession {
             process.destroyForcibly();
             Thread.currentThread().interrupt();
         }
+        family.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
     }
 }

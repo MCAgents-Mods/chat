@@ -19,9 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -90,8 +88,6 @@ public final class LocalWalletBridge implements WalletBridge {
     /** Enough for a signature and an address; anything larger is not a reply we sent for. */
     private static final int MAX_BODY_BYTES = 8 * 1024;
 
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     private final HttpServer server;
     private final ScheduledExecutorService scheduler;
     private final String token;
@@ -131,7 +127,7 @@ public final class LocalWalletBridge implements WalletBridge {
                 ? DEFAULT_TIMEOUT
                 : timeout;
 
-        String token = randomHex(TOKEN_BYTES);
+        String token = WalletChallenges.randomHex(TOKEN_BYTES);
 
         HttpServer server;
         try {
@@ -313,6 +309,7 @@ public final class LocalWalletBridge implements WalletBridge {
 
         Optional<WalletBinding> verified = challenges.redeem(
                 string(request, "nonce"),
+                accountId,
                 string(request, "address"),
                 string(request, "signature"),
                 string(request, "chainId"));
@@ -392,17 +389,24 @@ public final class LocalWalletBridge implements WalletBridge {
         return true;
     }
 
+    /**
+     * Whether {@code host} is this listener's own loopback address and port.
+     *
+     * <p>The port is checked as well as the name. The listener's port is random and never the
+     * scheme default, so a browser always sends it; a {@code Host} without it, or with a port
+     * or suffix of anything else, was not addressed to this bridge.
+     */
     private boolean isLoopbackHost(String host) {
         if (host == null) {
             return false;
         }
         String name = host.toLowerCase(Locale.ROOT);
-        int colon = name.lastIndexOf(':');
-        if (colon > 0 && !name.startsWith("[")) {
-            name = name.substring(0, colon);
+        String port = ":" + url.getPort();
+        if (!name.endsWith(port)) {
+            return false;
         }
-        return name.equals("127.0.0.1") || name.equals("localhost")
-                || name.equals("[::1]") || name.equals("::1");
+        name = name.substring(0, name.length() - port.length());
+        return name.equals("127.0.0.1") || name.equals("localhost") || name.equals("[::1]");
     }
 
     /** Constant-time, so the token cannot be recovered a byte at a time. */
@@ -480,12 +484,6 @@ public final class LocalWalletBridge implements WalletBridge {
             }
         }
         exchange.close();
-    }
-
-    private static String randomHex(int bytes) {
-        byte[] value = new byte[bytes];
-        RANDOM.nextBytes(value);
-        return HexFormat.of().formatHex(value);
     }
 
 }

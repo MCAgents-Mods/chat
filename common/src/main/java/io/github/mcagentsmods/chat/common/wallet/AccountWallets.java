@@ -176,7 +176,9 @@ public final class AccountWallets {
                     binding.address(), true);
         }
 
-        return wallets.createWallet(account, labelFor(binding.address()))
+        // Named after its shortened address: five wallets called "New Wallet" tell the player
+        // nothing, and the address is what tells them apart until they are renamed.
+        return wallets.createWallet(account, ChainAddress.masked(binding.address()))
                 .thenCompose(created -> wallets.addOrUpdateAddress(created.id(),
                         binding.platform(), binding.address(), true));
     }
@@ -189,18 +191,6 @@ public final class AccountWallets {
                         .filter(stored -> stored.equalsIgnoreCase(binding.address()))
                         .isPresent())
                 .findFirst();
-    }
-
-    /**
-     * The name a new wallet gets: the shortened address.
-     *
-     * <p>Five wallets called "New Wallet" tell the player nothing about which is which, and
-     * the address is the one thing that distinguishes them before they are renamed.
-     */
-    private static String labelFor(String address) {
-        return address.length() > 13
-                ? address.substring(0, 7) + "…" + address.substring(address.length() - 5)
-                : address;
     }
 
     private static String requireAccount(String accountId) {

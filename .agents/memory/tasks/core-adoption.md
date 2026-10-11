@@ -120,3 +120,39 @@ request other than the expected 404 for a pack that does not exist.
 
 **Not proven.** The console opened from the game, which needs a launched client with core
 installed.
+
+### Task 4 — fix/security-review
+
+**Landed.** Three reviews ran on chat after core was adopted: one for leaks, one for exploits,
+one for duplicated code. What they confirmed and this branch fixes:
+
+| Finding | Fix |
+|---|---|
+| The model could clone a repository and the mod ran its `mcp.json` command at once — code execution on the say-so of a Knowledge Pack or another tool's output | A server wired by its repository starts only once `mcp_servers.json` approves its fingerprint (`McpApproval`); a changed command needs approving again. owen chose this on the decision card |
+| A clone URL kept only its first two path segments and dropped the host | Exactly `{owner}/{repository}`, no credentials, port, query or fragment; git gets a URL rebuilt from the coordinate; the outcome names the host; an existing checkout from another host is not pulled |
+| A manifest could send tool calls to any host over plain http | https, or http to loopback only |
+| Every child process inherited `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` | `ChildEnvironment` removes it for MCP servers and git; git also gets `GIT_TERMINAL_PROMPT=0` |
+| `PUT /api/chat/routes` could move a stored key to any https host | While a key is stored, the address may change only within its host or back to the shipped one |
+| A wallet nonce was not bound to its account or address and never expired | Each nonce carries both and its issue time; ten-minute lifetime |
+| The wallet bridge's `Host` check accepted `localhost:anything` | The port must be the listener's |
+| `WatchingMcpHost.close()` raced a reload, and a server started during it outlived the host | The flag is checked again under the sessions lock after a start; handshakes run outside the lock so close never waits on one |
+| The watch service leaked when registering failed | Closed in that path; the loop takes the service as a parameter |
+| An HTTP MCP request had no deadline of its own | `orTimeout` on the host's request timeout |
+| git's output and a stdio server's lines were unbounded; a timed-out git was never stopped; a server's descendants outlived it | Capped reads, a drain thread so the timeout bounds the run, descendants destroyed |
+| Manifests and the catalog were read whole | Skipped over 1 MB |
+| The embedding cache kept whole pack text in its keys for six hours | SHA-256 keys |
+| `AccountWallets.labelFor` and a second `randomHex` | `ChainAddress.masked(String)` and one `randomHex` |
+
+**Tests.** `./gradlew build` passes: 397 tests in `common`, 76 in `website`.
+
+**Deferred, and why.**
+
+* `HttpMcpSession` never sends `Mcp-Session-Id`, because core's `HttpReply` carries no headers.
+  The fix is a core change (headers on `HttpReply`), after 0.5.0.
+* `KnowledgeRetriever` loads every pack for every question. Bounded by the player's own data;
+  needs a retrieval redesign, not a security fix.
+* `TokenCipher` derives its key with one unsalted SHA-256 and binds no AAD; `ApiKeyHandles` is
+  an unsalted hash. Changing either needs a stored-data migration.
+* The repeated screen boilerplate, the two near-identical list panels, the two MCP session
+  classes' shared methods, the JSON readers and the paging helpers. Refactors with no
+  behaviour change, left for their own branch.

@@ -252,6 +252,10 @@ class LocalWalletBridgeTest {
 
         assertTrue(rawGet("wallet-stealer.example", path).startsWith("HTTP/1.1 403"),
                 "a request carrying someone else's hostname must be refused");
+        assertTrue(rawGet("localhost:evil", path).startsWith("HTTP/1.1 403"),
+                "nor one whose port is not this listener's");
+        assertTrue(rawGet("127.0.0.1", path).startsWith("HTTP/1.1 403"),
+                "nor one with no port, which no browser sends for a random port");
         assertTrue(rawGet("127.0.0.1:" + bridge.url().getPort(), path).startsWith("HTTP/1.1 200"),
                 "and the same request from the real origin must still work");
     }

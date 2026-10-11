@@ -5,6 +5,7 @@ import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
 import io.github.mcagentsmods.chat.api.mcp.RepositoryCoordinate;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,12 @@ import java.util.concurrent.TimeUnit;
  */
 public final class GitRepositoryCloner implements McpRepositoryCloner {
 
+    /** git's output kept for the result or the error; the rest is read and dropped. */
+    private static final int MAX_OUTPUT_BYTES = 64 * 1024;
+
+    /** How long to wait for the output once git has exited. */
+    private static final long DRAIN_GRACE_MILLIS = 2_000;
+
     private final ClientPaths paths;
     private final Executor executor;
     private final Duration timeout;
@@ -61,8 +68,10 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
 
     private ClonedRepository cloneNow(String cloneUrl) {
         RepositoryCoordinate coordinate;
+        String canonicalUrl;
         try {
             coordinate = RepositoryCoordinate.fromCloneUrl(cloneUrl);
+            canonicalUrl = RepositoryCoordinate.canonicalCloneUrl(cloneUrl);
         } catch (IllegalArgumentException rejected) {
             throw new McpException(null, rejected.getMessage(), rejected);
         }
@@ -79,6 +88,7 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
         }
 
         if (alreadyPresent) {
+            requireSameOrigin(destination, canonicalUrl, coordinate);
             String detail = run(destination, List.of("git", "pull", "--ff-only"), coordinate);
             return new ClonedRepository(coordinate, destination, true, detail);
         }
@@ -91,9 +101,32 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
         }
 
         String detail = run(destination.getParent(),
-                List.of("git", "clone", "--depth", "1", cloneUrl.trim(), coordinate.repository()),
+                List.of("git", "clone", "--depth", "1", canonicalUrl, coordinate.repository()),
                 coordinate);
         return new ClonedRepository(coordinate, destination, false, detail);
+    }
+
+    /**
+     * Refuses to report an update of a repository the URL does not name.
+     *
+     * <p>The directory layout has no place for the host, so {@code https://a.example/x/y} and
+     * {@code https://b.example/x/y} land in the same directory. Pulling the checkout that is
+     * there and calling it the one asked for would tell the player something untrue about
+     * where their server's code came from.
+     */
+    private void requireSameOrigin(Path checkout, String canonicalUrl, RepositoryCoordinate coordinate) {
+        String origin = run(checkout, List.of("git", "config", "--get", "remote.origin.url"), coordinate);
+        String normalised;
+        try {
+            normalised = RepositoryCoordinate.canonicalCloneUrl(origin);
+        } catch (IllegalArgumentException notHttps) {
+            normalised = origin;
+        }
+        if (!normalised.equalsIgnoreCase(canonicalUrl)) {
+            throw new McpException(coordinate.slug(), coordinate.slug()
+                    + " is already cloned from a different address, so it was not updated: "
+                    + origin);
+        }
     }
 
     private boolean isEmpty(Path directory) {
@@ -115,6 +148,7 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.directory(workingDirectory.toFile());
         builder.redirectErrorStream(true);
+        ChildEnvironment.forGit(builder);
 
         Process process;
         try {
@@ -125,23 +159,30 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
                     cannotStart);
         }
 
-        String output;
-        try (InputStream out = process.getInputStream()) {
-            output = new String(out.readAllBytes(), StandardCharsets.UTF_8).trim();
-        } catch (IOException cannotRead) {
-            output = "";
-        }
+        // Drained on its own thread so the timeout below is what bounds the run. Reading on
+        // this thread would wait for git to exit before the timeout was ever looked at, and a
+        // stalled network would hold it — and the model's tool call — forever.
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        Thread drain = Thread.ofVirtual().name("MCAgents-git-output").start(
+                () -> drainCapped(process.getInputStream(), captured));
 
         try {
             if (!process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
-                process.destroyForcibly();
+                stop(process);
                 throw new McpException(coordinate.slug(),
                         "git took longer than " + timeout.toSeconds() + "s and was stopped");
             }
+            // git has exited; a helper it left holding the pipe must not hold this thread.
+            drain.join(DRAIN_GRACE_MILLIS);
         } catch (InterruptedException interrupted) {
-            process.destroyForcibly();
+            stop(process);
             Thread.currentThread().interrupt();
             throw new McpException(coordinate.slug(), "Clone was interrupted", interrupted);
+        }
+
+        String output;
+        synchronized (captured) {
+            output = captured.toString(StandardCharsets.UTF_8).trim();
         }
 
         if (process.exitValue() != 0) {
@@ -149,5 +190,33 @@ public final class GitRepositoryCloner implements McpRepositoryCloner {
                     "git failed: " + (output.isEmpty() ? "exit " + process.exitValue() : output));
         }
         return output;
+    }
+
+    /**
+     * Copies {@code in} into {@code into} up to {@link #MAX_OUTPUT_BYTES}, then keeps reading
+     * and discarding, so git never blocks on a full pipe and its output cannot grow without
+     * limit.
+     */
+    private static void drainCapped(InputStream in, ByteArrayOutputStream into) {
+        byte[] buffer = new byte[8192];
+        try (in) {
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                synchronized (into) {
+                    int room = MAX_OUTPUT_BYTES - into.size();
+                    if (room > 0) {
+                        into.write(buffer, 0, Math.min(room, read));
+                    }
+                }
+            }
+        } catch (IOException closed) {
+            // The process was stopped; what was read so far is all there is.
+        }
+    }
+
+    /** Stops git and anything it started, such as a credential or transport helper. */
+    private static void stop(Process process) {
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
+        process.destroyForcibly();
     }
 }

@@ -87,6 +87,7 @@ class WatchingMcpHostTest {
     @Test
     void connectsToADiscoveredServerAndMergesWhatItOffers() throws IOException {
         FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
 
         McpContextRegistry registry = host().start().join();
 
@@ -109,6 +110,7 @@ class WatchingMcpHostTest {
         // The fake server prints a non-JSON line before answering anything. If the reader
         // treated that as protocol, the handshake would never complete.
         FakeMcpServer.writeInto(repository("acme", "noisy-mcp"), "echo");
+        approveEverything();
 
         assertTrue(host().start().join().servers().getFirst().isConnected());
     }
@@ -116,6 +118,7 @@ class WatchingMcpHostTest {
     @Test
     void routesACallThroughTheSessionTheRegistryNames() throws IOException {
         FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
         host().start().join();
 
         Optional<McpSession> session = host.session("echo-mcp");
@@ -132,6 +135,7 @@ class WatchingMcpHostTest {
     void twoServersAreMergedAndKeptApartByTheirPrefixes() throws IOException {
         FakeMcpServer.writeInto(repository("alpha", "first-mcp"), "search");
         FakeMcpServer.writeInto(repository("beta", "second-mcp"), "search");
+        approveEverything();
 
         McpContextRegistry registry = host().start().join();
 
@@ -147,6 +151,7 @@ class WatchingMcpHostTest {
         Files.createDirectories(broken);
         Files.writeString(broken.resolve("mcp.json"),
                 "{\"command\":\"definitely-not-a-real-program\",\"args\":[]}");
+        approveEverything();
 
         McpContextRegistry registry = host().start().join();
 
@@ -178,6 +183,7 @@ class WatchingMcpHostTest {
     @Test
     void aReloadKeepsALiveSessionWhoseWiringDidNotChange() throws IOException {
         FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
         host().start().join();
         McpSession before = host.session("echo-mcp").orElseThrow();
 
@@ -191,6 +197,7 @@ class WatchingMcpHostTest {
     @Test
     void aReloadReplacesASessionWhoseWiringChanged() throws IOException {
         FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
         host().start().join();
         McpSession before = host.session("echo-mcp").orElseThrow();
 
@@ -211,6 +218,7 @@ class WatchingMcpHostTest {
     void aServerRemovedFromDiskIsDisconnected() throws IOException {
         Path repository = repository("acme", "echo-mcp");
         FakeMcpServer.writeInto(repository, "echo");
+        approveEverything();
         host().start().join();
         McpSession before = host.session("echo-mcp").orElseThrow();
 
@@ -232,6 +240,9 @@ class WatchingMcpHostTest {
 
     @Test
     void aServerClonedWhileRunningIsPickedUpWithoutARestart() throws Exception {
+        // Approved ahead of the clone, so what is under test is the watcher noticing it.
+        FakeMcpServer.approve(paths.mcpDirectory(), Map.of("late-mcp",
+                McpApproval.fingerprint(FakeMcpServer.discoveredSpec("acme", "late-mcp"))));
         host().start().join();
         assertTrue(host.registry().isEmpty(), "nothing to begin with");
 
@@ -254,6 +265,7 @@ class WatchingMcpHostTest {
     @Test
     void closingStopsEveryChildProcess() throws IOException {
         FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
         host().start().join();
         McpSession session = host.session("echo-mcp").orElseThrow();
 
@@ -262,6 +274,53 @@ class WatchingMcpHostTest {
         assertFalse(session.isAlive());
         assertTrue(host.registry().isEmpty());
         assertTrue(host.session("echo-mcp").isEmpty());
+    }
+
+    @Test
+    void aClonedServerIsNotStartedUntilThePlayerApprovesIt() throws IOException {
+        FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+
+        McpContextRegistry registry = host().start().join();
+
+        McpServerStatus status = registry.servers().getFirst();
+        assertEquals(McpServerStatus.State.AWAITING_APPROVAL, status.state());
+        String fingerprint = McpApproval.fingerprint(FakeMcpServer.discoveredSpec("acme", "echo-mcp"));
+        assertTrue(status.detail().contains(fingerprint), status.detail());
+        assertTrue(status.detail().contains("FakeServer.java"),
+                "the player must be shown what would run: " + status.detail());
+        assertTrue(registry.tools().isEmpty());
+        assertTrue(host.session("echo-mcp").isEmpty(), "nothing may run before approval");
+    }
+
+    @Test
+    void anApprovalForAnotherCommandDoesNotStartIt() throws IOException {
+        FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        approveEverything();
+        host().start().join();
+        McpSession before = host.session("echo-mcp").orElseThrow();
+
+        // What a pull bringing in a changed mcp.json looks like.
+        Files.writeString(repository("acme", "echo-mcp").resolve("mcp.json"),
+                "{\"command\":" + jsonJava() + ",\"args\":[\"FakeServer.java\",\"--other\"]}");
+        McpContextRegistry registry = host.reload().join();
+
+        assertEquals(McpServerStatus.State.AWAITING_APPROVAL, registry.servers().getFirst().state());
+        assertFalse(before.isAlive(), "the approved process must stop once its wiring changes");
+        assertTrue(host.session("echo-mcp").isEmpty());
+    }
+
+    @Test
+    void aServerTheCatalogWiresItselfNeedsNoApproval() throws IOException {
+        FakeMcpServer.writeInto(repository("acme", "echo-mcp"), "echo");
+        Files.writeString(paths.mcpServerCatalog(),
+                "{\"mcpServers\":{\"echo-mcp\":{\"command\":" + jsonJava()
+                        + ",\"args\":[\"FakeServer.java\"],\"cwd\":\"acme/echo-mcp\"}}}");
+
+        assertTrue(host().start().join().servers().getFirst().isConnected());
+    }
+
+    private void approveEverything() throws IOException {
+        FakeMcpServer.approveEverything(paths.mcpDirectory());
     }
 
     private static String jsonJava() {
