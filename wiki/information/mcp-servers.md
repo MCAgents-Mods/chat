@@ -135,9 +135,8 @@ it stops and gives you what it has.
 
 It is reported, and nothing else breaks. A server that will not start, answers nothing, or
 is missing its entry point becomes a line saying which server and why — the other servers
-stay connected, their tools stay available, and the mod carries on. This is the same rule
-that applies to the central Knowledge Pack service: an optional thing that is unavailable
-is a message, never a failure.
+stay connected, their tools stay available, and the mod carries on. An optional thing
+that is unavailable is a message, never a failure.
 
 Servers are stopped when the game exits. One that ignores that is killed rather than
 allowed to outlive the game that started it.

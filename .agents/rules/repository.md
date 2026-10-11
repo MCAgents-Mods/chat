@@ -20,14 +20,13 @@ This is the rule that outranks every other rule in this file.
 * **The mod is client-side only.** It must never require a Minecraft server plugin, a
   server-side companion mod, or any server cooperation to function.
 * **The mod must start, load, and operate with no network at all.** Chat sessions already
-  stored, Knowledge Packs already downloaded, API keys already saved, and the whole GUI
-  stay usable when `mcagents.mcrealms.space` is down, blocked, or has never been reached.
-* **The central service is a content source, not a dependency.** It exists to download and
-  update Knowledge Packs. No code path may treat it as required, block on it at startup,
-  or fail a local operation because it is unreachable.
-* A failed call to the central service is surfaced in the UI as a non-fatal message. It
-  never throws out of a local operation and never leaves the local database in a partial
-  state.
+  stored, Knowledge Packs already stored, API keys already saved, and the whole GUI
+  stay usable whatever the network is doing.
+* **The mod has no server of its own.** The only network calls it makes are to a model
+  provider the player configured and to an MCP server it was asked to clone. No code path
+  may block on either at startup or fail a local operation because one is unreachable.
+* A failed network call is surfaced in the UI as a non-fatal message. It never throws out
+  of a local operation and never leaves the local database in a partial state.
 * Calls to the OpenRouter API are the player's own choice with the player's own key. They
   are optional in the same sense: absence of a key disables answering, never the mod.
 
@@ -78,7 +77,7 @@ duplicated double drifts until the two modules are testing against different fic
 Minecraft's client thread renders the game. Blocking it freezes the game.
 
 * **Every `api/` method that performs I/O returns `CompletableFuture<T>`** — database
-  reads and writes, OpenRouter calls, embedding calls, central-service calls. No
+  reads and writes, OpenRouter calls, embedding calls. No
   exceptions.
 * `common/` executes that work on its own executor and never on the caller's thread.
 * GUI code consumes a future by attaching a callback that hands the result back to the

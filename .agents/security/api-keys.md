@@ -11,9 +11,8 @@ the player's own machine, and they are the single most damaging thing this mod c
 ## Where a key lives
 
 * In `data.db`, in the `api_keys` table, on the player's machine. Nowhere else.
-* **Never in the central service.** `MCAgents/server-fabric-expressjs` has no endpoint that
-  accepts, forwards, or stores a key, and adding one is a product decision, not an
-  implementation detail.
+* **Never uploaded to a service run for this mod.** There is none, and adding one that
+  accepts, forwards, or stores a key is a product decision, not an implementation detail.
 * **Never in a config file the player might share.** No `.env`, no `config.json`, no
   in-game screenshot of a plain-text field.
 * **Never in this repository.** Not in a test fixture, not in a comment, not in an example.

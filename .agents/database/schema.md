@@ -28,8 +28,8 @@ begins "delete your data.db".
 | Table | Holds | Key |
 |---|---|---|
 | `api_keys` | The player's API keys, and which platform each one opens | the stored form of the key |
-| `content_categories` | Groupings for the content browser | id assigned by the central service |
-| `contents` | Downloaded Knowledge Packs, text and embedding | id assigned by the central service |
+| `content_categories` | Groupings for the content browser | the id the caller supplies |
+| `contents` | Stored Knowledge Packs, text and embedding | the pack's own id |
 | `chat_sessions` | One row per conversation | a UUID string |
 | `chat_messages` | One row per turn | autoincrement |
 | `settings` | Player preferences, including the selected models | the setting key |
@@ -54,9 +54,8 @@ These are not incidental; code depends on each one.
 * **`contents.category_id` is a foreign key**, so a category is stored before its packs.
   The repository checks first and reports the missing category by id rather than letting a
   raw constraint violation reach the player.
-* **A pack is identified by `id` plus `version`.** The central service publishes a new
-  version rather than editing an existing one, so an update is an overwrite in place and an
-  update *check* is a version-string comparison. Never accumulate rows per version.
+* **A pack is identified by `id` plus `version`.** A new version replaces the stored one
+  whole, so storing an update is an overwrite in place. Never accumulate rows per version.
 * **Timestamps are text in UTC**, written by `CURRENT_TIMESTAMP`. SQLite has no date type.
   An unparseable value is read as the epoch rather than failing the query — a corrupt
   timestamp must not make a player's history unreadable.

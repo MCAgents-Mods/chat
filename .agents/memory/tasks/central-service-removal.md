@@ -1,6 +1,6 @@
 ---
 name: memory-task-central-service-removal
-status: open
+status: done
 description: Removing the mod's client for the central service at mcagents.mcrealms.space after its repository was deleted — what goes, what stays, and the plan.
 ---
 
@@ -85,3 +85,45 @@ service, so nothing there changed, but that was established by search, not by ru
 **Left for task 3.** Every document still describes the service, the base pack and downloads.
 `HttpCall.get` and the transport's GET branch are now unused by the mod; they are generic HTTP
 and were left in place.
+
+### Task 3 — docs/central-service-removal
+
+**Landed.** Every document that described the service now describes the mod without it:
+`AGENTS.md` and `.agents/rules/repository.md` restate the offline-first mandate as "the mod has
+no server of its own" — the rule itself is unchanged, only what it names; `api-keys.md`,
+`openrouter.md`, `schema.md` and the repository map lost their references; the README and the
+overview, architecture, setup, MCP, retrieval and console wiki pages no longer mention a
+catalog, a download, an update check, a banner or a marketplace, and the console page and the
+retrieval page were rewritten to what the code does now. The `0.0.0` changelog gained one Notes
+bullet saying so; it had never described the client, so nothing else in it needed changing. The
+state file's "Reaching the central service" section became a short "The network" section.
+
+**Kept as history.** `central-service.md` and the task records under `.agents/memory/tasks/`
+still describe the service, because it existed when they were written; the memory index marks
+`central-service.md` as historical rather than rewriting it.
+
+**Verified.** A search of `AGENTS.md`, the README, both wikis and `.agents/` for the service,
+`mcrealms`, `server-fabric-expressjs`, `CentralService`, `KnowledgeSync` and "available to
+download" finds only the changelog note, the state file's explanation of the removal, and the
+historical records.
+
+## What is proven, and what is not
+
+**Proven.** The build and tests pass on task 2, and the console pages were driven in Chromium
+afterwards — see task 2. Task 3 changes documents only.
+
+**Not proven.** The in-game screens were not opened in a client.
+
+## Open questions for the owner
+
+* The local pack store, embedding backfill and retrieval stay, but nothing can put a pack in
+  the store now, so retrieval finds nothing. Whether to give packs a new source, or to remove
+  the feature, is a product decision for a later task.
+* `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` still carries the old repository name; see
+  `repository-move.md`.
+
+## Closed
+
+Three branches stacked on `release/0.0.0` — `chore/central-service-removal-plan`,
+`refactor/central-service-removal`, `docs/central-service-removal`. Not pushed, and no pull
+requests are open, so the `PR` column is empty.

@@ -3,7 +3,7 @@
 MCAgentsClient is a **client-side only** Minecraft mod for the Fabric loader. It puts an
 AI assistant inside the game: the player opens a chat screen, asks a question, and an LLM
 answers using the player's own OpenRouter API key, the conversation so far, and whichever
-downloaded knowledge is relevant to the question.
+stored knowledge is relevant to the question.
 
 Nothing is installed on the Minecraft server. Nothing is required of the server operator.
 The mod works on single-player worlds and on any multiplayer server the player is allowed
@@ -47,23 +47,17 @@ before this existed.
 
 ### Knowledge Packs and retrieval
 
-A Knowledge Pack is a unit of downloadable content — a server's rules, a progression guide,
-a farming strategy. Packs are downloaded from the central service and stored in the local
-database together with their embeddings. When the player asks a question, the mod embeds
-the question, finds the closest stored content, and sends only that to the model. The model
-never receives the whole library.
+A Knowledge Pack is a unit of stored content — a server's rules, a progression guide, a
+farming strategy. Packs are kept in the local database together with their embeddings. When
+the player asks a question, the mod embeds the question, finds the closest stored content,
+and sends only that to the model. The model never receives the whole library.
 
-Packs are versioned. An update replaces only the packs that actually changed.
+The mod has no way to fetch packs: it has no catalog and no download path, and contacts no
+server of its own.
 
 Retrieval can be switched off, in the game or in the browser. Off means the question is sent
 on its own: no embedding call, no packs attached, nothing charged for it — and chatting is
 otherwise unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
-
-### The marketplace
-
-Players can author packs, publish them, and sell them. Free and premium packs are listed
-side by side in the mod's content browser, with search and a free/premium filter. The
-central service at `mcagents.mcrealms.space` hosts the catalog and handles purchases.
 
 ### Wallets
 
@@ -96,7 +90,7 @@ Everything the mod remembers lives on the player's own machine:
 |---|---|
 | Chat sessions and messages | `{minecraft_dir}/MCAgents/data.db` |
 | API keys, and the platform each one opens | `{minecraft_dir}/MCAgents/data.db` |
-| Downloaded Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
+| Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
 | Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/data.db` |
 | Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
 
@@ -113,13 +107,12 @@ about your game is sent: not your inventory, not your coordinates, not your chat
 
 ## Offline behaviour
 
-**The central service is a content source, not a dependency.** When
-`mcagents.mcrealms.space` is unreachable — down, blocked, or never contacted — the mod
-still starts, still opens, still shows every stored session, and still answers questions
-using the Knowledge Packs already downloaded. Only two things stop working: browsing the
-catalog and downloading new packs.
+**The mod has no server of its own.** With no network it still starts, still opens, still
+shows every stored session, and still answers questions using the Knowledge Packs already
+stored. Only what asks a model provider for something stops working, and cloning an MCP
+server needs a connection to the git host.
 
-The OpenRouter API is a separate matter: without a key or without internet, the mod cannot
+Without a key or without internet, the mod cannot
 produce new answers, but the interface, the history, and the stored knowledge remain fully
 accessible.
 
@@ -181,4 +174,3 @@ each will live.
 * [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.
 * [`web-console.md`](web-console.md) — the browser view of your own data.
 * [`../environments/setup.md`](../environments/setup.md) — building and running it.
-* `MCAgents/server-fabric-expressjs` — the central Knowledge Pack service.

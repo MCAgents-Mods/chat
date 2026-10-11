@@ -2,7 +2,7 @@
 
 A **client-side-only** Minecraft mod for the Fabric loader that puts an AI assistant inside
 the game. You ask a question in an in-game chat screen; a language model answers using your
-own API key, the conversation so far, and whichever downloaded knowledge is relevant to what
+own API key, the conversation so far, and whichever stored knowledge is relevant to what
 you asked.
 
 Nothing is installed on the Minecraft server, and nothing is required of a server operator.
@@ -12,27 +12,20 @@ It works in single-player and on any multiplayer server you are allowed to use i
 
 Everything the mod remembers lives on your own machine, in a SQLite database at
 `.minecraft/MCAgents/data.db`: your conversations, your API keys, your bound wallets, and
-the Knowledge Packs you have downloaded. When you ask a question, the mod turns it into an
+the Knowledge Packs you have stored. When you ask a question, the mod turns it into an
 embedding, compares it against the stored packs, and sends only the closest content to the
 model — never your whole library.
 
-The mod talks to a central service at [`https://mcagents.mcrealms.space`](https://mcagents.mcrealms.space),
-which catalogs and serves those packs. **That service is a content source, not a
-dependency.** With it unreachable — asleep, down, blocked, or never contacted — the mod
-still starts, still opens, still shows every stored conversation, and still answers from
-what is already downloaded. Only browsing the catalog and downloading new packs stop.
-
-Built-in knowledge grows over time, and **it updates only when you press the update button.**
-Nothing is fetched behind your back, with one exception: a small pack describing the mod
-itself is fetched at startup — and version-checked on every start — so the assistant can
-answer questions about what it is. Every other pack is checked when you open the chat page
-in the web console, and downloaded only when you ask.
+The mod has no server of its own. With no network it still starts, still opens, still shows
+every stored conversation, and still answers from the packs already stored. The calls it does
+make are to the model provider you chose, and to a git host when you ask it to clone an MCP
+server. Nothing is fetched behind your back.
 
 ## Your API keys
 
 A key is stored on your own machine and sent to nobody but the platform you stored it for. It
-is never uploaded to the central service, never written to a file that travels with a world,
-and shown in the interface only in shortened form.
+is never written to a file that travels with a world, and shown in the interface only in
+shortened form.
 
 Set `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
 in the database as well, with the same key encrypting differently every time it is written.
@@ -50,12 +43,11 @@ do not share your `data.db`.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
-* **Knowledge Packs**, free or paid, listed side by side — both the ones you have and the
-  ones you could download, with a button to fetch a single pack. Packs are versioned; an
-  update publishes a new version rather than editing one in place.
-* **Embedding on your own machine.** Packs are published as text and embedded by your
+* **Knowledge Packs**, stored on your machine and listed in the console, where you can read
+  and search them and delete the ones you no longer want.
+* **Embedding on your own machine.** Packs are stored as text and embedded by your
   client with your embedding model, so your library lives in the same vector space as your
-  questions rather than in whichever one a server chose.
+  questions rather than in whichever one produced a pack.
 * **A local web console** — the mod can serve your own data to your own browser on
   `127.0.0.1`: your packs, your chats, your API keys, and your model choice. It is for the
   jobs a Minecraft screen is bad at. Chat works both ways, so a message typed in the browser

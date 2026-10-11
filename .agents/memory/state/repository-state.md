@@ -95,7 +95,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   boundary is the player's decision to clone that server.
 * Embedding and retrieval. The agent answers from the conversation only; downloaded
   Knowledge Packs are stored but never consulted.
-* Any download path from the central service.
+* Any source of Knowledge Packs. The central service client was removed, so the library is
+  empty unless something else puts a pack in it.
 * The content browser.
 * Anything that tells a new player the key is `G`.
 * Any CI workflow.
@@ -119,16 +120,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
   `CachingModelClient` (embeddings cached, completions deliberately not).
-* Knowledge: published as text with no vector. `KnowledgeSync` downloads — the whole
-  difference, or one pack by id — and `EmbeddingBackfill` gives stored packs a vector using
-  the player's own embedding model, because a vector is only comparable inside the space of
-  the model that made it. Startup fetches and version-checks `mcagents-info` and nothing
-  else; the whole library is checked when `/chat/` opens, and one pack from its own page.
-  **No button fetches a pack the player did not choose**: update brings stored packs up to
-  date, download takes one pack, and refresh downloads nothing at all.
-  **An update drops that pack's embedding** — new version, new text, so the old vector
-  describes something that is no longer there — while re-downloading the same version keeps
-  it.
+* Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
+  using the player's own embedding model, because a vector is only comparable inside the
+  space of the model that made it. The console lists, shows and deletes stored packs and
+  nothing else: there is no catalog, download or update path.
 * Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
   cosine similarity, and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
@@ -187,24 +182,16 @@ Facts that cost time to establish, and will again if forgotten:
 Resolved through the `lxagents-agents-base` MCP connector. Nothing from it is copied here;
 the override table in `.agents/index/root-index.md` is empty.
 
-## Reaching the central service
+## The network
 
-`CentralService` is the one class that talks to `mcagents.mcrealms.space`, which is what
-makes "the mod works offline" checkable. `KnowledgeSync` compares published versions against
-stored ones and downloads only the difference, on the refresh button, the update button, or
-the one startup fetch of `mcagents-info`. A sleeping service is a state, not an error: the
-console shows a banner, retries once a minute, and stops after ten.
-
-**The live deployment answers, and a refresh from the console really downloads its catalog.**
-It does not yet publish `mcagents-info` — the server branch adding it is pushed and not
-deployed.
+The mod makes two kinds of call: to the model provider the player configured, and to a git
+host when it is asked to clone an MCP server. It has no server of its own. The client for the
+central service at `mcagents.mcrealms.space` was removed when its repository was deleted —
+see [`../tasks/central-service-removal.md`](../tasks/central-service-removal.md).
 
 ## Next step
 
 **Play-test in a real client, and publish real embeddings.**
-
-The server side is deployed: `mcagents-info` is served at version `0.0.0` and the catalog
-answers with `RateLimit-*` headers.
 
 Two things are outstanding, and the second is the more interesting.
 
@@ -225,12 +212,8 @@ Two things are outstanding, and the second is the more interesting.
    third-party server does that the fake one does not.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
-   would settle it — and would be the first end-to-end proof that a downloaded pack can be
+   would settle it — and would be the first end-to-end proof that a stored pack can be
    retrieved against.
 
-The `embeddedData: "[]"` gap recorded earlier is closed, and was never a content bug: the
-service publishes text on purpose and the client embeds it. The placeholder `example-*`
-packs are gone, replaced by five written from the README and wiki.
-
-Then wire retrieval, so downloaded Knowledge Packs actually reach the prompt, and after that
-the content browser and its download path against `MCAgents/server-fabric-expressjs`.
+Then decide how a pack reaches a machine at all. With the central service gone there is no
+source, so retrieval has nothing to find until the owner chooses one.
