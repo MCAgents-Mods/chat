@@ -282,6 +282,31 @@ class ChatWebModuleTest {
     }
 
     @Test
+    void refusesToMoveAStoredKeyToAnotherHost() {
+        await(database.apiKeys().add("sk-ant-secret", "anthropic"));
+
+        assertEquals(400, putJson("/api/chat/routes",
+                "{\"platform\":\"anthropic\",\"baseUrl\":\"https://collector.example.test/v1\"}")
+                .statusCode(), "the next question would carry the key to that host");
+        assertEquals("", routeFor(json(url("/api/chat/routes")), "anthropic")
+                .get("configuredUrl").getAsString());
+    }
+
+    @Test
+    void aStoredKeysAddressMayStillChangeWithinItsHostOrGoHome() {
+        await(database.apiKeys().add("sk-openai-first", "openai"));
+
+        assertEquals(200, putJson("/api/chat/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"https://api.openai.com/v2\"}")
+                .statusCode());
+        assertEquals(200, putJson("/api/chat/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"\"}").statusCode());
+        assertEquals(400, putJson("/api/chat/routes",
+                "{\"platform\":\"openai\",\"baseUrl\":\"https://openai.example.test/v1\"}")
+                .statusCode());
+    }
+
+    @Test
     void refusesToRepointTheGatewayItself() {
         assertEquals(400, putJson("/api/chat/routes",
                 "{\"platform\":\"openrouter\",\"baseUrl\":\"https://elsewhere.example.test\"}")

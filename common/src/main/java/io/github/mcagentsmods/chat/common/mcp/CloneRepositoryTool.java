@@ -4,8 +4,11 @@ import com.google.gson.JsonObject;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
+import io.github.mcagentsmods.chat.api.mcp.McpServerStatus;
+import io.github.mcagentsmods.chat.api.mcp.RepositoryCoordinate;
 import io.github.mcagentsmods.core.api.model.ToolDefinition;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -40,11 +43,12 @@ public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
     public ToolDefinition definition() {
         return new ToolDefinition(
                 NAME,
-                "Clone an external MCP server repository so its tools become available. "
-                        + "Takes an https git URL; the destination is chosen by the mod. The "
-                        + "server is connected automatically, and its tools can be used on "
-                        + "the next turn. Cloning a repository that is already present "
-                        + "updates it.",
+                "Clone an external MCP server repository. Takes an https git URL naming "
+                        + "exactly {owner}/{repository}; the destination is chosen by the mod. "
+                        + "A cloned server does not start until the player approves it, so "
+                        + "tell the player what the result says it would run and how to "
+                        + "approve it. Cloning a repository that is already present updates "
+                        + "it, and a changed command needs approving again.",
                 """
                 {
                   "type": "object",
@@ -76,9 +80,17 @@ public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
                     long tools = registry.tools().stream()
                             .filter(tool -> tool.serverId().equals(server))
                             .count();
-                    String what = cloned.alreadyPresent()
-                            ? "Updated " + cloned.coordinate().slug()
-                            : "Cloned " + cloned.coordinate().slug();
+                    // The host is named because the directory is not: two hosts can serve an
+                    // owner/repository of the same name, and the player should know which ran.
+                    String what = (cloned.alreadyPresent() ? "Updated " : "Cloned ")
+                            + cloned.coordinate().slug() + " from " + RepositoryCoordinate.hostOf(url);
+                    Optional<McpServerStatus> status = registry.servers().stream()
+                            .filter(row -> row.spec().id().equals(server))
+                            .findFirst();
+                    if (status.isPresent()
+                            && status.get().state() == McpServerStatus.State.AWAITING_APPROVAL) {
+                        return ToolOutcome.ok(callId, what + ". " + status.get().detail());
+                    }
                     // The count is the useful part: it distinguishes a repository that
                     // arrived and connected from one that arrived and would not start.
                     return ToolOutcome.ok(callId, tools > 0

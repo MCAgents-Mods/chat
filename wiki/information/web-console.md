@@ -183,6 +183,13 @@ An address must be `https`, or a loopback address for a gateway you run yourself
 else is refused rather than sent your key. Clearing a box goes back to the address the mod
 ships for that platform.
 
+**Once a key is stored for a platform, its address can only change within the same host**, or
+go back to the address the mod ships. Moving it to another host is refused, because the next
+question would carry your key there, and the page that cannot show your key should not be
+able to send it somewhere new. To move a platform to another host, remove its key, change
+the address, and add the key again. Type the address before adding the key for a platform
+the mod does not know.
+
 **A note above says whether your keys are encrypted on this machine.** They are when
 `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set in the environment the game runs in, and
 stored as you pasted them when it is not. The page says which rather than implying the

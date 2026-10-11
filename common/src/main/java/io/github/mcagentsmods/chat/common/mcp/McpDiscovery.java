@@ -24,11 +24,12 @@ import java.util.stream.Stream;
  * Works out which MCP servers exist, from the mcps directory and the optional catalog.
  *
  * <p>Two sources, deliberately unequal. The <b>directory</b> is the source of truth for
- * what is installed: a repository the mod cloned is a server, and it works with no
- * configuration at all — which is the point, because a player who asked the agent to add a
- * server should not then have to hand-write JSON. The <b>catalog</b>
- * ({@code mcp_servers.json}) adds hosted servers and overrides what discovery inferred, so
- * a wrong guess is correctable without editing anything inside the checkout.
+ * what is installed: a repository the mod cloned is a server, and the mod works out how to
+ * start it, so a player who asked the agent to add one never hand-writes its wiring. The
+ * <b>catalog</b> ({@code mcp_servers.json}) approves that wiring — a repository's command
+ * does not run until the player has, see {@link McpApproval} — adds hosted servers, and
+ * overrides what discovery inferred, so a wrong guess is correctable without editing
+ * anything inside the checkout.
  *
  * <p>Discovery never runs anything. It reads files, decides how a server <em>would</em> be
  * started, and returns specs. Starting them is
@@ -36,6 +37,13 @@ import java.util.stream.Stream;
  * single child process.
  */
 final class McpDiscovery {
+
+    /**
+     * The largest manifest, package.json or catalog read. Each is a few hundred bytes in
+     * practice; a repository that ships one far larger is not going to be understood by
+     * reading all of it, and every reload would read it again.
+     */
+    static final long MAX_JSON_BYTES = 1024 * 1024;
 
     private final Path mcpRoot;
 
@@ -54,11 +62,42 @@ final class McpDiscovery {
      *                 player can be shown why a server they expected is missing
      */
     List<McpServerSpec> discover(List<String> problems) {
+        return discover(problems, new LinkedHashMap<>());
+    }
+
+    /**
+     * Everything currently configured, with what still needs the player's approval.
+     *
+     * <p>A server whose wiring came from its repository, and whose fingerprint the catalog
+     * has not approved, comes back disabled, and {@code awaitingApproval} says why and how
+     * to allow it — see {@link McpApproval}. One the player switched off themselves stays
+     * plainly disabled.
+     *
+     * @param problems         as for {@link #discover(List)}
+     * @param awaitingApproval collects, per server id, the sentence to show for a server
+     *                         that is waiting for approval
+     */
+    List<McpServerSpec> discover(List<String> problems, Map<String, String> awaitingApproval) {
         Map<String, McpServerSpec> specs = new LinkedHashMap<>();
+        Set<String> fromRepository = new LinkedHashSet<>();
         for (McpServerSpec spec : fromDirectories(problems)) {
             specs.put(spec.id(), spec);
+            fromRepository.add(spec.id());
         }
-        applyCatalog(specs, problems);
+        Map<String, String> approvals = new LinkedHashMap<>();
+        applyCatalog(specs, fromRepository, approvals, problems);
+
+        for (String id : fromRepository) {
+            McpServerSpec spec = specs.get(id);
+            if (spec == null || !spec.enabled()) {
+                continue;
+            }
+            String fingerprint = McpApproval.fingerprint(spec);
+            if (!fingerprint.equalsIgnoreCase(approvals.getOrDefault(id, ""))) {
+                specs.put(id, spec.withEnabled(false));
+                awaitingApproval.put(id, McpApproval.describe(spec, fingerprint));
+            }
+        }
         return List.copyOf(specs.values());
     }
 
@@ -138,7 +177,11 @@ final class McpDiscovery {
         String transport = McpJson.string(manifest, "transport");
         if (transport.equalsIgnoreCase("http")) {
             String url = McpJson.string(manifest, "url");
-            return url.isBlank() ? Optional.empty() : Optional.of(McpServerSpec.http(id, url));
+            // A repository chooses this URL, and tool calls carry the conversation. Plain
+            // http would put that on the wire in the clear to whatever host it names.
+            return url.isBlank() || !isHttpsOrLoopback(url)
+                    ? Optional.empty()
+                    : Optional.of(McpServerSpec.http(id, url));
         }
         String command = McpJson.string(manifest, "command");
         if (command.isBlank()) {
@@ -198,12 +241,13 @@ final class McpDiscovery {
      * adds one. Both matter: the first is how a player corrects an inferred command or
      * switches a server off, the second is how a hosted server gets in at all.
      */
-    private void applyCatalog(Map<String, McpServerSpec> specs, List<String> problems) {
+    private void applyCatalog(Map<String, McpServerSpec> specs, Set<String> fromRepository,
+                              Map<String, String> approvals, List<String> problems) {
         Path catalogFile = mcpRoot.resolve(MCAgents.MCP_SERVERS_FILE);
         Optional<JsonObject> catalog = readJson(catalogFile);
         if (catalog.isEmpty()) {
             if (Files.exists(catalogFile)) {
-                problems.add(MCAgents.MCP_SERVERS_FILE + " is not valid JSON and was ignored");
+                problems.add(MCAgents.MCP_SERVERS_FILE + " is not valid JSON, or is over 1 MB, and was ignored");
             }
             return;
         }
@@ -217,6 +261,15 @@ final class McpDiscovery {
                 continue;
             }
             JsonObject entry = servers.getAsJsonObject(id);
+            String approved = McpJson.string(entry, McpApproval.FIELD).trim();
+            if (!approved.isEmpty()) {
+                approvals.put(id, approved);
+            }
+            // Wiring the player wrote is theirs, and needs no approval; an entry that only
+            // switches a discovered server on or off leaves the repository's wiring in place.
+            if (!McpJson.string(entry, "command").isBlank() || !McpJson.string(entry, "url").isBlank()) {
+                fromRepository.remove(id);
+            }
             boolean enabled = !entry.has("enabled")
                     || !entry.get("enabled").isJsonPrimitive()
                     || entry.get("enabled").getAsBoolean();
@@ -297,11 +350,32 @@ final class McpDiscovery {
         return values;
     }
 
+    /** Whether {@code url} is https, or plain http to this machine only. */
+    static boolean isHttpsOrLoopback(String url) {
+        java.net.URI uri;
+        try {
+            uri = new java.net.URI(url.trim());
+        } catch (java.net.URISyntaxException malformed) {
+            return false;
+        }
+        String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
+        String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(java.util.Locale.ROOT);
+        if (host.isEmpty() || uri.getRawUserInfo() != null) {
+            return false;
+        }
+        return scheme.equals("https")
+                || scheme.equals("http")
+                        && (host.equals("localhost") || host.equals("127.0.0.1") || host.equals("[::1]"));
+    }
+
     private Optional<JsonObject> readJson(Path file) {
         if (!Files.isRegularFile(file)) {
             return Optional.empty();
         }
         try {
+            if (Files.size(file) > MAX_JSON_BYTES) {
+                return Optional.empty();
+            }
             String text = Files.readString(file, StandardCharsets.UTF_8);
             JsonElement parsed = JsonParser.parseString(text);
             return parsed.isJsonObject() ? Optional.of(parsed.getAsJsonObject()) : Optional.empty();

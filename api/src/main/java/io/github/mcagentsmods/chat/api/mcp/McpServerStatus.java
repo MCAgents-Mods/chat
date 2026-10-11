@@ -26,7 +26,9 @@ public record McpServerStatus(
         /** Configured but switched off; nothing was started. */
         DISABLED,
         /** Tried and could not be reached, or broke the protocol. */
-        FAILED
+        FAILED,
+        /** Found in a cloned repository, and not started until the player approves it. */
+        AWAITING_APPROVAL
     }
 
     public McpServerStatus {
@@ -46,6 +48,10 @@ public record McpServerStatus(
 
     public static McpServerStatus failed(McpServerSpec spec, String detail) {
         return new McpServerStatus(spec, State.FAILED, detail, 0, Instant.now());
+    }
+
+    public static McpServerStatus awaitingApproval(McpServerSpec spec, String detail) {
+        return new McpServerStatus(spec, State.AWAITING_APPROVAL, detail, 0, Instant.now());
     }
 
     public boolean isConnected() {

@@ -1,5 +1,7 @@
 package io.github.mcagentsmods.chat.api.mcp;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -54,34 +56,82 @@ public record RepositoryCoordinate(String owner, String repository) {
      * refused: the first two need credentials the mod does not hold, and {@code file://}
      * would let a prompt reach anything on the player's disk.
      *
-     * @throws IllegalArgumentException if the URL is not an https URL naming an owner and a
-     *         repository
+     * <p>The path must be exactly {@code /{owner}/{repository}}, with an optional
+     * {@code .git}. Anything longer is refused rather than cut down to its first two segments,
+     * because what git fetches and what the player is told was fetched must be the same
+     * repository: {@code https://host/a/b/../../x} would otherwise be filed, and reported, as
+     * {@code a/b}.
+     *
+     * @throws IllegalArgumentException if the URL is not an https URL naming exactly an owner
+     *         and a repository
      */
     public static RepositoryCoordinate fromCloneUrl(String url) {
+        String[] parts = pathOf(url);
+        return new RepositoryCoordinate(parts[0], parts[1]);
+    }
+
+    /**
+     * The host a clone URL points at, lowercased.
+     *
+     * <p>The coordinate does not carry it, because the directory layout has no place for it,
+     * so whoever tells the player what was cloned names it from here: two hosts can both serve
+     * an {@code owner/repository} of the same name.
+     *
+     * @throws IllegalArgumentException under the same conditions as {@link #fromCloneUrl}
+     */
+    public static String hostOf(String url) {
+        pathOf(url);
+        return URI.create(url.trim()).getHost().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * The URL git is given: rebuilt from the host and the coordinate, never the text as
+     * received, so nothing the coordinate does not describe reaches git.
+     *
+     * @throws IllegalArgumentException under the same conditions as {@link #fromCloneUrl}
+     */
+    public static String canonicalCloneUrl(String url) {
+        RepositoryCoordinate coordinate = fromCloneUrl(url);
+        return "https://" + hostOf(url) + "/" + coordinate.slug() + ".git";
+    }
+
+    private static String[] pathOf(String url) {
         Objects.requireNonNull(url, "url");
         String trimmed = url.trim();
         if (!trimmed.toLowerCase(Locale.ROOT).startsWith("https://")) {
             throw new IllegalArgumentException(
                     "Only https clone URLs are supported, got '" + url + "'");
         }
-        String withoutScheme = trimmed.substring("https://".length());
-        int slash = withoutScheme.indexOf('/');
-        if (slash < 0) {
-            throw new IllegalArgumentException("Clone URL names no repository: '" + url + "'");
+        URI uri;
+        try {
+            uri = new URI(trimmed);
+        } catch (URISyntaxException malformed) {
+            throw new IllegalArgumentException("Not a valid clone URL: '" + url + "'");
         }
-        String path = withoutScheme.substring(slash + 1);
-        if (path.endsWith(".git")) {
-            path = path.substring(0, path.length() - ".git".length());
+        // Credentials, a port, a query or a fragment all mean the URL is doing something a
+        // repository address does not need, and an unparsed authority means the host is not
+        // what it appears to be.
+        if (uri.getHost() == null || uri.getRawUserInfo() != null || uri.getPort() != -1
+                || uri.getRawQuery() != null || uri.getRawFragment() != null) {
+            throw new IllegalArgumentException(
+                    "Clone URL must be https://{host}/{owner}/{repository}: '" + url + "'");
+        }
+        String path = uri.getRawPath() == null ? "" : uri.getRawPath();
+        if (path.startsWith("/")) {
+            path = path.substring(1);
         }
         while (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
-        String[] parts = path.split("/");
-        if (parts.length < 2) {
-            throw new IllegalArgumentException(
-                    "Clone URL must name {owner}/{repository}: '" + url + "'");
+        if (path.endsWith(".git")) {
+            path = path.substring(0, path.length() - ".git".length());
         }
-        return new RepositoryCoordinate(parts[0], parts[1]);
+        String[] parts = path.split("/", -1);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException(
+                    "Clone URL must name exactly {owner}/{repository}: '" + url + "'");
+        }
+        return parts;
     }
 
     /** {@code {owner}/{repository}} — how a coordinate is written in prose and in logs. */

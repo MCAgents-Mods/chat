@@ -243,10 +243,9 @@ final class WebApi {
 
         JsonArray items = new JsonArray();
         for (String platform : platforms) {
-            String configured = await(database.settings()
-                    .find(ModelPlatform.baseUrlSettingKey(platform))).orElse("").trim();
+            String configured = configuredBaseUrl(platform);
             String known = ModelPlatform.knownBaseUrl(platform).orElse("");
-            String effective = ModelPlatform.isUsableBaseUrl(configured) ? configured : known;
+            String effective = effectiveBaseUrl(platform);
 
             JsonObject item = new JsonObject();
             item.addProperty("platform", platform);
@@ -286,6 +285,13 @@ final class WebApi {
      * knows — or on the gateway when it knows nothing. A URL that is neither {@code https} nor
      * loopback is refused rather than stored: the value the player is configuring is where
      * their API key gets sent, and there is no version of that which is safe in the clear.
+     *
+     * <p>Nor may it move a stored key to another host. The page never shows a key, but
+     * whoever holds the console's address could otherwise point a platform at their own
+     * server and have the next question carry that platform's key there. So while a key is
+     * stored for a platform, its address may change only within the same host, or go back to
+     * the address this release ships; anything else asks for the key to be removed first and
+     * added again after, which a key the page cannot read makes impossible to abuse.
      */
     JsonObject saveRoute(String body) {
         String platform = ModelPlatform.normalise(string(body, "platform"));
@@ -297,8 +303,48 @@ final class WebApi {
             throw new IllegalArgumentException(
                     "A base URL must start with https://, or be a loopback address.");
         }
+        String known = ModelPlatform.knownBaseUrl(platform).orElse("");
+        String next = url.isEmpty() ? known : url;
+        boolean keyStored = await(database.apiKeys().findAll()).stream()
+                .anyMatch(key -> key.platform().equals(platform));
+        if (keyStored && !next.isEmpty() && !sameHost(next, known)
+                && !sameHost(next, effectiveBaseUrl(platform))) {
+            throw new IllegalArgumentException("A key is stored for " + platform
+                    + ", so its address cannot be moved to another host from here. Remove the "
+                    + "key, change the address, then add the key again.");
+        }
         await(database.settings().put(ModelPlatform.baseUrlSettingKey(platform), url));
         return routes();
+    }
+
+    private String configuredBaseUrl(String platform) {
+        return await(database.settings()
+                .find(ModelPlatform.baseUrlSettingKey(platform))).orElse("").trim();
+    }
+
+    /** Where {@code platform}'s requests go now: the usable configured address, else the shipped one. */
+    private String effectiveBaseUrl(String platform) {
+        String configured = configuredBaseUrl(platform);
+        return ModelPlatform.isUsableBaseUrl(configured)
+                ? configured
+                : ModelPlatform.knownBaseUrl(platform).orElse("");
+    }
+
+    /** Whether both URLs reach the same scheme, host and port; false when either is blank. */
+    private static boolean sameHost(String first, String second) {
+        if (first.isBlank() || second.isBlank()) {
+            return false;
+        }
+        try {
+            java.net.URI a = java.net.URI.create(first.trim());
+            java.net.URI b = java.net.URI.create(second.trim());
+            return a.getScheme() != null && a.getHost() != null
+                    && a.getScheme().equalsIgnoreCase(b.getScheme())
+                    && a.getHost().equalsIgnoreCase(b.getHost())
+                    && a.getPort() == b.getPort();
+        } catch (IllegalArgumentException malformed) {
+            return false;
+        }
     }
 
     /**
@@ -660,7 +706,7 @@ final class WebApi {
     JsonObject verifyWallet(String body) {
         String accountId = account(string(body, "accountId"));
         WalletBinding proved = challenges.redeem(
-                        string(body, "nonce"), string(body, "address"),
+                        string(body, "nonce"), accountId, string(body, "address"),
                         string(body, "signature"), string(body, "chainId"))
                 // Deliberately not saying which of the three was wrong: to anyone probing
                 // this route the distinction is the only useful thing it could give.

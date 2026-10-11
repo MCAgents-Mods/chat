@@ -4,6 +4,8 @@ import io.github.mcagentsmods.chat.api.wallet.ChainPlatform;
 import io.github.mcagentsmods.chat.api.wallet.WalletBinding;
 
 import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -49,15 +51,36 @@ public final class WalletChallenges {
      */
     private static final int MAX_OUTSTANDING = 64;
 
+    /**
+     * How long a challenge may wait for its signature. Long enough to read the prompt and
+     * approve it; short enough that a nonce left in a page's history is not good forever.
+     */
+    static final Duration LIFETIME = Duration.ofMinutes(10);
+
     private static final int NONCE_BYTES = 16;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private final Map<String, String> outstanding = new LinkedHashMap<>() {
+    private final Clock clock;
+
+    private final Map<String, Issued> outstanding = new LinkedHashMap<>() {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, Issued> eldest) {
             return size() > MAX_OUTSTANDING;
         }
     };
+
+    /** What a nonce was issued for: the redeem must name the same account and address. */
+    private record Issued(String accountId, String address, String message, Instant issuedAt) {
+    }
+
+    public WalletChallenges() {
+        this(Clock.systemUTC());
+    }
+
+    /** @param clock what "now" is, so expiry can be tested without waiting for it */
+    WalletChallenges(Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
 
     /** A message to sign, and the nonce that identifies it when the signature comes back. */
     public record Challenge(String nonce, String message) {
@@ -83,9 +106,10 @@ public final class WalletChallenges {
         }
 
         String nonce = randomHex(NONCE_BYTES);
-        String message = messageFor(accountId, address.trim(), nonce);
+        Instant now = clock.instant();
+        String message = messageFor(accountId, address.trim(), nonce, now);
         synchronized (outstanding) {
-            outstanding.put(nonce, message);
+            outstanding.put(nonce, new Issued(accountId, address.trim(), message, now));
         }
         return new Challenge(nonce, message);
     }
@@ -95,29 +119,37 @@ public final class WalletChallenges {
      *
      * <p>The address the caller states is never taken at its word — it is compared against
      * the address recovered from the signature, and a mismatch is a failure rather than a
-     * warning. The nonce is consumed whether or not the signature holds, so a wrong guess
-     * cannot be retried against the same message.
+     * warning. It must also be the address the challenge was issued for, and
+     * {@code accountId} the account it named: the binding lands where the signed message
+     * said it would, or nowhere. The nonce is consumed whether or not the signature holds,
+     * so a wrong guess cannot be retried against the same message, and one older than
+     * {@link #LIFETIME} is refused.
      *
-     * @return the proved address, or empty if the nonce is unknown, already spent, or the
-     *         signature does not belong to the address it arrived with
+     * @return the proved address, or empty if the nonce is unknown, spent or expired, names
+     *         another account or address, or the signature does not belong to the address it
+     *         arrived with
      */
     public Optional<WalletBinding> redeem(
-            String nonce, String address, String signature, String chainId) {
-        if (nonce == null || address == null || signature == null) {
+            String nonce, String accountId, String address, String signature, String chainId) {
+        if (nonce == null || accountId == null || address == null || signature == null) {
             return Optional.empty();
         }
-        String message;
+        Issued issued;
         synchronized (outstanding) {
-            message = outstanding.remove(nonce);
+            issued = outstanding.remove(nonce);
         }
-        if (message == null || !EvmSignatures.proves(message, signature, address)) {
+        if (issued == null
+                || !issued.accountId().equals(accountId.trim())
+                || !issued.address().equalsIgnoreCase(address.trim())
+                || issued.issuedAt().plus(LIFETIME).isBefore(clock.instant())
+                || !EvmSignatures.proves(issued.message(), signature, address)) {
             return Optional.empty();
         }
 
         long chain = parseChainId(chainId);
         ChainPlatform platform = ChainPlatform.fromEvmChainId(chain).orElse(ChainPlatform.ETHEREUM);
         return Optional.of(new WalletBinding(
-                EvmSignatures.toChecksumAddress(address), platform, chain, Instant.now()));
+                EvmSignatures.toChecksumAddress(address), platform, chain, clock.instant()));
     }
 
     /** How many challenges have been issued and not yet redeemed. */
@@ -147,20 +179,21 @@ public final class WalletChallenges {
         }
     }
 
-    private static String messageFor(String accountId, String address, String nonce) {
+    private static String messageFor(String accountId, String address, String nonce, Instant issuedAt) {
         return String.join("\n",
                 "MCAgents wallet binding",
                 "",
                 "Account: " + accountId,
                 "Address: " + address,
                 "Nonce: " + nonce,
-                "Issued: " + Instant.now(),
+                "Issued: " + issuedAt,
                 "",
                 "Signing proves you control this address.",
                 "It authorises nothing, moves no funds, and never reaches a chain.");
     }
 
-    private static String randomHex(int bytes) {
+    /** {@code bytes} of {@link SecureRandom} output as hex; also the bridge's token. */
+    static String randomHex(int bytes) {
         byte[] value = new byte[bytes];
         RANDOM.nextBytes(value);
         return HexFormat.of().formatHex(value);

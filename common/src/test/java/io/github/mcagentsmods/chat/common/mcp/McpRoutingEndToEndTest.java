@@ -62,6 +62,7 @@ class McpRoutingEndToEndTest {
     private McpToolRouter routerWith(String owner, String repository, String tool)
             throws IOException {
         FakeMcpServer.writeInto(paths.mcpDirectory().resolve(owner).resolve(repository), tool);
+        FakeMcpServer.approveEverything(paths.mcpDirectory());
         host = new WatchingMcpHost(paths, new StubTransport(), executor, Duration.ofSeconds(30));
         host.start().join();
         return new McpToolRouter(host);
@@ -110,6 +111,7 @@ class McpRoutingEndToEndTest {
     void twoServersRouteIndependently() throws IOException {
         FakeMcpServer.writeInto(paths.mcpDirectory().resolve("alpha").resolve("one-mcp"), "ping");
         FakeMcpServer.writeInto(paths.mcpDirectory().resolve("beta").resolve("two-mcp"), "pong");
+        FakeMcpServer.approveEverything(paths.mcpDirectory());
         host = new WatchingMcpHost(paths, new StubTransport(), executor, Duration.ofSeconds(30));
         host.start().join();
         McpToolRouter router = new McpToolRouter(host);

@@ -68,6 +68,43 @@ class RepositoryCoordinateTest {
     }
 
     @Test
+    void refusesAPathLongerThanOwnerAndRepository() {
+        // Cut down to its first two segments, this would be filed and reported as a/b while
+        // git fetched something else.
+        for (String url : new String[] {
+                "https://evil.example/a/b/../../x",
+                "https://github.com/a/b/c",
+                "https://github.com/a",
+                "https://github.com//b"}) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> RepositoryCoordinate.fromCloneUrl(url),
+                    url + " should be refused");
+        }
+    }
+
+    @Test
+    void refusesCredentialsPortsQueriesAndFragments() {
+        for (String url : new String[] {
+                "https://user:secret@github.com/a/b",
+                "https://github.com:8443/a/b",
+                "https://github.com/a/b?ref=x",
+                "https://github.com/a/b#frag"}) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> RepositoryCoordinate.fromCloneUrl(url),
+                    url + " should be refused");
+        }
+    }
+
+    @Test
+    void namesTheHostAndRebuildsTheUrlGitIsGiven() {
+        String url = "https://GitHub.com/LXAgents-MCP/shared-instruction/";
+
+        assertEquals("github.com", RepositoryCoordinate.hostOf(url));
+        assertEquals("https://github.com/LXAgents-MCP/shared-instruction.git",
+                RepositoryCoordinate.canonicalCloneUrl(url));
+    }
+
+    @Test
     void everyValidCoordinateResolvesInsideTheMcpsDirectory() {
         ClientPaths paths = ClientPaths.under(gameDirectory);
         Path resolved = paths.mcpRepository(new RepositoryCoordinate("LXAgents-MCP", "shared-instruction"));

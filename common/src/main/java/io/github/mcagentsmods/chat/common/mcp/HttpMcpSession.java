@@ -12,10 +12,12 @@ import io.github.mcagentsmods.core.api.http.HttpCall;
 import io.github.mcagentsmods.core.api.http.HttpReply;
 import io.github.mcagentsmods.core.api.http.HttpTransport;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -43,23 +45,28 @@ final class HttpMcpSession implements McpSession {
     private final String serverId;
     private final String url;
     private final HttpTransport transport;
+    private final Duration timeout;
     private final AtomicLong nextId = new AtomicLong(1);
     private volatile String sessionHeader = "";
     private volatile boolean closed;
 
-    private HttpMcpSession(String serverId, String url, HttpTransport transport) {
+    private HttpMcpSession(String serverId, String url, HttpTransport transport, Duration timeout) {
         this.serverId = serverId;
         this.url = url;
         this.transport = transport;
+        this.timeout = timeout;
     }
 
     /**
      * Connects to {@code spec} and completes the MCP handshake.
      *
+     * @param timeout how long one request, the handshake included, may take; the same limit
+     *                a stdio server has, so a slow endpoint is a failed row rather than a
+     *                reload that waits on the transport's own, longer limit
      * @throws McpException if the endpoint cannot be reached or does not speak MCP
      */
-    static HttpMcpSession connect(McpServerSpec spec, HttpTransport transport) {
-        HttpMcpSession session = new HttpMcpSession(spec.id(), spec.url(), transport);
+    static HttpMcpSession connect(McpServerSpec spec, HttpTransport transport, Duration timeout) {
+        HttpMcpSession session = new HttpMcpSession(spec.id(), spec.url(), transport, timeout);
         JsonObject result = McpJson.result(spec.id(), McpJson.await(spec.id(),
                 session.post(McpJson.request(0, "initialize", McpJson.initializeParams()))));
         if (!result.has("serverInfo")) {
@@ -79,6 +86,7 @@ final class HttpMcpSession implements McpSession {
 
     private CompletableFuture<String> post(String body) {
         return transport.send(HttpCall.post(url, headers(), body))
+                .orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .thenApply(reply -> {
                     if (!reply.isSuccess()) {
                         throw new McpException(serverId, describe(reply));
