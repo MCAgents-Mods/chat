@@ -51,6 +51,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/service-leftovers.md`](../memory/tasks/service-leftovers.md) | The code the removed service client left behind, the plans folder ignore, and why `release/0.0.0` moved back to the tip. |
 | [`../memory/tasks/token-env-rename.md`](../memory/tasks/token-env-rename.md) | Renaming the token encryption variable to `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY`, and why the old name is dropped rather than kept. |
 | [`../memory/tasks/core-adoption.md`](../memory/tasks/core-adoption.md) | Adopting core: calling core's model client, registering chat's pages into core's web console, the security review, and the `0.1.0` release. |
+| [`../memory/tasks/loader-platforms.md`](../memory/tasks/loader-platforms.md) | Renaming every jar to `MCAgentsChat{Module}` and artifact to `mcagents-chat-{module}`, and splitting the mod into `platforms/{shared, fabric, neoforge}`. |
 
 ## Maintenance
 
