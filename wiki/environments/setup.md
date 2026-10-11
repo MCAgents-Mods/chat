@@ -61,8 +61,9 @@ first, or the loader refuses to start chat for the missing `mcagents_core`.
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
 keeping the logic out of the platform module. Run them before you launch the game.
 
-The mod jar lands in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar`. It carries the classes of all three
-modules — `api/` and `common/` are merged into it rather than nested as separate mods.
+The mod jar lands in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar`.
+It carries the classes of `api/`, `common/`, `website/` and `platforms/shared/`, merged into
+it rather than nested as separate mods.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection.
 

@@ -165,14 +165,14 @@ itself, which lives in MetaMask and knows nothing about any of this.
 |---|---|
 | `api/` | `ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`, `WalletRepository` |
 | `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser`; `AccountColumns` for the screen's layout; the `/wallets/` page and its routes |
-| `platforms/fabric/` | `WalletScreen`, `WalletListPanel`, `ChainAddressPanel`, `AddAddressScreen`, `WalletConnectScreen`, `PlayerAccounts` |
+| `platforms/shared/` | `WalletScreen`, `WalletListPanel`, `ChainAddressPanel`, `AddAddressScreen`, `WalletConnectScreen`, `PlayerAccounts` |
 
 `WalletChallenges` and `AccountWallets` sit in `common/` because both interfaces use them.
 Two implementations of one handshake would be two chances to get it wrong, and a rule about
 which account a wallet may go in is not a rule worth having twice.
 
 `AccountColumns` holds the screen's arithmetic — how many columns fit, how the width divides,
-which accounts are on screen — because `platforms/fabric/` has no test source set. A sum can
+which accounts are on screen — because `platforms/shared/` has no test source set. A sum can
 be wrong without Minecraft being involved, and there it can be tested.
 
 Keccak-256 and secp256k1 recovery are written out rather than taken from a library. The JDK

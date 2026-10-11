@@ -1,4 +1,4 @@
-package io.github.mcagentsmods.chat.fabric.client;
+package io.github.mcagentsmods.chat.shared.client;
 
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;

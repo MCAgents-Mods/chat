@@ -1,4 +1,4 @@
-package io.github.mcagentsmods.chat.fabric.client.gui;
+package io.github.mcagentsmods.chat.shared.client.gui;
 
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.wallet.Wallet;

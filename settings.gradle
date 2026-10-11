@@ -39,5 +39,8 @@ project(':mcagents-chat-common').projectDir = file('common')
 include 'mcagents-chat-website'
 project(':mcagents-chat-website').projectDir = file('website')
 
+include 'mcagents-chat-shared'
+project(':mcagents-chat-shared').projectDir = file('platforms/shared')
+
 include 'mcagents-chat-fabric'
 project(':mcagents-chat-fabric').projectDir = file('platforms/fabric')

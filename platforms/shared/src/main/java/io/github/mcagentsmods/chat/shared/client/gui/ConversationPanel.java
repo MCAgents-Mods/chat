@@ -1,4 +1,4 @@
-package io.github.mcagentsmods.chat.fabric.client.gui;
+package io.github.mcagentsmods.chat.shared.client.gui;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.core.api.chat.ChatRole;

@@ -24,6 +24,7 @@ gradle.properties    project identity only — organization, repository, version
 gradle/              the wrapper and libs.versions.toml
 api/                 mcagents-chat-api
 common/              mcagents-chat-common
+platforms/shared/    mcagents-chat-shared
 platforms/fabric/    mcagents-chat-fabric
 ```
 
@@ -33,14 +34,15 @@ retrieval, and the interface are all implemented. Do not assume a source file ex
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
 
-## The four modules
+## The five modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`), and the tool-calling contracts in `api.agent` (`ToolBroker`, `ToolOutcome`). The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
 | `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, and `McpToolRouter`, which routes a model's tool call to the server that owns the tool. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
 | `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`), `client.MCAgentsKeyMappings`, `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Mixins, further context injection, the content browser. |
+| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.MCAgentsKeyMappings` (builds the key; the loader registers it), `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): registers the key category and key, the end-of-tick and connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
 `mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
@@ -53,13 +55,15 @@ own classpath.
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
 
-The dependency chain is one-way: `api/` ← `common/` ← `website/` ← `platforms/fabric/`. The
+The dependency chain is one-way: `api/` ← `common/` ← `website/` ← `platforms/shared/` ←
+`platforms/fabric/`. The
 `WebConsole` contract stays in `api/` even though only `website/` implements it — `api/` is
 where contracts go.
 
-`api/` and `common/` are plain `java-library` modules. Their classes are **merged into the
-mod jar** by the `jar` task in `platforms/fabric/build.gradle` rather than nested as
-Jar-in-Jar mods — they are not Fabric mods and have no `fabric.mod.json`. Third-party
+`api/`, `common/` and `website/` are plain `java-library` modules, and `platforms/shared/` is
+built with Loom against vanilla Minecraft alone. Their classes are **merged into the mod jar**
+by the `jar` task in `platforms/fabric/build.gradle` rather than nested as Jar-in-Jar mods —
+they are not mods and have no `fabric.mod.json`. Third-party
 runtime libraries go the other way: `sqlite-jdbc` is bundled with Loom's `include` and
 lands at `META-INF/jars/` in the mod jar. It carries native binaries for every platform, so
 it alone is about 12 MB of the built jar.
@@ -234,7 +238,7 @@ If it fails with an out-of-memory error, raise the Gradle daemon heap in your **
 
 ## Generated paths — leave them alone
 
-`build/`, `.gradle/`, `run/`, `platforms/fabric/build/`, and `platforms/fabric/run/` are
+`build/`, `.gradle/`, `run/`, `platforms/*/build/`, and `platforms/fabric/run/` are
 generated. Never commit them, never hand-edit them. `gradle/wrapper/gradle-wrapper.jar` is
 the one binary that **is** committed, on purpose — `.gitignore` carries an explicit
 exception for it.

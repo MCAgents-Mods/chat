@@ -9,7 +9,7 @@ package io.github.mcagentsmods.chat.api;
  */
 public final class MCAgents {
 
-    /** Mod id, as declared in {@code fabric.mod.json}. */
+    /** Mod id, as declared in each loader's mod manifest. */
     public static final String MOD_ID = "mcagents";
 
     /** Human-readable mod name, used for logging and in the interface. */

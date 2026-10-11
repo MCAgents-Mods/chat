@@ -11,7 +11,7 @@ import java.util.List;
  * <p>The same reason as {@link StackedRows}: the wallet screen used to show one account at a
  * time behind a dropdown, and showing them all at once is arithmetic — how many columns fit,
  * how wide each is, which accounts are on screen when there are more than fit. Arithmetic
- * does not need Minecraft to be wrong, and the Fabric module has no tests, so a mistake in
+ * does not need Minecraft to be wrong, and the platform modules have no tests, so a mistake in
  * it could only be found by looking at it.
  *
  * <p>Nothing here knows what a font, a panel, or a wallet is. It is given widths and counts

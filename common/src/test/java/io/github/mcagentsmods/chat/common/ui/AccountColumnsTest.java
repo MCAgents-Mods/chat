@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The column arithmetic behind the wallet screen.
  *
- * <p>Tested here because the Fabric module has no test source set: a screen laid out by hand
+ * <p>Tested here because the platform modules have no test source set: a screen laid out by hand
  * can only be checked by looking at it, so the sums it depends on are pulled out to where a
  * test can run them.
  */

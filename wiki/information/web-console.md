@@ -245,12 +245,12 @@ yours. Every page and every data route stays behind the token.
 | `api/` | `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary`, `PersonaStore` |
 | `common/` | `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets`, `FilePersonaStore` — what the console reads, drives, and writes through |
 | `website/` | `ChatWebModule` — chat's pages, registered with core — `WebApi`, `WebJson`, `ApiKeyHandles`, and the pages, scripts and styles under `resources/mcagents/web/` |
-| `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder` — which registers chat's pages the first time the console is asked for — and the button on `AgentChatScreen` |
+| `platforms/shared/` | `WebConsoleScreen`, `WebConsoleHolder` — which registers chat's pages the first time the console is asked for — and the button on `AgentChatScreen` |
 
 **The console is a module of its own**, `website/`, holding everything a browser ever sees
 and nothing else. It sits above `common/`: serving a page means reading storage, driving the
 agent, syncing knowledge and filing wallets, so it depends on those — and nothing in
-`common/` depends back on it. `platforms/fabric` merges it into the mod jar with the rest,
+`common/` depends back on it. Each loader module merges it into its mod jar with the rest,
 so the split changes what the source looks like and not what ships. See
 [`architecture.md`](architecture.md).
 
