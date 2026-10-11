@@ -74,7 +74,7 @@ entry point. What is worth knowing before changing it:
   already exists cannot say `IF NOT EXISTS`, so those live in a second list guarded by a read
   of `pragma_table_info(?)`.
 * **API keys are encrypted in the column, not in the interface.** With
-  `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` set, `SqliteApiKeyRepository` writes an AES-GCM
+  `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` set, `SqliteApiKeyRepository` writes an AES-GCM
   envelope under a fresh nonce; with it unset it writes the key. Either way everything above
   the repository sees the key. Because the ciphertext is randomised, **no key is ever looked
   up in SQL** — the repository scans and decrypts, and a deterministic column to search on is

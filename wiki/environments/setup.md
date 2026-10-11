@@ -75,11 +75,11 @@ never attach it to an issue and never copy it into the repository**, encrypted o
 
 ## Encrypting stored API keys
 
-Set `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in the environment the game runs in, and the
+Set `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in the environment the game runs in, and the
 mod encrypts every stored key with it:
 
 ```bash
-export MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
+export MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
 ./gradlew :mcagents-fabric:runClient
 ```
 

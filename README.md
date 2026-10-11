@@ -27,7 +27,7 @@ A key is stored on your own machine and sent to nobody but the platform you stor
 is never written to a file that travels with a world, and shown in the interface only in
 shortened form.
 
-Set `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
+Set `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
 in the database as well, with the same key encrypting differently every time it is written.
 Leave it unset and they are stored as you pasted them, which is what the mod did before.
 Either way the console's key page tells you which.

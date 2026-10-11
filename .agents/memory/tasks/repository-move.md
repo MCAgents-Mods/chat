@@ -153,3 +153,6 @@ requests are open, so the `PR` column is empty; fill it when they are opened.
 
 `release/0.0.0` was later moved forward to the tip of the stack, so it carries this work too;
 see [`service-leftovers.md`](service-leftovers.md).
+
+The variable named above was later renamed to `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY`; see
+[`token-env-rename.md`](token-env-rename.md).

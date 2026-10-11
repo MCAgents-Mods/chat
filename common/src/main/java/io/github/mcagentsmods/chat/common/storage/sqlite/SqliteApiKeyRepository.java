@@ -48,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>A row encrypted with a key this machine no longer has is skipped on read, with one warning
  * naming how many rows it happened to. It is never deleted and never guessed at: the player's
- * keys are recoverable the moment the right {@code MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY} is
+ * keys are recoverable the moment the right {@code MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY} is
  * put back, and a mod that pruned them would have destroyed the only copy.
  */
 final class SqliteApiKeyRepository implements ApiKeyRepository {

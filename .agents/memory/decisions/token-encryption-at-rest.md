@@ -52,3 +52,9 @@ which of the two states a player is in rather than implying the stronger one.
 * **A wrong key hides rows; it never deletes them.** Putting the right value back is all it
   takes to get the keys back, which is why an unreadable row is skipped with a warning rather
   than pruned.
+
+## Renamed
+
+The variable is now `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY`; the name above is the one this record was
+written under. The mod had not been published, so the old name was dropped rather than kept as a
+fallback. See [`../tasks/token-env-rename.md`](../tasks/token-env-rename.md).

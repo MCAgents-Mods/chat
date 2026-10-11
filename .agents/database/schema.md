@@ -78,7 +78,7 @@ These are not incidental; code depends on each one.
   ever stored, accepted, or logged — the same rule as
   [`../security/api-keys.md`](../security/api-keys.md), and for a stronger reason.
 * **`api_keys.key_value` holds the stored form of a key, not the key.** With
-  `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` set it is an AES-GCM envelope under a fresh nonce,
+  `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` set it is an AES-GCM envelope under a fresh nonce,
   so writing one key twice produces two different rows; with it unset it is the key itself.
   `SqliteApiKeyRepository` is the only place either direction happens, and everything above it
   sees the key.

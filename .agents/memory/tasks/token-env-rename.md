@@ -40,3 +40,23 @@ it gets a note about the rename rather than a rewrite.
 adds the release commit on top of task 2 and moves the branch there by fast-forward.
 
 *(each task appends below as it lands)*
+
+### Task 2 — refactor/token-env-rename
+
+**Landed.** `TokenCipher.KEY_VARIABLE` is `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY`, and so is every
+place that quotes it: the comment in `SqliteApiKeyRepository`, the README, the overview,
+architecture, setup and console wiki pages, `schema.md`, `api-keys.md`, the repository map, the
+state file and the `0.0.0` changelog. The decision file `token-encryption-at-rest.md` gained a
+"Renamed" section; the two earlier records that listed the name as an open question gained a
+pointer here. Other older task records keep the old name, as history.
+
+**Two sentences changed with it.** The changelog and `keys.css` called the name "a
+forty-character word"; the new one is 31 characters, so both now say "a long word". It is still
+unbreakable, so the wrapping rule the CSS comment explains is unchanged.
+
+**Proven.** `./gradlew build` passes with the tests, which read the name through the constant.
+The built jar's `TokenCipher` holds the new name and not the old one. A search of the sources,
+documents, styles and pages finds the old name only in the historical records and in this one.
+
+**Not proven.** That a game launched with the variable set decrypts a stored key; the cipher
+tests prove the mechanism with a supplied key, not through the process environment.

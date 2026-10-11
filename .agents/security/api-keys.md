@@ -20,7 +20,7 @@ the player's own machine, and they are the single most damaging thing this mod c
 
 ## Keys are encrypted at rest, when the machine has a key to encrypt with
 
-`MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in the environment is the only place the encryption
+`MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in the environment is the only place the encryption
 key comes from. **Nothing ships.** It is not in this repository, not in the mod jar, and not
 in `data.db`, which is what makes this worth doing at all: a key encrypted with a key that
 travels beside it is not protected, only harder to read.

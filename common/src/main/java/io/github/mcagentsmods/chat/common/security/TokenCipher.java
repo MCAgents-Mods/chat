@@ -52,7 +52,7 @@ import java.util.Objects;
 public final class TokenCipher {
 
     /** The environment variable holding the key material. */
-    public static final String KEY_VARIABLE = "MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY";
+    public static final String KEY_VARIABLE = "MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY";
 
     /**
      * What marks a stored value as encrypted, and by which scheme.

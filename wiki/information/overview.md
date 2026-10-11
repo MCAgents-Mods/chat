@@ -27,7 +27,7 @@ rejects is deactivated so the next one takes over without interrupting the conve
 Each key records the platform it opens, and is only ever sent there. OpenRouter is the
 default and the fallback; store a key for `openai`, `deepseek`, `groq`, or a gateway you run
 yourself, and questions for that platform's models go straight to it instead. Keys are
-encrypted in the database when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the
+encrypted in the database when `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set in the
 environment the game runs in, and stored as pasted when it is not.
 
 ### External tools
