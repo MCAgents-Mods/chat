@@ -2,77 +2,94 @@ package io.github.mcagentsmods.chat.fabric.client;
 
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.website.LocalWebConsole;
+import io.github.mcagentsmods.chat.website.ChatWebModule;
+import io.github.mcagentsmods.core.api.web.WebConsole;
+import io.github.mcagentsmods.core.common.web.CoreWebRegistry;
 
+import java.net.URI;
 import java.util.Optional;
 
 /**
- * Owns the running web console, for as long as the player wants it.
+ * Chat's place in MCAgents core's web console.
  *
- * <h2>Why this outlives the screen that started it</h2>
+ * <p>Core owns the console: one server for every MCAgents mod, opened on demand and closed
+ * when the game exits. Chat registers its pages into it once, the first time the player asks
+ * for the console, and takes its own pages out again when the game shuts down, before the
+ * database those pages read is closed.
  *
- * <p>The obvious thing — start the console when the screen opens and stop it when the
- * screen closes — is wrong here, and wrong in a way the player would feel immediately. They
- * open the console precisely so they can go back to the game and read in a browser beside
- * it. Tying the server's life to a screen nobody is looking at would close the port the
- * moment it started being useful.
+ * <h2>Why the console outlives the screen that opened it</h2>
  *
- * <p>So the console is held here instead: started once, stopped when the player asks or
- * when the game exits. That is the whole difference between this and the wallet bridge,
- * which is a listener for one handshake and must never outlive it.
+ * <p>The player opens the console so they can go back to the game and read in a browser
+ * beside it. Tying the server's life to a screen nobody is looking at would close the port
+ * the moment it started being useful. So it runs until the player stops it or the game exits
+ * — which is the whole difference between this and the wallet bridge, a listener for one
+ * handshake that must never outlive it.
  */
 public final class WebConsoleHolder {
 
-    private static volatile LocalWebConsole console;
+    /** Whether chat's pages are in core's registry. */
+    private static boolean registered;
 
     private WebConsoleHolder() {
         throw new AssertionError("No instances.");
     }
 
-    /** The console, if one is running. */
-    public static synchronized Optional<LocalWebConsole> current() {
-        LocalWebConsole running = console;
-        if (running != null && !running.isRunning()) {
-            // It stopped without going through stop() — treat it as gone rather than
-            // handing out a handle to a closed port.
-            console = null;
+    /**
+     * Where chat's pages are, if the console is running and holds them.
+     *
+     * <p>Another mod may have opened the console before chat registered; until chat does,
+     * there is no chat address to show.
+     *
+     * @return the address with the token, or empty
+     */
+    public static synchronized Optional<URI> address() {
+        if (!registered) {
             return Optional.empty();
         }
-        return Optional.ofNullable(running);
+        return CoreWebRegistry.shared().current().map(console -> console.url(ChatWebModule.ID));
     }
 
     /**
-     * Starts the console, or returns the one already running.
+     * Registers chat's pages if they are not yet, and opens the console if it is not running.
      *
-     * <p>Idempotent on purpose: pressing the button twice should show the same address, not
-     * open a second server the player has no way to find again.
+     * <p>The pages use the agent, model client and persona store the game already has, so a
+     * question asked in the browser is answered as one asked in the game.
+     *
+     * @param database the player's local database
+     * @param paths    where the game's files are
+     * @return the address of chat's first page, with the token
      */
-    public static synchronized LocalWebConsole start(LocalDatabase database, ClientPaths paths) {
-        return current().orElseGet(() -> {
-            // The same agent the in-game screen uses, so a question asked in the browser is
-            // answered exactly as one asked in the game — and the same model client, so
-            // embedding a pack from the console reuses the connection pool and the embedding
-            // cache the game already has rather than opening a second stack beside it.
-            //
-            // The persona store is shared for a sharper reason than either: the console can
-            // write AGENTS.md, and a store of its own would leave the game answering from
-            // the text the player had just replaced.
-            LocalWebConsole started = LocalWebConsole.start(
+    public static synchronized URI start(LocalDatabase database, ClientPaths paths) {
+        if (!registered) {
+            CoreWebRegistry.shared().register(ChatWebModule.create(
                     database,
                     AgentFactory.create(database, paths),
                     AgentFactory.modelClient(database),
-                    AgentFactory.personaStore(paths));
-            console = started;
-            return started;
-        });
+                    AgentFactory.personaStore(paths)));
+            registered = true;
+        }
+        WebConsole console = CoreWebRegistry.shared().open();
+        return console.url(ChatWebModule.ID);
     }
 
-    /** Stops the console if one is running. Safe to call when none is. */
+    /**
+     * Stops the console at the player's request.
+     *
+     * <p>The console is shared, so this closes every mod's pages, as the player asked. Chat's
+     * stay registered and come back with the next start.
+     */
+    public static synchronized void stopConsole() {
+        CoreWebRegistry.shared().close();
+    }
+
+    /**
+     * Takes chat's pages out of the console. Called on game shutdown, before the database
+     * closes, so no request can reach a store that is closing.
+     */
     public static synchronized void stop() {
-        LocalWebConsole running = console;
-        console = null;
-        if (running != null) {
-            running.close();
+        if (registered) {
+            CoreWebRegistry.shared().unregister(ChatWebModule.ID);
+            registered = false;
         }
     }
 }

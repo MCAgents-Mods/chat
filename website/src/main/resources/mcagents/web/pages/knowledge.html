@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  The knowledge list. Served at /knowledge/ by LocalWebConsole.
+  The knowledge list. Served at /chat/knowledge/ by ChatWebModule, through core's console.
 
   Everything below is static: the page fetches what it shows, so this file never contains
   player data and there is nothing here to escape. Assets are same-origin and nothing is
@@ -12,16 +12,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Knowledge · MCAgents Console</title>
-  <script>
-    window.SITE_ROOT = '../';
-    window.PAGE_SECTION = 'knowledge';
-  </script>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/shared/layout.css">
-  <link rel="stylesheet" href="../assets/css/shared/components.css">
-  <link rel="stylesheet" href="../assets/css/knowledge/knowledge.css">
+  <link rel="stylesheet" href="/assets/core/css/main.css">
+  <link rel="stylesheet" href="/assets/core/css/layout.css">
+  <link rel="stylesheet" href="/assets/core/css/components.css">
+  <link rel="stylesheet" href="/assets/chat/css/knowledge/knowledge.css">
 </head>
-<body>
+<body data-module="chat" data-section="knowledge">
 <div id="site-header"></div>
 
 <main>
@@ -58,7 +54,7 @@
 </main>
 
 <div id="site-footer"></div>
-<script src="../assets/js/site.js"></script>
-<script src="../assets/js/knowledge.js"></script>
+<script src="/assets/core/js/site.js"></script>
+<script src="/assets/chat/js/knowledge.js"></script>
 </body>
 </html>

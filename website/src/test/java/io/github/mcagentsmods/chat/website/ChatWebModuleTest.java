@@ -29,18 +29,17 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The console, driven the way its pages drive it.
+ * Chat's pages and routes, driven the way its pages drive them, through core's console.
  *
  * <p>Two things get the most attention here. The first is the guard — a console that serves
  * a player's conversations has to refuse everything that is not its own page asking. The
  * second is the revision counter, because a sync that works in one direction looks finished
  * from the side that works.
  */
-class LocalWebConsoleTest {
+class ChatWebModuleTest {
 
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -51,7 +50,7 @@ class LocalWebConsoleTest {
     Path gameDirectory;
 
     private LocalDatabase database;
-    private LocalWebConsole console;
+    private ConsoleUnderTest console;
 
     /** Answers instantly, so the tests measure the console rather than a model provider. */
     private final Agent agent = (sessionId, prompt) ->
@@ -60,7 +59,7 @@ class LocalWebConsoleTest {
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
-        console = LocalWebConsole.start(database, agent);
+        console = ConsoleUnderTest.start(database, agent);
     }
 
     @AfterEach
@@ -77,11 +76,11 @@ class LocalWebConsoleTest {
 
     @Test
     void refusesEveryRequestWithoutTheToken() {
-        assertEquals(403, statusOf(base() + "/api/chats"));
-        assertEquals(403, statusOf(base() + "/api/knowledge"));
-        assertEquals(403, statusOf(base() + "/api/revision"));
-        assertEquals(403, statusOf(base() + "/knowledge/"));
-        assertEquals(403, statusOf(base() + "/api/chats?t=guessed"));
+        assertEquals(403, statusOf(base() + "/api/chat/chats"));
+        assertEquals(403, statusOf(base() + "/api/chat/knowledge"));
+        assertEquals(403, statusOf(base() + "/api/chat/revision"));
+        assertEquals(403, statusOf(base() + "/chat/knowledge/"));
+        assertEquals(403, statusOf(base() + "/api/chat/chats?t=guessed"));
     }
 
     @Test
@@ -89,7 +88,7 @@ class LocalWebConsoleTest {
         // A site pointing one of its own names at 127.0.0.1 reaches the console carrying
         // that name. Written onto a socket by hand because HttpClient forbids setting Host —
         // which is itself the point: no well-behaved client sends this.
-        String path = "/api/revision?t=" + token();
+        String path = "/api/chat/revision?t=" + token();
 
         assertTrue(rawGet("console-stealer.example", path).startsWith("HTTP/1.1 403"));
         assertTrue(rawGet("127.0.0.1:" + console.port(), path).startsWith("HTTP/1.1 200"),
@@ -104,7 +103,7 @@ class LocalWebConsoleTest {
         String secret = "sk-or-v1-neverleavesthemod";
         await(database.apiKeys().add(secret));
 
-        String listing = body(url("/api/keys"));
+        String listing = body(url("/api/chat/keys"));
         assertFalse(listing.contains(secret), "a key's value must never reach the browser");
         assertTrue(listing.contains("sk-o"), "but its mask must, so the player recognises it");
 
@@ -118,20 +117,20 @@ class LocalWebConsoleTest {
 
     @Test
     void stillHasNoRouteForAnythingItDoesNotManage() {
-        assertEquals(404, statusOf(url("/api/apikeys")));
-        assertEquals(404, statusOf(url("/api/settings")));
-        assertEquals(404, statusOf(url("/api/accounts")));
+        assertEquals(404, statusOf(url("/api/chat/apikeys")));
+        assertEquals(404, statusOf(url("/api/chat/settings")));
+        assertEquals(404, statusOf(url("/api/chat/accounts")));
     }
 
     @Test
     void addsAndRemovesAKeyThroughTheHandle() {
-        JsonObject added = json(post(url("/api/keys"), "{\"value\":\"sk-or-v1-added-here\"}"));
+        JsonObject added = json(post(url("/api/chat/keys"), "{\"value\":\"sk-or-v1-added-here\"}"));
         assertEquals(1, await(database.apiKeys().findAll()).size());
         assertFalse(added.toString().contains("added-here"),
                 "not even the reply to adding one echoes it back");
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/keys/" + added.get("handle").getAsString())))
+                .uri(URI.create(url("/api/chat/keys/" + added.get("handle").getAsString())))
                 .DELETE()).statusCode());
         assertTrue(await(database.apiKeys().findAll()).isEmpty());
     }
@@ -139,24 +138,24 @@ class LocalWebConsoleTest {
     @Test
     void refusesAHandleThatNamesNothing() {
         assertEquals(404, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/keys/" + "0".repeat(32))))
+                .uri(URI.create(url("/api/chat/keys/" + "0".repeat(32))))
                 .DELETE()).statusCode());
     }
 
     @Test
     void refusesAnEmptyKey() {
-        assertEquals(400, post(url("/api/keys"), "{\"value\":\"   \"}").statusCode());
+        assertEquals(400, post(url("/api/chat/keys"), "{\"value\":\"   \"}").statusCode());
         assertTrue(await(database.apiKeys().findAll()).isEmpty());
     }
 
     @Test
     void storesThePlatformAKeyWasAddedFor() {
-        assertEquals(201, post(url("/api/keys"),
+        assertEquals(201, post(url("/api/chat/keys"),
                 "{\"value\":\"sk-openai-added-here\",\"platform\":\"OpenAI\"}").statusCode());
 
         assertEquals("openai", await(database.apiKeys().findAll()).get(0).platform(),
                 "lowercased before the write, like every other half of a model name");
-        assertEquals("openai", JsonParser.parseString(body(url("/api/keys")))
+        assertEquals("openai", JsonParser.parseString(body(url("/api/chat/keys")))
                 .getAsJsonObject().getAsJsonArray("items").get(0).getAsJsonObject()
                 .get("platform").getAsString(),
                 "and shown back, because two masked keys are otherwise indistinguishable");
@@ -165,7 +164,7 @@ class LocalWebConsoleTest {
     @Test
     void treatsAKeyAddedWithNoPlatformAsAGatewayKey() {
         // The fallback an older page, or a player who ignores the box, relies on.
-        assertEquals(201, post(url("/api/keys"), "{\"value\":\"sk-or-v1-added-here\"}")
+        assertEquals(201, post(url("/api/chat/keys"), "{\"value\":\"sk-or-v1-added-here\"}")
                 .statusCode());
 
         assertEquals("openrouter", await(database.apiKeys().findAll()).get(0).platform());
@@ -175,7 +174,7 @@ class LocalWebConsoleTest {
     void saysWhichPlatformsAreReachedDirectlyAndWhichAreNot() {
         await(database.apiKeys().add("sk-openai-first", "openai"));
 
-        JsonObject routes = json(url("/api/routes"));
+        JsonObject routes = json(url("/api/chat/routes"));
         JsonObject openai = routeFor(routes, "openai");
 
         assertTrue(openai.get("direct").getAsBoolean(),
@@ -190,10 +189,10 @@ class LocalWebConsoleTest {
     @Test
     void switchesTheChatModelToThePlatformTheChatPageChose() {
         assertEquals("deepseek/deepseek-v4-flash",
-                json(url("/api/models")).get("chatModel").getAsString(), "the default, to start");
+                json(url("/api/chat/models")).get("chatModel").getAsString(), "the default, to start");
 
         JsonObject stored = JsonParser.parseString(
-                putJson("/api/models", "{\"chatPlatform\":\"openai\"}").body()).getAsJsonObject();
+                putJson("/api/chat/models", "{\"chatPlatform\":\"openai\"}").body()).getAsJsonObject();
 
         assertEquals("openai/gpt-4o-mini", stored.get("chatModel").getAsString(),
                 "OpenAI does not serve deepseek-v4-flash, so its own suggestion is used");
@@ -207,13 +206,13 @@ class LocalWebConsoleTest {
     void leavesTheEmbeddingChoiceAloneWhenOnlyTheProviderChanges() {
         // The chat page sends one field. A handler that read the absent ones as blanks would
         // reset the embedding model and its switch every time a provider was picked.
-        assertEquals(200, putJson("/api/models",
+        assertEquals(200, putJson("/api/chat/models",
                 "{\"embeddingModel\":\"qwen/qwen3-embedding-8b\",\"embeddingEnabled\":false}")
                 .statusCode());
 
-        assertEquals(200, putJson("/api/models", "{\"chatPlatform\":\"openai\"}").statusCode());
+        assertEquals(200, putJson("/api/chat/models", "{\"chatPlatform\":\"openai\"}").statusCode());
 
-        JsonObject models = json(url("/api/models"));
+        JsonObject models = json(url("/api/chat/models"));
         assertEquals("qwen/qwen3-embedding-8b", models.get("embeddingModel").getAsString());
         assertFalse(models.get("embeddingEnabled").getAsBoolean());
     }
@@ -221,7 +220,7 @@ class LocalWebConsoleTest {
     @Test
     void letsAnExplicitModelIdOutrankAPlatform() {
         // Both name the chat model, and the id says strictly more than the platform does.
-        JsonObject stored = JsonParser.parseString(putJson("/api/models",
+        JsonObject stored = JsonParser.parseString(putJson("/api/chat/models",
                 "{\"chatModel\":\"groq/llama-4-70b\",\"chatPlatform\":\"openai\"}").body())
                 .getAsJsonObject();
 
@@ -234,7 +233,7 @@ class LocalWebConsoleTest {
         // The selector's "Other…" box. The lists are suggestions, so a platform this release
         // has never heard of is stored exactly as typed and routed through the gateway.
         JsonObject stored = JsonParser.parseString(
-                putJson("/api/models", "{\"chatPlatform\":\"Fireworks\"}").body())
+                putJson("/api/chat/models", "{\"chatPlatform\":\"Fireworks\"}").body())
                 .getAsJsonObject();
 
         assertEquals("fireworks/deepseek-v4-flash", stored.get("chatModel").getAsString(),
@@ -248,7 +247,7 @@ class LocalWebConsoleTest {
         // it means typing the name again, under "Other…", and a typo files it somewhere new.
         await(database.apiKeys().add("sk-fireworks-first", "fireworks"));
 
-        var offered = json(url("/api/routes")).getAsJsonArray("suggestedPlatforms").asList()
+        var offered = json(url("/api/chat/routes")).getAsJsonArray("suggestedPlatforms").asList()
                 .stream().map(element -> element.getAsString()).toList();
 
         assertTrue(offered.contains("openrouter"), "the gateway, and the default choice");
@@ -260,31 +259,31 @@ class LocalWebConsoleTest {
 
     @Test
     void storesAndClearsThePlatformsAddress() {
-        assertEquals(200, putJson("/api/routes",
+        assertEquals(200, putJson("/api/chat/routes",
                 "{\"platform\":\"openai\",\"baseUrl\":\"https://openai.example.test/v1\"}")
                 .statusCode());
         assertEquals("https://openai.example.test/v1",
-                routeFor(json(url("/api/routes")), "openai").get("baseUrl").getAsString());
+                routeFor(json(url("/api/chat/routes")), "openai").get("baseUrl").getAsString());
 
-        assertEquals(200, putJson("/api/routes",
+        assertEquals(200, putJson("/api/chat/routes",
                 "{\"platform\":\"openai\",\"baseUrl\":\"\"}").statusCode());
         assertEquals("https://api.openai.com/v1",
-                routeFor(json(url("/api/routes")), "openai").get("baseUrl").getAsString(),
+                routeFor(json(url("/api/chat/routes")), "openai").get("baseUrl").getAsString(),
                 "clearing it goes back to the address the mod ships");
     }
 
     @Test
     void refusesToStoreAnAddressAKeyWouldTravelToInTheClear() {
-        assertEquals(400, putJson("/api/routes",
+        assertEquals(400, putJson("/api/chat/routes",
                 "{\"platform\":\"openai\",\"baseUrl\":\"http://openai.example.test/v1\"}")
                 .statusCode());
-        assertEquals("", routeFor(json(url("/api/routes")), "openai")
+        assertEquals("", routeFor(json(url("/api/chat/routes")), "openai")
                 .get("configuredUrl").getAsString());
     }
 
     @Test
     void refusesToRepointTheGatewayItself() {
-        assertEquals(400, putJson("/api/routes",
+        assertEquals(400, putJson("/api/chat/routes",
                 "{\"platform\":\"openrouter\",\"baseUrl\":\"https://elsewhere.example.test\"}")
                 .statusCode());
     }
@@ -295,7 +294,7 @@ class LocalWebConsoleTest {
             await(database.apiKeys().add("sk-or-v1-fake-" + i));
         }
 
-        JsonObject page = json(url("/api/keys?limit=10"));
+        JsonObject page = json(url("/api/chat/keys?limit=10"));
 
         assertEquals(10, page.getAsJsonArray("items").size());
         assertEquals(23, page.get("total").getAsInt());
@@ -311,7 +310,7 @@ class LocalWebConsoleTest {
         java.util.Set<String> handles = new java.util.HashSet<>();
         int offset = 0;
         while (true) {
-            JsonObject page = json(url("/api/keys?limit=10&offset=" + offset));
+            JsonObject page = json(url("/api/chat/keys?limit=10&offset=" + offset));
             page.getAsJsonArray("items").forEach(item ->
                     handles.add(item.getAsJsonObject().get("handle").getAsString()));
             if (!page.get("hasMore").getAsBoolean()) {
@@ -325,20 +324,20 @@ class LocalWebConsoleTest {
 
     @Test
     void readsAndWritesTheModelSelection() {
-        JsonObject before = json(url("/api/models"));
+        JsonObject before = json(url("/api/chat/models"));
         assertEquals("deepseek/deepseek-v4-flash", before.get("chatModel").getAsString());
         assertEquals("openai/text-embedding-3-small", before.get("embeddingModel").getAsString());
         assertTrue(before.getAsJsonArray("suggestedChatModels").size() > 0,
                 "the page takes its suggestions from the console, so there is only one list");
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
                 .statusCode());
 
-        JsonObject after = json(url("/api/models"));
+        JsonObject after = json(url("/api/chat/models"));
         assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
         assertEquals("openai/text-embedding-3-small", after.get("embeddingModel").getAsString(),
                 "a blank field resolves to the default rather than storing nothing");
@@ -346,17 +345,17 @@ class LocalWebConsoleTest {
 
     @Test
     void readsAndWritesTheEmbeddingSwitch() {
-        assertTrue(json(url("/api/models")).get("embeddingEnabled").getAsBoolean(),
+        assertTrue(json(url("/api/chat/models")).get("embeddingEnabled").getAsBoolean(),
                 "retrieval is on until the player says otherwise");
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"\",\"embeddingModel\":\"\",\"embeddingEnabled\":false}")))
                 .statusCode());
 
-        assertFalse(json(url("/api/models")).get("embeddingEnabled").getAsBoolean());
+        assertFalse(json(url("/api/chat/models")).get("embeddingEnabled").getAsBoolean());
     }
 
     @Test
@@ -365,20 +364,20 @@ class LocalWebConsoleTest {
         // change it" — collapsing absent into false would switch the feature off on every
         // save made by a client that had never heard of the field.
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"\",\"embeddingModel\":\"\",\"embeddingEnabled\":false}")))
                 .statusCode());
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
                 .statusCode());
 
-        JsonObject after = json(url("/api/models"));
+        JsonObject after = json(url("/api/chat/models"));
         assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
         assertFalse(after.get("embeddingEnabled").getAsBoolean(),
                 "the switch survived a save that said nothing about it");
@@ -390,7 +389,7 @@ class LocalWebConsoleTest {
         // absent ids as blanks would reset both models to the defaults every time a player
         // switched retrieval off.
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"openai/gpt-4o-mini\","
@@ -398,12 +397,12 @@ class LocalWebConsoleTest {
                 .statusCode());
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString("{\"embeddingEnabled\":false}")))
                 .statusCode());
 
-        JsonObject after = json(url("/api/models"));
+        JsonObject after = json(url("/api/chat/models"));
         assertEquals("openai/gpt-4o-mini", after.get("chatModel").getAsString());
         assertEquals("qwen/qwen3-embedding-8b", after.get("embeddingModel").getAsString());
         assertFalse(after.get("embeddingEnabled").getAsBoolean());
@@ -414,14 +413,14 @@ class LocalWebConsoleTest {
         // Blank must keep meaning "give me the default" — it is how a player resets by hand,
         // and it is the one case that must not be folded into "said nothing about it".
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"openai/gpt-4o-mini\",\"embeddingModel\":\"\"}")))
                 .statusCode());
 
         assertEquals("openai/text-embedding-3-small",
-                json(url("/api/models")).get("embeddingModel").getAsString());
+                json(url("/api/chat/models")).get("embeddingModel").getAsString());
     }
 
     @Test
@@ -429,43 +428,24 @@ class LocalWebConsoleTest {
         // The lists are suggestions. A provider adds and retires models faster than the mod
         // ships, so refusing an unfamiliar id would break a player who is right.
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/models")))
+                .uri(URI.create(url("/api/chat/models")))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(
                         "{\"chatModel\":\"someone/brand-new-model\",\"embeddingModel\":\"\"}")))
                 .statusCode());
 
         assertEquals("someone/brand-new-model",
-                json(url("/api/models")).get("chatModel").getAsString());
+                json(url("/api/chat/models")).get("chatModel").getAsString());
     }
 
     @Test
     void acceptsTheTokenInAHeaderAsWellAsTheUrl() {
         HttpResponse<String> response = send(HttpRequest.newBuilder()
-                .uri(URI.create(base() + "/api/revision"))
+                .uri(URI.create(base() + "/api/chat/revision"))
                 .header("X-MCAgents-Token", token())
                 .GET());
 
         assertEquals(200, response.statusCode());
-    }
-
-    @Test
-    void givesEveryRunItsOwnToken() {
-        LocalWebConsole second = LocalWebConsole.start(database, agent);
-        try {
-            assertNotEquals(console.url().getQuery(), second.url().getQuery());
-        } finally {
-            second.close();
-        }
-    }
-
-    @Test
-    void refusesToBeReadFromDiskThroughTheAssetRoute() {
-        // Nothing is served from disk, so the worst a traversal could do is read another
-        // resource out of the jar. That is still not something to allow.
-        assertEquals(404, statusOf(url("/assets/../../../etc/passwd")));
-        assertEquals(404, statusOf(url("/assets/..%2f..%2fpom.xml")));
-        assertEquals(404, statusOf(url("/assets/")));
     }
 
     // ----------------------------------------------------------- knowledge
@@ -477,13 +457,13 @@ class LocalWebConsoleTest {
             givenPack(String.format("pack-%02d", i), 1, "Pack " + i);
         }
 
-        JsonObject first = json(url("/api/knowledge?limit=20"));
+        JsonObject first = json(url("/api/chat/knowledge?limit=20"));
 
         assertEquals(20, first.getAsJsonArray("items").size());
         assertEquals(25, first.get("total").getAsInt());
         assertTrue(first.get("hasMore").getAsBoolean());
 
-        JsonObject second = json(url("/api/knowledge?limit=20&offset="
+        JsonObject second = json(url("/api/chat/knowledge?limit=20&offset="
                 + first.get("nextOffset").getAsInt()));
 
         assertEquals(5, second.getAsJsonArray("items").size());
@@ -496,7 +476,7 @@ class LocalWebConsoleTest {
         givenCategory(1, "Guides");
         givenPack("only", 1, "Only pack");
 
-        JsonObject item = json(url("/api/knowledge")).getAsJsonArray("items").get(0)
+        JsonObject item = json(url("/api/chat/knowledge")).getAsJsonArray("items").get(0)
                 .getAsJsonObject();
 
         assertFalse(item.has("rawContent"), "a list row carries no body");
@@ -509,7 +489,7 @@ class LocalWebConsoleTest {
         givenCategory(1, "Guides");
         givenPack("netherite", 1, "Netherite guide");
 
-        JsonObject pack = json(url("/api/knowledge/netherite"));
+        JsonObject pack = json(url("/api/chat/knowledge/netherite"));
 
         assertEquals("netherite", pack.get("id").getAsString());
         assertEquals("1.0.0", pack.get("version").getAsString());
@@ -524,24 +504,24 @@ class LocalWebConsoleTest {
         givenPack("redstone", 1, "Redstone basics");
         givenPack("farming", 2, "Farming");
 
-        assertEquals(1, json(url("/api/knowledge?q=redstone")).get("total").getAsInt());
-        assertEquals(1, json(url("/api/knowledge?categoryId=2")).get("total").getAsInt());
-        assertEquals(2, json(url("/api/categories")).getAsJsonArray("items").size());
+        assertEquals(1, json(url("/api/chat/knowledge?q=redstone")).get("total").getAsInt());
+        assertEquals(1, json(url("/api/chat/knowledge?categoryId=2")).get("total").getAsInt());
+        assertEquals(2, json(url("/api/chat/categories")).getAsJsonArray("items").size());
     }
 
     @Test
     void reportsAMissingPackRatherThanFailing() {
-        assertEquals(404, statusOf(url("/api/knowledge/no-such-pack")));
+        assertEquals(404, statusOf(url("/api/chat/knowledge/no-such-pack")));
     }
 
     // ---------------------------------------------------------------- chat
 
     @Test
     void holdsAConversationTheSameWayTheGameDoes() {
-        JsonObject created = json(post(url("/api/chats"), "{\"title\":\"From the browser\"}"));
+        JsonObject created = json(post(url("/api/chat/chats"), "{\"title\":\"From the browser\"}"));
         String id = created.get("id").getAsString();
 
-        JsonObject exchange = json(post(url("/api/chats/" + id + "/messages"),
+        JsonObject exchange = json(post(url("/api/chat/chats/" + id + "/messages"),
                 "{\"prompt\":\"how do I find netherite\"}"));
 
         assertEquals("user", exchange.getAsJsonObject("question").get("role").getAsString());
@@ -559,7 +539,7 @@ class LocalWebConsoleTest {
             await(database.chat().createSession("Chat " + i));
         }
 
-        JsonObject page = json(url("/api/chats?limit=10"));
+        JsonObject page = json(url("/api/chat/chats?limit=10"));
 
         assertEquals(10, page.getAsJsonArray("items").size());
         assertEquals(23, page.get("total").getAsInt());
@@ -572,7 +552,7 @@ class LocalWebConsoleTest {
         await(database.chat().appendMessage(session.id(), ChatRole.USER, "netherite please"));
         await(database.chat().createSession("Something else"));
 
-        assertEquals(1, json(url("/api/chats?q=netherite")).get("total").getAsInt());
+        assertEquals(1, json(url("/api/chat/chats?q=netherite")).get("total").getAsInt());
     }
 
     @Test
@@ -580,13 +560,13 @@ class LocalWebConsoleTest {
         ChatSession session = await(database.chat().createSession("Before"));
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/chats/" + session.id())))
+                .uri(URI.create(url("/api/chat/chats/" + session.id())))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString("{\"title\":\"After\"}"))).statusCode());
         assertEquals("After", await(database.chat().findSession(session.id())).orElseThrow().title());
 
         assertEquals(200, send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/api/chats/" + session.id())))
+                .uri(URI.create(url("/api/chat/chats/" + session.id())))
                 .DELETE()).statusCode());
         assertTrue(await(database.chat().findSession(session.id())).isEmpty());
     }
@@ -596,7 +576,7 @@ class LocalWebConsoleTest {
         ChatSession session = await(database.chat().createSession("Empty"));
 
         HttpResponse<String> response =
-                post(url("/api/chats/" + session.id() + "/messages"), "{\"prompt\":\"   \"}");
+                post(url("/api/chat/chats/" + session.id() + "/messages"), "{\"prompt\":\"   \"}");
 
         assertEquals(400, response.statusCode());
         assertTrue(JsonParser.parseString(response.body()).getAsJsonObject()
@@ -605,21 +585,21 @@ class LocalWebConsoleTest {
 
     @Test
     void reportsAMissingConversationRatherThanCreatingOne() {
-        assertEquals(404, post(url("/api/chats/no-such-session/messages"),
+        assertEquals(404, post(url("/api/chat/chats/no-such-session/messages"),
                 "{\"prompt\":\"hello\"}").statusCode());
-        assertEquals(404, statusOf(url("/api/chats/no-such-session/messages")));
+        assertEquals(404, statusOf(url("/api/chat/chats/no-such-session/messages")));
     }
 
     // ------------------------------------------------------------ the sync
 
     @Test
     void reportsAChangeMadeInTheGameSoTheBrowserCanNotice() {
-        long before = json(url("/api/revision")).get("chat").getAsLong();
+        long before = json(url("/api/chat/revision")).get("chat").getAsLong();
 
         // A write through the repository, which is what the in-game screen does.
         await(database.chat().createSession("Typed in game"));
 
-        assertNotEquals(before, json(url("/api/revision")).get("chat").getAsLong(),
+        assertNotEquals(before, json(url("/api/chat/revision")).get("chat").getAsLong(),
                 "a conversation started in game must move the counter the browser polls");
     }
 
@@ -627,7 +607,7 @@ class LocalWebConsoleTest {
     void reportsAChangeMadeInTheBrowserSoTheGameCanNotice() {
         long before = database.changes().chatRevision();
 
-        json(post(url("/api/chats"), "{\"title\":\"Typed in the browser\"}"));
+        json(post(url("/api/chat/chats"), "{\"title\":\"Typed in the browser\"}"));
 
         assertNotEquals(before, database.changes().chatRevision(),
                 "a conversation started in the browser must move the counter the game reads");
@@ -662,39 +642,12 @@ class LocalWebConsoleTest {
         assertEquals(before, database.changes().chatRevision());
     }
 
-    // ----------------------------------------------------------- lifecycle
+    // ------------------------------------------------------------- address
 
     @Test
-    void keepsListeningUntilItIsClosed() {
-        // The opposite of the wallet bridge, on purpose: a browser tab the player is
-        // reading must not have its server vanish underneath it.
-        assertEquals(200, statusOf(url("/api/revision")));
-        assertEquals(200, statusOf(url("/api/revision")));
-        assertTrue(console.isRunning());
-
-        console.close();
-
-        assertFalse(console.isRunning());
-        assertTrue(console.stopped().isDone());
-        assertThrows(IOException.class, () -> connectTo(console.port()));
-    }
-
-    @Test
-    void closingTwiceIsHarmless() {
-        console.close();
-        console.close();
-
-        assertFalse(console.isRunning());
-    }
-
-    @Test
-    void sendsTheRootOnToTheKnowledgePageCarryingTheToken() {
-        HttpResponse<String> response = send(HttpRequest.newBuilder()
-                .uri(URI.create(url("/"))).GET());
-
-        assertEquals(303, response.statusCode());
-        assertTrue(response.headers().firstValue("Location").orElseThrow()
-                .startsWith("/knowledge/?t="));
+    void landsOnTheKnowledgePageCarryingTheToken() {
+        assertEquals("/chat/knowledge/", console.url().getPath());
+        assertEquals(200, statusOf(console.url().toString()));
     }
 
     // -------------------------------------------------------------- helpers
@@ -781,12 +734,6 @@ class LocalWebConsoleTest {
             return new String(socket.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("The console did not answer a hand-written request", e);
-        }
-    }
-
-    private static void connectTo(int port) throws IOException {
-        try (Socket socket = new Socket()) {
-            socket.connect(new java.net.InetSocketAddress("127.0.0.1", port), 2_000);
         }
     }
 

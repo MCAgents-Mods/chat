@@ -1,7 +1,6 @@
 package io.github.mcagentsmods.chat.fabric.client.gui;
 
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
-import io.github.mcagentsmods.chat.website.LocalWebConsole;
 import io.github.mcagentsmods.chat.common.ui.StackedRows;
 import io.github.mcagentsmods.chat.common.wallet.SystemBrowser;
 import io.github.mcagentsmods.chat.fabric.MCAgentsClientMod;
@@ -15,6 +14,7 @@ import net.minecraft.util.FormattedCharSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,9 +90,9 @@ public final class WebConsoleScreen extends Screen {
         contentWidth = Math.min(MAX_CONTENT_WIDTH, Math.max(120, width - 40));
         contentLeft = (width - contentWidth) / 2;
 
-        Optional<LocalWebConsole> running = WebConsoleHolder.current();
+        Optional<URI> running = WebConsoleHolder.address();
         urlLines = running
-                .map(console -> font.split(Component.literal(console.url().toString()), contentWidth))
+                .map(address -> font.split(Component.literal(address.toString()), contentWidth))
                 .orElse(List.of());
         hintLines = font.split(
                 Component.translatable("gui.mcagents.console.local_only"), contentWidth);
@@ -176,7 +176,7 @@ public final class WebConsoleScreen extends Screen {
     }
 
     private void startOrOpen() {
-        Optional<LocalWebConsole> running = WebConsoleHolder.current();
+        Optional<URI> running = WebConsoleHolder.address();
         if (running.isEmpty()) {
             try {
                 WebConsoleHolder.start(database, MCAgentsClientMod.paths());
@@ -193,24 +193,24 @@ public final class WebConsoleScreen extends Screen {
                 return;
             }
         }
-        WebConsoleHolder.current().ifPresent(console -> {
-            if (!SystemBrowser.open(console.url())) {
+        WebConsoleHolder.address().ifPresent(address -> {
+            if (!SystemBrowser.open(address)) {
                 status = Component.translatable("gui.mcagents.console.no_browser");
             }
         });
     }
 
     private void copyLink() {
-        WebConsoleHolder.current().ifPresent(console -> {
+        WebConsoleHolder.address().ifPresent(address -> {
             if (minecraft != null) {
-                minecraft.keyboardHandler.setClipboard(console.url().toString());
+                minecraft.keyboardHandler.setClipboard(address.toString());
                 status = Component.translatable("gui.mcagents.console.copied");
             }
         });
     }
 
     private void stop() {
-        WebConsoleHolder.stop();
+        WebConsoleHolder.stopConsole();
         status = Component.translatable("gui.mcagents.console.stopped");
         failed = false;
         // The address is gone, so the rows below it move up.
@@ -227,7 +227,7 @@ public final class WebConsoleScreen extends Screen {
         graphics.centeredText(font, Component.translatable("gui.mcagents.console.subtitle"),
                 width / 2, subtitleY, 0xFF9A9AA4);
 
-        boolean running = WebConsoleHolder.current().isPresent();
+        boolean running = WebConsoleHolder.address().isPresent();
         graphics.text(font, running
                         ? Component.translatable("gui.mcagents.console.running")
                                 .withStyle(ChatFormatting.GREEN)

@@ -173,10 +173,4 @@ final class WebJson {
         body.addProperty("createdAt", key.createdAt().toString());
         return body;
     }
-
-    static JsonObject error(String message) {
-        JsonObject body = new JsonObject();
-        body.addProperty("error", message);
-        return body;
-    }
 }

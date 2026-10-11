@@ -81,3 +81,42 @@ passes: 381 tests in `common`, 78 in `website`.
 
 **Not proven.** `runClient` with core's Fabric jar in `run/mods/`, and the mod loading next to
 core in a real game.
+
+### Task 3 — feat/web-registry
+
+**Landed.** Chat's pages are `ChatWebModule`, registered with core's `CoreWebRegistry`, so
+they are served by the one console every MCAgents mod shares:
+
+| Was chat's | Now |
+|---|---|
+| `LocalWebConsole` — the server, the token, the `Host` check, the routing | core's `LocalWebHost`; chat's routing is `ChatWebModule.handle`, answering `/api/chat/…` |
+| `WebAssets` | core's `WebResources`, reading through the module's own class loader |
+| `api.web.WebConsole`, `WebConsoleException` | core's `api.web` |
+| `main.css`, `shared/layout.css`, `shared/components.css`, `site.js`, the header and footer partials | core's, at `/assets/core/…` |
+| the root redirect to `/knowledge/` | the module's address is `/chat/knowledge/`, its first navigation link |
+
+The pages no longer set `window.SITE_ROOT` and `window.PAGE_SECTION` in an inline script, which
+core's content security policy would not run; they name themselves on `<body>` with
+`data-module="chat"` and `data-section`, and load every file by its absolute `/assets/…` path.
+The pack page reads its id from `/chat/knowledge/<id>`, one segment deeper than before. The
+API path is decoded once, by core, where chat's routes decoded it twice.
+
+`WebConsoleHolder` registers the module the first time the player asks for the console, opens
+core's console, and unregisters on shutdown before the database closes. The screen's **Stop**
+closes core's console, so every mod's pages stop with it; chat's stay registered for the next
+start.
+
+**Tests.** The five route and page suites run through a fresh `CoreWebRegistry` with the
+module registered (`ConsoleUnderTest`), so they drive chat's routes over real HTTP through
+core's guard. Four tests of the server alone — every run's own token, traversal through the
+asset route, staying up until closed, closing twice — are core's now and were removed; core
+tests the same in `LocalWebHostTest`. `./gradlew build` passes: 381 tests in `common`, 74 in
+`website`.
+
+**Proven in a browser.** Chromium loaded all six pages from a console started by the tests'
+own wiring: the header built from core's registry with the right link active on each, the
+footer in place, the chat list showing a stored conversation, and no console error or failed
+request other than the expected 404 for a pack that does not exist.
+
+**Not proven.** The console opened from the game, which needs a launched client with core
+installed.

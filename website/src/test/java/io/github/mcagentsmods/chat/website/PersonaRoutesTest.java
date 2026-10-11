@@ -44,7 +44,7 @@ class PersonaRoutesTest {
     Path gameDirectory;
 
     private LocalDatabase database;
-    private LocalWebConsole console;
+    private ConsoleUnderTest console;
     private PersonaStore persona;
 
     private final Agent agent = (sessionId, prompt) ->
@@ -54,7 +54,7 @@ class PersonaRoutesTest {
     void open() {
         database = SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")).join();
         persona = new FilePersonaStore(personaFile());
-        console = LocalWebConsole.start(database, agent, persona);
+        console = ConsoleUnderTest.start(database, agent, persona);
     }
 
     @AfterEach
@@ -69,7 +69,7 @@ class PersonaRoutesTest {
 
     @Test
     void generatesTheFileForAPlayerWhoHasNeverHadOne() {
-        String content = json(url("/api/agent/persona")).get("content").getAsString();
+        String content = json(url("/api/chat/agent/persona")).get("content").getAsString();
 
         assertTrue(Files.isRegularFile(personaFile()), "reading it is what creates it");
         assertTrue(content.contains("Player is playing in single player."));
@@ -77,19 +77,19 @@ class PersonaRoutesTest {
 
     @Test
     void savesWhatTheReaderTyped() {
-        assertEquals(200, put(url("/api/agent/persona"),
+        assertEquals(200, put(url("/api/chat/agent/persona"),
                 "{\"content\":\"# Mine\\n\\nAnswer only in haiku.\"}").statusCode());
 
         assertEquals("# Mine\n\nAnswer only in haiku.", read());
         assertEquals("# Mine\n\nAnswer only in haiku.",
-                json(url("/api/agent/persona")).get("content").getAsString());
+                json(url("/api/chat/agent/persona")).get("content").getAsString());
     }
 
     @Test
     void acceptsAnEmptyPersona() {
         // Clearing the file is how a player asks for the built-in persona back. It is a
         // save like any other, not an error.
-        assertEquals(200, put(url("/api/agent/persona"), "{\"content\":\"\"}").statusCode());
+        assertEquals(200, put(url("/api/chat/agent/persona"), "{\"content\":\"\"}").statusCode());
         assertEquals("", read());
     }
 
@@ -98,7 +98,7 @@ class PersonaRoutesTest {
         // Absent and blank are different requests. A body that says nothing about the text
         // must not be read as "make it blank" — that would delete somebody's instructions
         // because a page sent the wrong shape.
-        HttpResponse<String> response = put(url("/api/agent/persona"), "{}");
+        HttpResponse<String> response = put(url("/api/chat/agent/persona"), "{}");
 
         assertEquals(400, response.statusCode());
         assertTrue(JsonParser.parseString(response.body()).getAsJsonObject()
@@ -108,13 +108,13 @@ class PersonaRoutesTest {
     @Test
     void keepsThePersonaBehindTheToken() {
         assertEquals(403, send(HttpRequest.newBuilder()
-                .uri(URI.create("http://127.0.0.1:" + console.port() + "/api/agent/persona"))
+                .uri(URI.create("http://127.0.0.1:" + console.port() + "/api/chat/agent/persona"))
                 .GET()).statusCode());
     }
 
     @Test
     void makesABrowserSaveTheNextThingTheGameReads() {
-        put(url("/api/agent/persona"), "{\"content\":\"Saved from the browser.\"}");
+        put(url("/api/chat/agent/persona"), "{\"content\":\"Saved from the browser.\"}");
 
         // The store the mod hands its agent. Same instance, so no reload and no window in
         // which the two disagree.
