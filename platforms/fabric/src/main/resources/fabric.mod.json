@@ -9,10 +9,10 @@
   ],
   "contact": {
     "homepage": "https://mcagents.mcrealms.space",
-    "sources": "https://github.com/MCAgents/client-fabric",
-    "issues": "https://github.com/MCAgents/client-fabric/issues"
+    "sources": "https://github.com/MCAgents-Mods/chat",
+    "issues": "https://github.com/MCAgents-Mods/chat/issues"
   },
-  "license": "LicenseRef-MCAgents-Commercial",
+  "license": "MIT",
   "environment": "client",
   "entrypoints": {
     "client": [

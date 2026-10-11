@@ -87,32 +87,16 @@ corner.
 
 ## Where the project lives
 
-The MCAgents organization exists on GitHub and GitLab, and on those cloud hosts only:
-
-* [github.com/MCAgents](https://github.com/MCAgents)
-* [gitlab.com/MCAgents](https://gitlab.com/MCAgents)
-
-The author is Jetsada Wijit — [github.com/JetsadaWijit](https://github.com/JetsadaWijit),
-[gitlab.com/JetsadaWijit](https://gitlab.com/JetsadaWijit) — who also owns the domain
-`mcrealms.space`.
+The source is on GitHub, at [github.com/MCAgents-Mods/chat](https://github.com/MCAgents-Mods/chat),
+under the [MCAgents-Mods](https://github.com/MCAgents-Mods) organization. Issues and pull
+requests go there.
 
 ## License
 
-Proprietary. See [`LICENSE`](LICENSE), which governs; the following is only a summary.
-
-Use is licensed to people in exactly one of three categories: the owner and members of the
-MCAgents organization; anyone given express written permission by the organization; and
-anyone who has lawfully purchased a license, for the duration and scope of that purchase.
-Use outside those three is unlicensed.
-
-The mod may also be published through platforms such as CurseForge and Modrinth. Those
-listings are authorized **only** for builds published by the MCAgents organization itself —
-so if you download it from a third-party platform, **check the publisher, not the platform.**
-A build published by any other account may have been modified, may carry malware, and is
-covered by neither the license nor any support.
-
-Reselling, redistributing, mirroring, reverse engineering, and creating derivative works are
-not permitted, except where mandatory law says otherwise.
+[MIT](LICENSE), copyright 2026 MCAgents. You may use, copy, modify, merge, publish,
+distribute, sublicense, and sell copies of the software, provided the copyright notice and
+the license text travel with it. The software is provided as is, without warranty. See
+[`LICENSE`](LICENSE), which governs; the above is only a summary.
 
 ## Documentation
 
