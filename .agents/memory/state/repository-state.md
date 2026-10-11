@@ -168,8 +168,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## Stack
 
 Minecraft 26.2 · Fabric Loader 0.19.3 · Fabric API 0.157.0+26.2 · Fabric Loom 1.17.19 ·
-Java 25 · Gradle 9.7.0 via the committed wrapper · group `io.github.mcagents` · base package
-`io.github.mcagents.clientfabric`.
+Java 25 · Gradle 9.7.0 via the committed wrapper · group `io.github.mcagentsmods` · base package
+`io.github.mcagentsmods.chat`.
 
 Facts that cost time to establish, and will again if forgotten:
 
