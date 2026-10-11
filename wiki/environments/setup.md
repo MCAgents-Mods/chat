@@ -41,11 +41,11 @@ Minecraft version.
 Chat compiles against MCAgents core and does not carry it. Clone `MCAgents-Mods/core` beside
 this repository — `../core` — and `settings.gradle` builds the two together, so chat compiles
 and tests against core's source. Pass `-Pcore-build=/path/to/core` for another location.
-Without a checkout, Gradle resolves the published `io.github.mcagentsmods:core-api` and
-`core-common` at the version in `gradle/libs.versions.toml`.
+Without a checkout, Gradle resolves the published `io.github.mcagentsmods:mcagents-core-api` and
+`mcagents-core-common` at the version in `gradle/libs.versions.toml`.
 
 `runClient` does not put core in the development game. Copy core's Fabric jar
-(`platforms/fabric/build/libs/core-fabric-*.jar` in the core checkout) into `run/mods/`
+(`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` in the core checkout) into `run/mods/`
 first, or the loader refuses to start chat for the missing `mcagents_core`.
 
 ## Commands
@@ -53,15 +53,15 @@ first, or the loader refuses to start chat for the missing `mcagents_core`.
 | Goal | Command |
 |---|---|
 | Build everything | `./gradlew build` |
-| Run the tests | `./gradlew :mcagents-fabric-common:test` |
-| Build one module | `./gradlew :mcagents-fabric-common:build` |
-| Run the client | `./gradlew :mcagents-fabric:runClient` |
-| Produce the mod jar | `./gradlew :mcagents-fabric:build` |
+| Run the tests | `./gradlew :mcagents-chat-common:test` |
+| Build one module | `./gradlew :mcagents-chat-common:build` |
+| Run the client | `./gradlew :mcagents-chat-fabric:runClient` |
+| Produce the mod jar | `./gradlew :mcagents-chat-fabric:build` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
 keeping the logic out of the platform module. Run them before you launch the game.
 
-The mod jar lands in `platforms/fabric/build/libs/`. It carries the classes of all three
+The mod jar lands in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar`. It carries the classes of all three
 modules — `api/` and `common/` are merged into it rather than nested as separate mods.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection.
@@ -92,7 +92,7 @@ mod encrypts every stored key with it:
 
 ```bash
 export MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
-./gradlew :mcagents-fabric:runClient
+./gradlew :mcagents-chat-fabric:runClient
 ```
 
 Anything works as a value — a passphrase, a random string — because it is hashed to a

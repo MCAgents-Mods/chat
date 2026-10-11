@@ -6,3 +6,23 @@ allprojects {
     group = 'io.github.mcagentsmods'
     version = providers.gradleProperty('project-version').get()
 }
+
+subprojects {
+    // Every module publishes under its project name, which settings.gradle sets to
+    // mcagents-chat-{module}: the group alone cannot tell chat's api from core's. The jar
+    // each module builds is named by its own archivesName, MCAgentsChat{Module}.
+    apply plugin: 'maven-publish'
+
+    publishing {
+        repositories {
+            maven {
+                name = 'GitHubPackages'
+                url = "https://maven.pkg.github.com/${providers.gradleProperty('git-org').get()}/${providers.gradleProperty('git-repo').get()}"
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+            }
+        }
+    }
+}

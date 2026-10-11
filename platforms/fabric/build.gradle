@@ -9,7 +9,7 @@ plugins {
 }
 
 base {
-    archivesName = 'mcagents-chat'
+    archivesName = 'MCAgentsChatFabric'
 }
 
 java {
@@ -41,9 +41,9 @@ dependencies {
     implementation libs.fabric.loader
     implementation libs.fabric.api
 
-    implementation project(':mcagents-fabric-api')
-    implementation project(':mcagents-fabric-common')
-    implementation project(':mcagents-fabric-website')
+    implementation project(':mcagents-chat-api')
+    implementation project(':mcagents-chat-common')
+    implementation project(':mcagents-chat-website')
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
@@ -54,9 +54,9 @@ dependencies {
 // merged into the mod jar rather than nested as separate Fabric mods. Third-party runtime
 // libraries are bundled with Loom's `include` instead.
 def bundledModules = [
-        ':mcagents-fabric-api',
-        ':mcagents-fabric-common',
-        ':mcagents-fabric-website'
+        ':mcagents-chat-api',
+        ':mcagents-chat-common',
+        ':mcagents-chat-website'
 ]
 
 tasks.named('jar', Jar) {
@@ -84,5 +84,20 @@ tasks.named('jar', Jar) {
 
     from(rootProject.file('LICENSE')) {
         rename { "${it}_${projectName}" }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // The mod jar alone, with no dependency list: it already carries api, common and
+            // website, nests SQLite, and the loader and mcagents_core supply the rest.
+            artifact tasks.named('jar')
+
+            pom {
+                name = 'MCAgentsChatFabric'
+                url = 'https://github.com/MCAgents-Mods/chat'
+            }
+        }
     }
 }

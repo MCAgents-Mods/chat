@@ -9,7 +9,7 @@ plugins {
 }
 
 base {
-    archivesName = 'mcagents-fabric-api'
+    archivesName = 'MCAgentsChatApi'
 }
 
 java {
@@ -33,4 +33,17 @@ dependencies {
     // compileOnlyApi: every module above sees them, and no jar of chat's carries them,
     // because the mcagents_core mod provides one copy for every MCAgents mod in game.
     compileOnlyApi libs.core.api
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'MCAgentsChatApi'
+                url = 'https://github.com/MCAgents-Mods/chat'
+            }
+        }
+    }
 }

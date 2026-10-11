@@ -14,7 +14,7 @@ plugins {
 }
 
 base {
-    archivesName = 'mcagents-fabric-common'
+    archivesName = 'MCAgentsChatCommon'
 }
 
 java {
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    api project(':mcagents-fabric-api')
+    api project(':mcagents-chat-api')
 
     // Core's model client and HTTP transport. Provided in game by the mcagents_core mod,
     // so compiled against and never bundled, like core's API above.
@@ -66,5 +66,18 @@ tasks.named('test', Test) {
     useJUnitPlatform()
     testLogging {
         events 'passed', 'skipped', 'failed'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'MCAgentsChatCommon'
+                url = 'https://github.com/MCAgents-Mods/chat'
+            }
+        }
     }
 }

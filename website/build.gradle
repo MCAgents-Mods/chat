@@ -13,7 +13,7 @@ plugins {
 }
 
 base {
-    archivesName = 'mcagents-fabric-website'
+    archivesName = 'MCAgentsChatWebsite'
 }
 
 java {
@@ -35,7 +35,7 @@ repositories {
 dependencies {
     // api rather than implementation: platforms/fabric holds a WebConsole and calls into
     // the same records this module returns, so it needs both on its compile classpath.
-    api project(':mcagents-fabric-common')
+    api project(':mcagents-chat-common')
 
     // Minecraft ships Gson, so it is present at runtime in the game and must NOT be
     // bundled. compileOnly here says exactly that: compile against it, ship nothing.
@@ -45,7 +45,7 @@ dependencies {
     // The doubles that stand in for a network and for MetaMask. They live in common's
     // test fixtures because both modules test against them, and a test source set is not
     // shared between Gradle projects.
-    testImplementation testFixtures(project(':mcagents-fabric-common'))
+    testImplementation testFixtures(project(':mcagents-chat-common'))
 
     // The tests open a real SQLite database. common/ keeps sqlite-jdbc off its consumers'
     // compile classpath on purpose — nothing here names a sqlite type — so it is asked for
@@ -65,5 +65,18 @@ tasks.named('test', Test) {
     useJUnitPlatform()
     testLogging {
         events 'passed', 'skipped', 'failed'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'MCAgentsChatWebsite'
+                url = 'https://github.com/MCAgents-Mods/chat'
+            }
+        }
     }
 }

@@ -38,3 +38,18 @@ and `platforms/neoforge` hold only each loader's entry point, key registration a
 | 2 | Artifact names | Project names, base names, publications, core's new coordinates, docs | `refactor/artifact-names` | |
 | 3 | Shared platform | `platforms/shared` against vanilla Minecraft; Fabric keeps its three loader classes | `refactor/shared-platform` | |
 | 4 | NeoForge | `platforms/neoforge`: entry point, key registration, events, manifest, bundled SQLite | `feat/neoforge-platform` | |
+
+## Task 2 — refactor/artifact-names
+
+The Gradle projects are renamed `mcagents-chat-{module}` in `settings.gradle`, so the
+artifact id is the project name with nothing to compute. Each module sets its own
+`archivesName`, `MCAgentsChat{Module}`. The root build applies `maven-publish` to every module
+with the GitHub Packages repository; `api`, `common` and `website` publish `components.java`,
+and the Fabric module publishes its mod jar alone through `tasks.named('jar')` — an eager
+`jar` reference evaluates the Fabric project before `website`, whose source set it bundles.
+
+`libs.versions.toml` and the composite build's substitution now name core's
+`mcagents-core-api` and `mcagents-core-common`. Released changelogs and older task records keep
+the old names as history.
+
+`./gradlew build publishToMavenLocal` passes against core's `refactor/artifact-names`.

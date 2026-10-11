@@ -19,16 +19,21 @@ platforms/fabric/           the mod: GUI, mixins, events, paths
 
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
-| `api/` | `mcagents-fabric-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `mcagents-fabric-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
-| `website/` | `mcagents-fabric-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
-| `platforms/fabric/` | `mcagents-fabric` | all of the above | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
+| `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
+| `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
+| `website/` | `mcagents-chat-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above | Mod initializer, screens, key bindings, mixins, event listeners, game-directory resolution. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
-`mcagents-fabric-api` to `api/`, `mcagents-fabric-common` to `common/`,
-`mcagents-fabric-website` to `website/`, and `mcagents-fabric` to `platforms/fabric/`. The
+`mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
+`mcagents-chat-website` to `website/`, and `mcagents-chat-fabric` to `platforms/fabric/`. The
 `platforms/` folder is where a second loader — Forge, NeoForge, Quilt — would go without
 disturbing anything else.
+
+The Gradle module name is also the Maven artifact id, so every module publishes as
+`io.github.mcagentsmods:mcagents-chat-{module}`, and the jar it builds is named
+`MCAgentsChat{Module}-{version}.jar` by its own `archivesName`. The `mcagents-chat-` prefix
+keeps chat's modules apart from core's, which share the group.
 
 ### Why the console is a module and not a package
 
