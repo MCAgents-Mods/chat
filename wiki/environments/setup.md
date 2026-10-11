@@ -67,7 +67,7 @@ data goes to `platforms/fabric/run/MCAgents/`:
 
 | File | Contents |
 |---|---|
-| `data.db` | SQLite — chat sessions, messages, API keys, downloaded Knowledge Packs |
+| `data.db` | SQLite — chat sessions, messages, API keys, Knowledge Packs |
 | `AGENTS.md` | The agent persona and instructions, editable by the player |
 
 Both are player data. `run/` is generated and is not committed. **`data.db` holds API keys —
@@ -100,9 +100,8 @@ the variable as easily as the mod does.
 ## Working offline
 
 The mod is required to work without network access, so test it that way. With no internet:
-the game starts, the chat screen opens, stored sessions and downloaded Knowledge Packs are
-readable, and the content browser reports that the catalog is unreachable without breaking
-anything else. If any of that fails, it is a bug.
+the game starts, the chat screen opens, stored sessions and Knowledge Packs are
+readable. If any of that fails, it is a bug.
 
 Note that the *first* Gradle build does need network to fetch Minecraft and the
 dependencies. Offline is a runtime requirement, not a build requirement.

@@ -30,43 +30,14 @@ console changes nothing about the game.
 
 ### `/knowledge/`
 
-Every pack downloaded to this machine, twenty at a time in a panel that scrolls on its own —
+Every pack stored on this machine, twenty at a time in a panel that scrolls on its own —
 so the search box and the category filters stay where you left them however large the
 library grows. The search box filters as you type, across titles and pack text. The chips
-filter by category and by free or premium.
+filter by category and by free or premium. **Refresh** re-reads the library; nothing leaves
+the machine.
 
-**Refresh** re-reads your library *and* checks it against the service. A pack the service
-has moved past is badged with the version it now publishes — `v1.0.0 published` beside your
-`v0.1.0` — so being behind is visible on the pack rather than buried in a count. The button
-says how many are behind, or that everything is current. It downloads nothing; **Update
-knowledge** on the chat page is what applies them.
-
-A badge only ever repeats a version the service actually reported. Before the catalog has
-been read, and again if it stops answering, there are no badges at all — an unreachable
-service produces silence rather than a stale claim.
-
-Below it, **Available to download** lists what the service publishes that you do not have,
-in a scrolling panel of its own, with **its own Refresh**. That is the half of this page
-which depends on the service, so it is the half worth retrying once the banner clears — and
-retrying it does not re-read the library, which has not changed.
-
-Both lists are boxed for the same reason: a library or a catalog of any size would otherwise
-push the search box, the filters, and the headings that tell the two lists apart off the top
-of the window.
-
-**The second panel stays on the page even when it is empty**, saying so — everything
-downloaded, nothing published yet, or the service not answering. It used to hide itself, so
-pressing Refresh, the one action guaranteed to empty it, collapsed the page from two panels
-to one while you were looking at it.
-
-The two are deliberately separate sections rather than rows mixed together. The library is a
-window over a local table and pages with an offset, while the catalog comes from the network
-and disappears when the service is asleep. Merging them would mean paging a union of two
-sources with different costs and different failure modes, and the page would stop working
-whenever the service did.
-
-On a narrow window both go back to flowing with the page, where a fixed box would show three
-cards and put its own scrollbar inside the page's.
+On a narrow window the list goes back to flowing with the page, where a fixed box would show
+three cards and put its own scrollbar inside the page's.
 
 The list deliberately does not carry pack bodies. An embedding is thousands of numbers, and
 reading twenty of them to render a list of titles would be slow for no benefit.
@@ -77,22 +48,11 @@ One pack in full: its identifier, version, category, availability, dates, its te
 embedding.
 
 **The pack's content is read-only, on purpose.** There is no form and no endpoint behind
-this page that could change one. Packs are published by version and replaced whole, so
-editing a stored copy would only put you out of step with the next update.
+this page that could change one; packs are replaced whole.
 
-**This page opens for a pack you have not downloaded**, shown from the service, and that is
-where the **Download** button lives — it is the only page that is about exactly one pack. A
-downloaded pack shows its embedding instead; one you do not have has none, because nothing
-has embedded it yet.
-
-A pack you *do* have also gets two buttons of its own:
-
-* **Check for update** asks about this pack alone. The chat page checks the whole library;
-  neither replaces the other, because a reader looking at one pack did not ask about every
-  other one.
-* **Delete** removes this machine's copy. It does not unpublish anything — the pack goes
-  straight back into *Available to download*, which is exactly what has happened. Downloading
-  it again means embedding it again, so the button asks first.
+It has one button, **Delete**, which removes this machine's copy and returns you to the list.
+Nothing can bring the pack back, and embedding it again costs a request to your model
+provider, so the button asks first.
 
 ### `/chat/`
 
@@ -178,8 +138,7 @@ proved. See [`wallet-binding.md`](wallet-binding.md).
 of them name the account, and the mod checks that rather than trusting it. A request naming
 one account and a wallet in another changes nothing.
 
-Nothing here needs the central service, so none of it is disabled when the service is asleep.
-Wallets live on this machine and the service has never heard of them.
+Wallets live on this machine and nothing about them leaves it.
 
 ### `/keys/`
 
@@ -223,40 +182,14 @@ ships for that platform.
 stored as you pasted them when it is not. The page says which rather than implying the
 stronger one.
 
-## When the service is asleep
+## Embedding
 
-The central service is hosted somewhere that idles, so the first request after a quiet
-period is often a refused connection. The console treats that as ordinary: a banner appears,
-it checks again once a minute for ten minutes, and then stops — a page that retried forever
-would poll a host that is not coming back until you closed the tab. **Reconnect** restarts
-that budget, and the banner disappears entirely once the service answers.
+**Check embeddings** on the chat page asks your model provider to embed the packs that have no
+usable vector. It asks first and tells you how many packs it is about to send: each one is a
+separate request charged to your API key. Once it has run, the line beside it says how many
+packs still need embedding.
 
-Nothing on any page depends on it. The lists, the conversations, and the keys all work while
-it is unreachable; only the refresh and update buttons are disabled, because they are the
-only things that need it.
-
-**Refresh** on the knowledge page downloads nothing. It re-reads your library, checks it
-against the catalog, and badges whatever is behind.
-
-**Update knowledge** on the chat page brings the packs you already have up to their published
-versions, and takes nothing new. A new pack is downloaded from its own page, one at a time,
-where you can see what you are taking. It asks before it runs, because updating a pack drops
-its embedding — so the real cost of pressing it includes embedding the result. The service
-rate-limits these reads, so pressing repeatedly earns a short wait rather than a faster
-answer.
-
-The chat page also **checks** when it opens, and says how many updates are waiting. That
-check is one request and downloads nothing — pressing the button is still the only thing
-that spends bandwidth. Startup checks one pack and one pack only, `mcagents-info`; see
-[`knowledge-retrieval.md`](knowledge-retrieval.md).
-
-**Check embeddings** beside it is not a service operation at all. It asks your model
-provider to embed the packs that have no usable vector, so it keeps working while the
-service is asleep and is never disabled with the buttons that need it. It asks first and
-tells you how many packs it is about to send: each one is a separate request charged to your
-API key.
-
-Every question the console asks — rename, delete, update, embed — is a dialog drawn by the
+Every question the console asks — rename, delete, embed — is a dialog drawn by the
 page itself, never a browser popup. Browsers let you silence their own dialogs after the
 second one, and a "delete this?" that has been silenced is a deletion.
 

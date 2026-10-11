@@ -136,8 +136,6 @@ An exchange with tools is still one request shape, extended:
 * Anything the player did not ask to send. Context injection — inventory, the block being
   looked at, chat logs — is a feature the player controls, not a default.
 * Another player's data.
-* Any identifier for the central service's account system. OpenRouter is between the player
-  and OpenRouter.
 * **An MCP server's environment.** A tool's name, description and schema are sent because
   the model must be able to call it; the credentials that server was configured with are
   not part of any of the three.

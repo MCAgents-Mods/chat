@@ -279,9 +279,8 @@ adding one would be treating a symptom.
 
 ## Gotchas
 
-* **Offline-first is a hard rule, not a preference.** The central service at
-  `mcagents.mcrealms.space` may be unreachable at any time and everything local must keep
-  working. See [`../../rules/repository.md`](../../rules/repository.md).
+* **Offline-first is a hard rule, not a preference.** The network may be unreachable at any
+  time and everything local must keep working. See [`../../rules/repository.md`](../../rules/repository.md).
 * **Never block the client thread.** No `join()`, no `get()` on a future from render or
   tick code. The game freezes and the player blames the mod.
 * **`common/` must not see Minecraft.** If you reach for a `net.minecraft` import there,

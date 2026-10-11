@@ -72,9 +72,8 @@ host lives in `common/`, so it is testable by spawning real servers with no game
 which is how it is tested. Nothing about a server may need a Minecraft type.
 
 **Nothing about MCP may fail the mod.** A server that will not start becomes a status row
-and the rest carry on. This is the offline-first rule of this document applied to a second
-optional thing: the central service is one, an MCP server is another, and neither is
-allowed onto the path of anything local.
+and the rest carry on. This is the offline-first rule of this document applied to an
+optional thing: an MCP server is not allowed onto the path of anything local.
 
 ## Rules the split enforces
 
@@ -127,9 +126,8 @@ and `getNow()` are never called from render or tick code.
 5. The answer is written to the local database as the next message in the session and
    rendered.
 
-Steps 1, 3, and 5 work with no internet. Step 2 works with whatever was already
-downloaded. Only step 4 needs a model provider, and only downloading *new* packs needs the
-central service.
+Steps 1, 3, and 5 work with no internet. Step 2 works with whatever packs are
+stored. Only step 4 needs a model provider.
 
 ### Which provider a request reaches
 
@@ -206,13 +204,3 @@ The cryptography — Keccak-256 and secp256k1 public key recovery — is written
 would be megabytes shipped to every player for one hash and one curve operation, and the
 JDK's SHA3-256 is a *different function* that would recover the wrong address without
 failing. See [`wallet-binding.md`](wallet-binding.md).
-
-## The central service
-
-`mcagents.mcrealms.space`, implemented in `MCAgents/server-fabric-expressjs`, serves the
-Knowledge Pack catalog and content. The client downloads a pack and writes it straight into
-`contents` — there is no intermediate pack file on disk to manage.
-
-**It is optional at every point.** The mod is designed so that a player who never reaches
-it has a working mod with an empty content library, and a player who reaches it once has a
-working mod with a full library forever after.

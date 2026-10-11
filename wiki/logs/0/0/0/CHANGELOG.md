@@ -67,7 +67,7 @@ project is developed under.
   `Cache` contract, and `CachingContentRepository` decorating the SQLite repository. Pack
   bodies and the category list are cached because they are read far more often than they
   change; searches, the stored-version map, and absent packs deliberately are not. Writes
-  invalidate in the same call, so a downloaded pack is visible immediately rather than when
+  invalidate in the same call, so a stored pack is visible immediately rather than when
   a timer expires. The database stays the record: everything cached can be dropped at any
   moment without changing what the mod knows.
 * **The local web console.** A loopback server the player starts from the chat screen, so
@@ -358,6 +358,12 @@ project is developed under.
 
 * Group `io.github.mcagentsmods`, base package `io.github.mcagentsmods.chat`. The sub-packages
   `api`, `common`, `website` and `fabric` are unchanged.
+* **The mod has no server of its own.** Its only network calls are to the model provider the
+  player configured and to a git host when asked to clone an MCP server. There is no catalog,
+  download, update or health-check path, no startup fetch, and no service banner in the
+  console; Knowledge Packs are stored, listed, embedded, searched and deleted, and nothing
+  puts a new one on the machine. The client for the central Knowledge Pack service was
+  removed after the repository that implemented it was deleted.
 * Minecraft 26.x publishes no Yarn mappings and no intermediary; Fabric Loom uses Mojang's
   official mappings and **no `remapJar` task runs** — `jar` produces the final artifact.
 * Dependency scopes, measured rather than assumed. In Loom, `implementation` bundles

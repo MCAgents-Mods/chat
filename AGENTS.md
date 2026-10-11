@@ -8,11 +8,11 @@ description: Entry point for agents working on MCAgentsClient — resolves the s
 `MCAgents-Mods/chat` holds **MCAgentsClient**, a client-side-only Minecraft mod for
 the Fabric loader that puts an LLM chat agent inside the game. It talks to the OpenRouter
 API with a key the player supplies — or to a platform's own API, when the player has stored
-a key for that platform — and keeps chat history, API keys, and downloadable
-Knowledge Packs in a local SQLite database under `{minecraft_dir}/MCAgents/data.db`, and
-uses embeddings to retrieve only the relevant Knowledge Pack content for each prompt. The
-central service at `mcagents.mcrealms.space` is a content source and nothing more — **the
-mod must remain fully usable when that service is offline or unreachable.**
+a key for that platform — and keeps chat history, API keys, and Knowledge Packs in a
+local SQLite database under `{minecraft_dir}/MCAgents/data.db`, and uses embeddings to
+retrieve only the relevant Knowledge Pack content for each prompt. The mod has no server of
+its own — **it must remain fully usable with no network**, and the only calls it makes are
+to the model providers the player configures and to the MCP servers it is asked to clone.
 
 ## Shared Instruction Set
 

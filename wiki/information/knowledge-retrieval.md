@@ -3,41 +3,21 @@
 The mod can put relevant Knowledge Packs in front of your question before it asks the
 model. This page is what that means, what it costs, and how to turn it off.
 
-## Getting packs onto your machine
+## Where packs come from
 
-Packs live on the knowledge service and do nothing until they are on your disk. There are
-three ways to get them there, and they exist for different moments.
+The mod stores Knowledge Packs in `data.db` and nothing fetches them: it has no download,
+update or catalog path, and it contacts no server of its own. Retrieval works over whatever
+packs are already stored, and with none stored it finds nothing and the question is sent on
+its own.
 
-| | What it fetches | Where |
-|---|---|---|
-| **Automatic, at startup** | `mcagents-info` only | Every time the game loads |
-| **Download** | One pack | That pack's page, `/knowledge/<id>` |
-| **Update knowledge** / **Refresh** | Everything missing or out of date | The chat page, and `/knowledge/` |
-| **Check for update** | Tells you about one pack; downloads nothing | That pack's page |
-| **Refresh** | Checks your whole library against the service and badges what is behind; downloads nothing | `/knowledge/` |
+## Embedding what is stored
 
-**Only one pack is fetched without being asked for**, and only at startup: the pack
-describing the mod, so the agent can answer "what are you". A game that stalled on somebody
-else's host while it loaded would be a game that stalled, so nothing else is checked there.
-
-**Everything else is checked when the chat page opens.** It tells you how many updates are
-waiting — that check is one request and downloads nothing. Pressing **Update knowledge** is
-what actually fetches them.
-
-To browse what exists without taking all of it, open `/knowledge/`. Below your own library
-is **Available to download**: packs the service publishes that you do not have. Open one and
-its page has a **Download** button. That page works for a pack you do not own — the console
-shows it from the service — which is the only reason a download button can live there.
-
-## Embedding what you downloaded
-
-**A pack you just downloaded cannot be retrieved against yet.** It arrives as text with no
-vector, and it stays inert until it has one.
+**A stored pack cannot be retrieved against until it has a vector.** A pack is text, and it
+stays inert until it has been embedded.
 
 That is on purpose. A vector is only comparable inside the space of the model that produced
-it, so a vector shipped by the service would silently force every player onto whichever
-model the service happened to use. Instead the service ships text and *your* client embeds
-it with *your* embedding model.
+it, so a vector that arrived with a pack would silently force every player onto whichever
+model produced it. Instead *your* client embeds the text with *your* embedding model.
 
 **Check embeddings**, in the chat page header, is what does it. It embeds every stored pack
 that has no usable vector, one at a time, with your embedding model. The header also tells
@@ -48,21 +28,14 @@ It also re-embeds the whole library when you change your embedding model, becaus
 exactly what changing it means. The mod records which model embedded the library, so it
 knows; it does not guess from the vectors.
 
-**Updating a pack drops its embedding.** A new version is new text, and the old vector
-describes text that is no longer there — it would keep matching questions about wording that
-has gone and keep the pack out of results it now belongs in, while still showing as
-*Embedded*. So the vector goes and the pack asks to be embedded again. Re-downloading a pack
-at the version you already have keeps its embedding, because that text is identical.
-
-The button asks your model provider, not the knowledge service, so it works while the
-service is asleep — and it works with the Embedding switch off, because the switch governs
-whether retrieval happens, not whether you may prepare for it.
+The button asks your model provider, and it works with the Embedding switch off, because the
+switch governs whether retrieval happens, not whether you may prepare for it.
 
 ## What happens when you ask something
 
 1. Your question is sent to your **embedding model**, which returns a vector — a list of
    numbers standing for what the question is about.
-2. Every downloaded pack that carries an embedding is compared against it. The comparison
+2. Every stored pack that carries an embedding is compared against it. The comparison
    is cosine similarity: how nearly the two point the same way.
 3. The closest few packs are attached to the request, just ahead of your question.
 4. The model answers with them in view.
@@ -98,11 +71,11 @@ and the other shows it.
   question about Java syntax spends tokens to make the answer slightly worse.
 * **Your library is embedded with a different model** and you have not re-embedded it yet
   — see below.
-* **You want the model's own answer**, unshaped by anything you downloaded.
+* **You want the model's own answer**, unshaped by anything you have stored.
 
 ## What is *not* switched off
 
-Downloading packs, browsing them, reading them, and searching them all keep working. The
+Browsing packs, reading them, deleting them, and searching them all keep working. The
 switch governs whether packs reach a **prompt**, not whether they exist.
 
 ## Limits, and why they are there
@@ -124,7 +97,7 @@ mean nothing. The mod detects this — vectors of different lengths cannot be co
 those packs, and says so in the log. The fix is to re-embed the library, not to change the
 switch.
 
-**A pack published without an embedding never takes part** until you embed it. The list
+**A pack stored without an embedding never takes part** until you embed it. The list
 marks these *No embedding*; **Check embeddings** on the chat page fixes them.
 
 **Retrieval failing never stops an answer.** If the embedding call fails — no key, rate
@@ -145,7 +118,7 @@ flipping the switch never costs you an uncached turn.
 | Layer | What it holds |
 |---|---|
 | `api/` | `ModelPreferences` — the two model ids and the switch, loaded together |
-| `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement), `EmbeddingBackfill` (giving packs a vector), `KnowledgeSync` (downloading) |
+| `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement), `EmbeddingBackfill` (giving packs a vector) |
 | `platforms/fabric/` | the toggle on `ModelSettingsScreen` |
 
 ## Related
