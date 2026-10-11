@@ -27,6 +27,8 @@ Every dependency coordinate lives in the Gradle version catalog at
 | Fabric Loader | 0.19.3 |
 | Fabric API | 0.157.0+26.2 |
 | Fabric Loom | 1.17.19 |
+| NeoForge | 26.2.0.90 |
+| ModDevGradle | 2.0.148 |
 | Java | 25 |
 
 Change a platform version there, not in `gradle.properties`.
@@ -44,9 +46,11 @@ and tests against core's source. Pass `-Pcore-build=/path/to/core` for another l
 Without a checkout, Gradle resolves the published `io.github.mcagentsmods:mcagents-core-api` and
 `mcagents-core-common` at the version in `gradle/libs.versions.toml`.
 
-`runClient` does not put core in the development game. Copy core's Fabric jar
-(`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` in the core checkout) into `run/mods/`
-first, or the loader refuses to start chat for the missing `mcagents_core`.
+`runClient` does not put core in the development game. Copy core's jar for the same loader
+(`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` or
+`platforms/neoforge/build/libs/MCAgentsCoreNeoforge-*.jar` in the core checkout) into that
+loader's `run/mods/` first, or the loader refuses to start chat for the missing
+`mcagents_core`.
 
 ## Commands
 
@@ -55,15 +59,17 @@ first, or the loader refuses to start chat for the missing `mcagents_core`.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` |
 | Build one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric:runClient` |
-| Produce the mod jar | `./gradlew :mcagents-chat-fabric:build` |
+| Run the client on Fabric | `./gradlew :mcagents-chat-fabric:runClient` |
+| Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge:runClient` |
+| Produce the mod jars | `./gradlew :mcagents-chat-fabric:build :mcagents-chat-neoforge:build` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
 keeping the logic out of the platform module. Run them before you launch the game.
 
-The mod jar lands in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar`.
-It carries the classes of `api/`, `common/`, `website/` and `platforms/shared/`, merged into
-it rather than nested as separate mods.
+The mod jars land in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar` and
+in `platforms/neoforge/build/libs/` as `MCAgentsChatNeoforge-{version}.jar`. Each carries the
+classes of `api/`, `common/`, `website/` and `platforms/shared/`, merged into it rather than
+nested as separate mods, and nests `sqlite-jdbc` its loader's way.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection.
 

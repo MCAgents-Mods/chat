@@ -26,6 +26,7 @@ api/                 mcagents-chat-api
 common/              mcagents-chat-common
 platforms/shared/    mcagents-chat-shared
 platforms/fabric/    mcagents-chat-fabric
+platforms/neoforge/  mcagents-chat-neoforge
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
@@ -34,7 +35,7 @@ retrieval, and the interface are all implemented. Do not assume a source file ex
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
 
-## The five modules
+## The six modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
@@ -43,6 +44,7 @@ three documents for a long time before any code called `ModelClient.embed`.
 | `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
 | `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.MCAgentsKeyMappings` (builds the key; the loader registers it), `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): registers the key category and key, the end-of-tick and connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): registers the key category and key on `RegisterKeyMappingsEvent`, `ClientTickEvent.Post`, `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
 `mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
@@ -56,16 +58,16 @@ own classpath.
 module names deliberately differ.
 
 The dependency chain is one-way: `api/` ← `common/` ← `website/` ← `platforms/shared/` ←
-`platforms/fabric/`. The
+`platforms/fabric/` and `platforms/neoforge/`. The
 `WebConsole` contract stays in `api/` even though only `website/` implements it — `api/` is
 where contracts go.
 
 `api/`, `common/` and `website/` are plain `java-library` modules, and `platforms/shared/` is
 built with Loom against vanilla Minecraft alone. Their classes are **merged into the mod jar**
-by the `jar` task in `platforms/fabric/build.gradle` rather than nested as Jar-in-Jar mods —
-they are not mods and have no `fabric.mod.json`. Third-party
-runtime libraries go the other way: `sqlite-jdbc` is bundled with Loom's `include` and
-lands at `META-INF/jars/` in the mod jar. It carries native binaries for every platform, so
+by the `jar` task in each loader module's `build.gradle` rather than nested as Jar-in-Jar mods —
+they are not mods and have no manifest of their own. Third-party
+runtime libraries go the other way: `sqlite-jdbc` is nested with Loom's `include` at
+`META-INF/jars/` in the Fabric jar, and with `jarJar` at `META-INF/jarjar/` in the NeoForge jar. It carries native binaries for every platform, so
 it alone is about 12 MB of the built jar.
 
 ## Storage
@@ -193,6 +195,8 @@ names cannot be dereferenced as `project.gitOrg`.
 | Fabric Loader | 0.19.3 |
 | Fabric API | 0.157.0+26.2 |
 | Fabric Loom | 1.17.19 |
+| NeoForge | 26.2.0.90 |
+| ModDevGradle | 2.0.148 |
 | Java | 25 (Minecraft 26.2 requires it) |
 | Gradle | 9.7.0, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
@@ -218,8 +222,8 @@ these.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric:runClient` |
-| Produce the mod jar | `./gradlew :mcagents-chat-fabric:build` — output in `platforms/fabric/build/libs/` |
+| Run the client | `./gradlew :mcagents-chat-fabric:runClient` or `:mcagents-chat-neoforge:runClient` |
+| Produce the mod jars | `./gradlew build` — output in `platforms/fabric/build/libs/` and `platforms/neoforge/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
 its classpath. Put a test there whenever you can; a behaviour that can only be checked by
@@ -238,7 +242,7 @@ If it fails with an out-of-memory error, raise the Gradle daemon heap in your **
 
 ## Generated paths — leave them alone
 
-`build/`, `.gradle/`, `run/`, `platforms/*/build/`, and `platforms/fabric/run/` are
+`build/`, `.gradle/`, `run/`, `platforms/*/build/`, and `platforms/*/run/` are
 generated. Never commit them, never hand-edit them. `gradle/wrapper/gradle-wrapper.jar` is
 the one binary that **is** committed, on purpose — `.gitignore` carries an explicit
 exception for it.
@@ -279,6 +283,9 @@ The `G` key, and nothing else. That is enough, and it is provably enough:
 > startup with a Fabric error screen. **So a game that reaches the main menu has already
 > proven its key mappings registered** — a key that appears to do nothing is never a
 > registration problem.
+>
+> NeoForge gets the same guarantee another way: it offers key registration only on
+> `RegisterKeyMappingsEvent`, which fires during start-up, before `Options` is built.
 
 **The screen therefore opens unconditionally.** It does not require the database, because
 requiring it is what made this ship broken: `open()` returned silently when storage was not

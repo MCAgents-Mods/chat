@@ -1,0 +1,35 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/MCAgents-Mods/chat/issues"
+
+[[mods]]
+modId = "mcagents"
+version = "${version}"
+displayName = "MCAgentsClient"
+authors = "MCAgents"
+displayURL = "https://github.com/MCAgents-Mods/chat"
+description = '''
+A client-side AI assistant for Minecraft. Chat with an LLM agent using your own OpenRouter key, with Knowledge Packs kept on your machine and retrieved by embedding similarity.
+'''
+
+[[dependencies.mcagents]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.2,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.mcagents]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.2,26.3)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.mcagents]]
+modId = "mcagents_core"
+type = "required"
+versionRange = "[${coreVersion},)"
+ordering = "AFTER"
+side = "CLIENT"

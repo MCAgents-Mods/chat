@@ -35,7 +35,7 @@ else it improves.
 
 ## Module boundaries
 
-Five Gradle modules, and the dependency direction is one-way. See
+Six Gradle modules, and the dependency direction is one-way. See
 [`../../wiki/information/architecture.md`](../../wiki/information/architecture.md) for the
 diagram and the reasoning.
 
@@ -46,6 +46,7 @@ diagram and the reasoning.
 | Website | `website/` | `mcagents-chat-website` | `api/`, `common/`, plain JVM libraries. |
 | Shared platform | `platforms/shared/` | `mcagents-chat-shared` | all of the above and vanilla Minecraft — no loader. |
 | Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric. |
+| NeoForge platform | `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge. |
 
 * `api/` holds **contracts only** — interfaces, records, enums, sealed types, abstract
   classes. No implementation logic, no I/O, no third-party dependency. MCAgents core is not
@@ -67,7 +68,8 @@ diagram and the reasoning.
 * `platforms/shared/` holds everything Minecraft-specific that every loader shares — the
   client start-up, screens, the key and the factories — compiled against vanilla Minecraft.
   No loader type may appear in it.
-* A loader module — `platforms/fabric/` — holds only what that loader needs: the entry
+* A loader module — `platforms/fabric/`, `platforms/neoforge/` — holds only what that loader
+  needs: the entry
   point, the key and category registration, the tick and connection events, and the game
   directory it hands to `ChatRuntime.start`.
 * Nothing in `api/`, `common/`, or `website/` imports `net.minecraft.*` or a loader's

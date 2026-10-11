@@ -1,0 +1,102 @@
+// The NeoForge mod jar: the client entry point, which registers the key and the client
+// events and finds the game directory, plus everything platforms/shared and the modules
+// below it carry.
+//
+// This is the only module that may reference NeoForge types. The screens and start-up live
+// in platforms/shared, the logic in common/ — see .agents/rules/repository.md.
+
+plugins {
+    alias(libs.plugins.moddevgradle)
+}
+
+base {
+    archivesName = 'MCAgentsChatNeoforge'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = libs.versions.java.get() as int
+}
+
+repositories {
+    mavenCentral()
+}
+
+neoForge {
+    version = libs.versions.neoforge.get()
+
+    mods {
+        'mcagents' {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    implementation project(':mcagents-chat-api')
+    implementation project(':mcagents-chat-common')
+    implementation project(':mcagents-chat-website')
+    implementation project(':mcagents-chat-shared')
+
+    // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads
+    // it as a library, which is what lets the mod store data on a machine that has never
+    // been online.
+    jarJar libs.sqlite.jdbc
+}
+
+// api/, common/, website/ and platforms/shared are chat's own code, so their classes and
+// resources are merged into the mod jar rather than nested. Third-party runtime libraries
+// are nested with jarJar instead.
+def bundledModules = [
+        ':mcagents-chat-api',
+        ':mcagents-chat-common',
+        ':mcagents-chat-website',
+        ':mcagents-chat-shared'
+]
+
+tasks.named('jar', Jar) {
+    bundledModules.each { path ->
+        from project(path).sourceSets.main.output
+    }
+
+    // The license travels with the jar, renamed so it cannot be mistaken for a dependency's.
+    def projectName = project.name
+    inputs.property 'projectName', projectName
+    from(rootProject.file('LICENSE')) {
+        rename { "${it}_${projectName}" }
+    }
+}
+
+processResources {
+    def modVersion = project.version
+    // The core this build compiled against is the oldest the jar may run with.
+    def coreVersion = libs.versions.mcagents.core.get()
+    inputs.property 'version', modVersion
+    inputs.property 'coreVersion', coreVersion
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand version: modVersion, coreVersion: coreVersion
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // The mod jar alone, with no dependency list: it already carries api, common,
+            // website and shared, nests SQLite, and the loader and mcagents_core supply the rest.
+            artifact tasks.named('jar')
+
+            pom {
+                name = 'MCAgentsChatNeoforge'
+                url = 'https://github.com/MCAgents-Mods/chat'
+            }
+        }
+    }
+}

@@ -1,6 +1,6 @@
 # Architecture
 
-MCAgentsClient is split into five Gradle modules with a one-way dependency chain. The
+MCAgentsClient is split into six Gradle modules with a one-way dependency chain. The
 split exists so that the logic that matters — storage, retrieval, the model client — can be
 compiled, tested, and reasoned about without Minecraft anywhere near it.
 
@@ -15,9 +15,10 @@ website/ |  |               everything a browser sees
    ^     |  |
    |     |  |
 platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the key
-   ^
-   |
-platforms/fabric/           Fabric's entry point, key registration, events, paths
+   ^               ^
+   |               |
+platforms/fabric/  platforms/neoforge/    each loader's entry point, key registration,
+                                          events, paths — one jar per loader
 ```
 
 | Directory | Gradle module | Depends on | Contains |
@@ -27,11 +28,13 @@ platforms/fabric/           Fabric's entry point, key registration, events, path
 | `website/` | `mcagents-chat-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
 | `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the key, the factories that wire `common/` and `website/` together. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: registers the key, the tick and connection events, and passes the game directory to `ChatRuntime`. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-`mcagents-chat-website` to `website/`, `mcagents-chat-shared` to `platforms/shared/`, and
-`mcagents-chat-fabric` to `platforms/fabric/`. A loader module is a few lines on top of
+`mcagents-chat-website` to `website/`, `mcagents-chat-shared` to `platforms/shared/`,
+`mcagents-chat-fabric` to `platforms/fabric/`, and `mcagents-chat-neoforge` to
+`platforms/neoforge/`. A loader module is a few lines on top of
 `platforms/shared/`, so another loader is one more folder under `platforms/`.
 
 `platforms/shared/` is built with Loom for the vanilla game alone. Minecraft 26.x ships
