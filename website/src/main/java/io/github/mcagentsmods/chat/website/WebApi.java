@@ -11,7 +11,6 @@ import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ContentAvailability;
 import io.github.mcagentsmods.chat.api.model.ContentQuery;
-import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
 import io.github.mcagentsmods.chat.api.model.ModelCatalog;
 import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
@@ -22,10 +21,6 @@ import io.github.mcagentsmods.chat.api.wallet.Wallet;
 import io.github.mcagentsmods.chat.api.wallet.WalletBinding;
 import io.github.mcagentsmods.chat.common.agent.EmbeddingBackfill;
 import io.github.mcagentsmods.chat.common.security.TokenCipher;
-import io.github.mcagentsmods.chat.common.service.CentralService;
-import io.github.mcagentsmods.chat.common.service.ContentNotPublishedException;
-import io.github.mcagentsmods.chat.common.service.KnowledgeSync;
-import io.github.mcagentsmods.chat.common.service.ServiceHealth;
 import io.github.mcagentsmods.chat.common.wallet.AccountWallets;
 import io.github.mcagentsmods.chat.common.wallet.WalletChallenges;
 
@@ -75,12 +70,6 @@ final class WebApi {
      */
     private static final Duration ANSWER_TIMEOUT = Duration.ofMinutes(3);
 
-    /** Short: a health check exists to answer quickly or not at all. */
-    private static final Duration SERVICE_TIMEOUT = Duration.ofSeconds(15);
-
-    /** Long: a sync downloads pack bodies one at a time over somebody's home connection. */
-    private static final Duration SYNC_TIMEOUT = Duration.ofMinutes(5);
-
     /**
      * Long: embedding a library is one provider call per pack, sequentially.
      *
@@ -91,8 +80,6 @@ final class WebApi {
 
     private final LocalDatabase database;
     private final Agent agent;
-    private final CentralService service;
-    private final KnowledgeSync sync;
     private final EmbeddingBackfill backfill;
     private final AccountWallets accountWallets;
     private final PersonaStore persona;
@@ -105,13 +92,11 @@ final class WebApi {
      */
     private final WalletChallenges challenges = new WalletChallenges();
 
-    WebApi(LocalDatabase database, Agent agent, CentralService service, KnowledgeSync sync,
-           EmbeddingBackfill backfill, PersonaStore persona) {
+    WebApi(LocalDatabase database, Agent agent, EmbeddingBackfill backfill,
+           PersonaStore persona) {
         this.accountWallets = new AccountWallets(database.wallets());
         this.database = database;
         this.agent = agent;
-        this.service = service;
-        this.sync = sync;
         this.backfill = backfill;
         this.persona = persona;
     }
@@ -149,110 +134,9 @@ final class WebApi {
     }
 
     /**
-     * Whether the central service is awake.
-     *
-     * <p>The page asks this on load and then once a minute while it is asleep. Never an
-     * error: the host idles, so "not reachable" is an ordinary state and the page shows a
-     * banner rather than a failure.
-     */
-    JsonObject serviceHealth() {
-        ServiceHealth health = await(service.health(), SERVICE_TIMEOUT);
-
-        JsonObject body = new JsonObject();
-        body.addProperty("reachable", health.reachable());
-        body.addProperty("version", health.version());
-        body.addProperty("detail", health.detail());
-        body.addProperty("url", service.baseUrl());
-        return body;
-    }
-
-    /**
-     * Brings the packs already on this machine up to their published versions.
-     *
-     * <p>Behind the update button on the chat page, and nothing else. It downloads no pack
-     * the player has not already chosen — taking a new one is done from that pack's page,
-     * where they can see what they are taking.
-     */
-    JsonObject updateKnowledge() {
-        KnowledgeSync.SyncResult result = await(sync.updateStored(), SYNC_TIMEOUT);
-
-        JsonObject body = new JsonObject();
-        body.addProperty("downloaded", result.downloaded());
-        body.addProperty("failed", result.failed());
-        body.addProperty("published", result.published());
-        body.addProperty("changed", result.changedAnything());
-        return body;
-    }
-
-    /**
-     * What a refresh would fetch, without fetching any of it.
-     *
-     * <p>The chat page asks this when it opens. Checking is one request; downloading is
-     * however many packs have changed, over somebody's home connection, while they are in a
-     * game. Keeping them separate is what lets the page say "three updates available"
-     * without having spent anything to find out.
-     */
-    JsonObject knowledgeUpdates() {
-        KnowledgeSync.UpdateStatus status = await(sync.checkForUpdates(), SERVICE_TIMEOUT);
-
-        JsonObject body = new JsonObject();
-        body.addProperty("available", status.available());
-        body.addProperty("missing", status.missingIds().size());
-        body.addProperty("outdated", status.outdatedIds().size());
-        body.addProperty("published", status.published());
-        return body;
-    }
-
-    /**
-     * Downloads one pack by id.
-     *
-     * <p>The button on a pack's own page. It does not check the version first: the player
-     * asked for this pack, and deciding it was already current and doing nothing would look
-     * like a broken button.
-     */
-    JsonObject downloadPack(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Name the pack to download.");
-        }
-        KnowledgeContent stored = await(sync.download(id), SYNC_TIMEOUT);
-
-        JsonObject body = new JsonObject();
-        body.addProperty("id", stored.id());
-        body.addProperty("version", stored.version());
-        body.addProperty("title", stored.title());
-        body.addProperty("hasEmbedding", stored.hasEmbedding());
-        return body;
-    }
-
-    /**
-     * Whether one pack is behind, without downloading it.
-     *
-     * <p>The detail page asks about the pack it is showing. The chat page asks about the
-     * whole library. Neither is a substitute for the other: a reader looking at one pack does
-     * not want a listing of every other one, and a player about to ask a question does not
-     * want to check packs one at a time.
-     */
-    JsonObject packUpdate(String id) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Name the pack to check.");
-        }
-        KnowledgeSync.PackStatus status = await(sync.checkPack(id), SERVICE_TIMEOUT);
-
-        JsonObject body = new JsonObject();
-        body.addProperty("id", status.id());
-        body.addProperty("stored", status.stored());
-        body.addProperty("storedVersion", status.storedVersion());
-        body.addProperty("publishedVersion", status.publishedVersion());
-        body.addProperty("updateAvailable", status.updateAvailable());
-        return body;
-    }
-
-    /**
      * Removes a downloaded pack.
      *
-     * <p>Local only. Deleting here takes the pack off this machine; it does not unpublish
-     * anything, and the pack reappears under "Available to download" the moment the page is
-     * reloaded — which is the honest outcome, because that is exactly what has happened.
+     * <p>Local only: the pack is taken off this machine and nothing else changes.
      *
      * @return whether a pack was removed, so a missing one answers 404 rather than pretending
      */
@@ -523,87 +407,9 @@ final class WebApi {
                 WebJson::summary);
     }
 
-    /**
-     * Packs the service publishes that this machine does not have.
-     *
-     * <p>Kept apart from {@link #knowledge} rather than merged into it. That list is a
-     * window over a local table and pages with an offset; this one comes from the network
-     * and is only as large as the catalog. Interleaving the two would mean paging a union of
-     * two sources with different costs and different failure modes, and the page would stop
-     * working entirely whenever the service was asleep.
-     *
-     * <p>Returned whole, because a catalog is a published list of titles rather than a
-     * player's accumulated library — and because the alternative is holding a cursor into
-     * somebody else's paging.
-     */
-    JsonObject catalog() {
-        java.util.List<io.github.mcagentsmods.chat.api.model.KnowledgeSummary> published =
-                await(service.catalog(), SERVICE_TIMEOUT);
-        Map<String, String> stored = await(database.contents().findStoredVersions());
-
-        JsonArray items = new JsonArray();
-        JsonArray outdated = new JsonArray();
-        for (var summary : published) {
-            String have = stored.get(summary.id());
-            if (have == null) {
-                items.add(WebJson.summary(summary));
-            } else if (!have.equals(summary.version())) {
-                // Named, not just counted. The library list is where a stale pack lives, and
-                // a page that knows one is behind but cannot say which leaves the reader to
-                // open every pack in turn to find it.
-                JsonObject behind = new JsonObject();
-                behind.addProperty("id", summary.id());
-                behind.addProperty("storedVersion", have);
-                behind.addProperty("publishedVersion", summary.version());
-                outdated.add(behind);
-            }
-        }
-
-        JsonObject body = new JsonObject();
-        body.add("items", items);
-        body.addProperty("total", items.size());
-        // Out-of-date packs are reported here but never listed as available: they are
-        // already in the library list, and showing one under both headings is one pack
-        // twice.
-        body.add("outdatedItems", outdated);
-        body.addProperty("outdated", outdated.size());
-        body.addProperty("published", published.size());
-        return body;
-    }
-
-    /**
-     * One pack in full, for the detail page.
-     *
-     * <p>Falls back to the service when the pack is not stored, so a pack the player has not
-     * downloaded still has a page — which is the only place a download button could sensibly
-     * live. The reply says which of the two it came from; the page shows an embedding for one
-     * and a download button for the other.
-     */
+    /** One stored pack in full, for the detail page. */
     Optional<JsonObject> knowledgeById(String id) {
-        Optional<JsonObject> local = await(database.contents().findById(id))
-                .map(WebJson::content);
-        if (local.isPresent()) {
-            local.get().addProperty("stored", true);
-            return local;
-        }
-
-        KnowledgeContent published;
-        try {
-            published = await(service.content(id), SERVICE_TIMEOUT);
-        } catch (ContentNotPublishedException e) {
-            // The service answered and there is no such pack. That is a fact, and 404 is
-            // what it means.
-            return Optional.empty();
-        } catch (RuntimeException e) {
-            // Not stored, and the service could not say. "No such pack" would be a lie —
-            // it may exist perfectly well on a host that is merely asleep — so say what
-            // actually happened instead of guessing.
-            throw new IllegalArgumentException(
-                    "That pack is not downloaded, and the knowledge service is not answering.");
-        }
-        JsonObject body = WebJson.content(published);
-        body.addProperty("stored", false);
-        return Optional.of(body);
+        return await(database.contents().findById(id)).map(WebJson::content);
     }
 
     JsonObject chats(Map<String, String> query) {

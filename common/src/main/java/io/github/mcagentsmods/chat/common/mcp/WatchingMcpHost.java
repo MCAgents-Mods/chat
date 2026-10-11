@@ -46,8 +46,7 @@ import java.util.function.Consumer;
  * own directory, which some of them do constantly.
  *
  * <p><b>Nothing here fails the mod.</b> A server that will not start becomes a
- * {@link McpServerStatus.State#FAILED} row and the rest carry on. The offline-first mandate
- * applies to MCP exactly as it applies to the central service.
+ * {@link McpServerStatus.State#FAILED} row and the rest carry on.
  */
 public final class WatchingMcpHost implements McpHost {
 

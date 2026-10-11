@@ -66,8 +66,8 @@ final class SqliteContentRepository implements ContentRepository {
         String name = displayName.trim();
 
         return worker.submitInTransaction("Storing a content category", connection -> {
-            // The id comes from the central service, so the local row is kept in step with
-            // it rather than being given an identity of its own.
+            // The id is the caller's, so the row keeps it rather than being given an
+            // identity of its own.
             String sql = "INSERT INTO content_categories (id, display_name) VALUES (?, ?) "
                     + "ON CONFLICT(id) DO UPDATE SET "
                     + "display_name = excluded.display_name, updated_at = CURRENT_TIMESTAMP";

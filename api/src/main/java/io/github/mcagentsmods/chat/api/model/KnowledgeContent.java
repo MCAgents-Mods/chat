@@ -4,17 +4,15 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A downloaded Knowledge Pack: the text the agent can draw on, plus the embedding used to
+ * A stored Knowledge Pack: the text the agent can draw on, plus the embedding used to
  * decide whether it is relevant to a given question.
  *
  * <p>A pack is identified by {@code id}, and {@code version} says which revision of it is
- * stored. The central service publishes a new version rather than editing an existing one,
- * so comparing the two is all an update check needs.
+ * stored. A new version replaces the stored one whole rather than editing it in place.
  *
- * <p>Everything here is stored locally. Once downloaded, a pack is usable with no network
- * at all.
+ * <p>Everything here is stored locally, and a pack is usable with no network at all.
  *
- * @param id           the pack's identifier, assigned by the central service
+ * @param id           the pack's identifier
  * @param categoryId   the category it belongs to
  * @param version      the revision stored, e.g. {@code 1.0.2}
  * @param premium      whether it was a paid pack

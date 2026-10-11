@@ -14,8 +14,6 @@ import io.github.mcagentsmods.chat.common.agent.CachingModelClient;
 import io.github.mcagentsmods.chat.common.agent.EmbeddingBackfill;
 import io.github.mcagentsmods.chat.common.agent.RepositoryApiKeySource;
 import io.github.mcagentsmods.chat.common.agent.openrouter.OpenRouterClient;
-import io.github.mcagentsmods.chat.common.service.CentralService;
-import io.github.mcagentsmods.chat.common.service.KnowledgeSync;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,22 +123,17 @@ public final class LocalWebConsole implements WebConsole {
      * @throws WebConsoleException if no loopback port can be opened
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent) {
-        return start(database, agent, new CentralService(new JdkHttpTransport()));
-    }
-
-    /** @param service the central catalog, pointed elsewhere by a test */
-    public static LocalWebConsole start(LocalDatabase database, Agent agent, CentralService service) {
-        return start(database, agent, service, defaultModelClient(database));
+        return start(database, agent, defaultModelClient(database));
     }
 
     /**
      * @param personaStore the player's {@code AGENTS.md}, for a caller that has one but has
      *                     no model client to give — the default one is built, exactly as it
-     *                     is for the overloads above
+     *                     is for the overload above
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent,
-                                        CentralService service, PersonaStore personaStore) {
-        return start(database, agent, service, defaultModelClient(database), personaStore);
+                                        PersonaStore personaStore) {
+        return start(database, agent, defaultModelClient(database), personaStore);
     }
 
     /**
@@ -148,10 +141,10 @@ public final class LocalWebConsole implements WebConsole {
      *                    with it, because that is what {@code agent} is for
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent,
-                                        CentralService service, ModelClient modelClient) {
+                                        ModelClient modelClient) {
         // Without a game directory there is no AGENTS.md to serve. The persona routes say
         // so rather than inventing an empty file to save into.
-        return start(database, agent, service, modelClient, PersonaStore.notConfigured());
+        return start(database, agent, modelClient, PersonaStore.notConfigured());
     }
 
     /**
@@ -162,11 +155,9 @@ public final class LocalWebConsole implements WebConsole {
      *                     player to notice
      */
     public static LocalWebConsole start(LocalDatabase database, Agent agent,
-                                        CentralService service, ModelClient modelClient,
-                                        PersonaStore personaStore) {
+                                        ModelClient modelClient, PersonaStore personaStore) {
         Objects.requireNonNull(database, "database");
         Objects.requireNonNull(agent, "agent");
-        Objects.requireNonNull(service, "service");
         Objects.requireNonNull(modelClient, "modelClient");
         Objects.requireNonNull(personaStore, "personaStore");
 
@@ -191,7 +182,7 @@ public final class LocalWebConsole implements WebConsole {
                 + "/knowledge/?t=" + token);
 
         LocalWebConsole console = new LocalWebConsole(server, workers,
-                new WebApi(database, agent, service, new KnowledgeSync(service, database),
+                new WebApi(database, agent,
                         new EmbeddingBackfill(database, modelClient), personaStore),
                 token, url);
 
@@ -286,18 +277,6 @@ public final class LocalWebConsole implements WebConsole {
             sendJson(exchange, 200, api.revision());
             return;
         }
-        if (path.equals("/api/service/health") && method.equals("GET")) {
-            sendJson(exchange, 200, api.serviceHealth());
-            return;
-        }
-        if (path.equals("/api/service/update") && method.equals("POST")) {
-            sendJson(exchange, 200, api.updateKnowledge());
-            return;
-        }
-        if (path.equals("/api/service/updates") && method.equals("GET")) {
-            sendJson(exchange, 200, api.knowledgeUpdates());
-            return;
-        }
         if (path.equals("/api/embeddings")) {
             if (method.equals("GET")) {
                 sendJson(exchange, 200, api.embeddingStatus());
@@ -307,20 +286,6 @@ public final class LocalWebConsole implements WebConsole {
                 sendJson(exchange, 200, api.embedKnowledge());
                 return;
             }
-        }
-        if (path.startsWith("/api/knowledge/") && path.endsWith("/update")
-                && method.equals("GET")) {
-            String id = path.substring("/api/knowledge/".length(),
-                    path.length() - "/update".length());
-            sendJson(exchange, 200, api.packUpdate(decode(id)));
-            return;
-        }
-        if (path.startsWith("/api/knowledge/") && path.endsWith("/download")
-                && method.equals("POST")) {
-            String id = path.substring("/api/knowledge/".length(),
-                    path.length() - "/download".length());
-            sendJson(exchange, 200, api.downloadPack(decode(id)));
-            return;
         }
         if (path.equals("/api/agent/persona")) {
             if (method.equals("GET")) {
@@ -374,10 +339,6 @@ public final class LocalWebConsole implements WebConsole {
         }
         if (path.equals("/api/knowledge") && method.equals("GET")) {
             sendJson(exchange, 200, api.knowledge(query));
-            return;
-        }
-        if (path.equals("/api/catalog") && method.equals("GET")) {
-            sendJson(exchange, 200, api.catalog());
             return;
         }
         if (path.startsWith("/api/knowledge/") && method.equals("DELETE")) {

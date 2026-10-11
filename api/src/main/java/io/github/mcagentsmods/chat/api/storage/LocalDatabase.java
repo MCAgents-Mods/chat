@@ -5,8 +5,7 @@ package io.github.mcagentsmods.chat.api.storage;
  *
  * <p>It holds everything the mod remembers: chat history, OpenRouter API keys, and
  * downloaded Knowledge Packs. Nothing here needs the network — that is the point. The mod
- * reads and writes this store whether or not the central service or OpenRouter can be
- * reached.
+ * reads and writes this store whether or not OpenRouter can be reached.
  *
  * <h2>Everything is asynchronous</h2>
  *

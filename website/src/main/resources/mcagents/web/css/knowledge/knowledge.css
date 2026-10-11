@@ -37,11 +37,9 @@
  * first. Keeping the list in a fixed box leaves the search box and the chips where the
  * reader left them.
  */
-/* Both pack lists scroll inside their own box: the library above, and what is available to
- * download below it. One recipe, because two boxes on one page that scrolled differently
- * would look like a mistake rather than a decision.
+/* The pack list scrolls inside its own box.
  *
- * --pack-rows is how many rows of cards a box shows before it scrolls. It is a ceiling and
+ * --pack-rows is how many rows of cards the box shows before it scrolls. It is a ceiling and
  * not a target: whichever of the two is smaller wins, so on a short window the box shrinks
  * to what the window has rather than pushing the page into a second scrollbar. */
 .pack-scroller {
@@ -66,17 +64,6 @@
 /* The library is what the page is for, so it gets the taller box. */
 .pack-scroller--library { --pack-rows: 4; }
 
-/* What is available is secondary — it is a shelf to pick from, not the thing being read —
- * and it sits below a list that already scrolls, so it is kept shorter. */
-.pack-scroller--available {
-  --pack-rows: 3;
-  max-height: min(
-    calc(var(--pack-row) * var(--pack-rows)),
-    calc(100vh - var(--header-h) - 26rem)
-  );
-  min-height: 10rem;
-}
-
 .pack-scroller:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
@@ -85,8 +72,7 @@
 @media (max-width: 900px) {
   /* On a short window a fixed box would show three cards and its own scrollbar inside the
    * page's. Below this width the lists go back to flowing with the page. */
-  .pack-scroller,
-  .pack-scroller--available {
+  .pack-scroller {
     max-height: none;
     min-height: 0;
     overflow-y: visible;
@@ -95,23 +81,3 @@
     border: 0;
   }
 }
-
-/* Packs the service publishes that this machine does not have. Below the library rather
-   than inside it: it is a different question ("what could I have?") from the one the
-   scroller answers ("what do I have?"). */
-.available {
-  margin-top: 1.5rem;
-}
-
-.available__title {
-  font-size: 1.05rem;
-  margin: 0;
-  flex: 1;
-}
-
-.available[hidden] { display: none; }
-
-/* The download offer on a pack's own page. */
-.download-note__body { flex: 1; }
-.download-note__text { margin: 0 0 .7rem; line-height: 1.5; }
-.download-note[hidden] { display: none; }

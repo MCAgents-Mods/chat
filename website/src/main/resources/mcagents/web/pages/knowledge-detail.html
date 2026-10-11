@@ -42,33 +42,14 @@
 
       <div class="callout callout--info readonly-note">
         <span class="callout__icon" aria-hidden="true">&#128274;</span>
-        <span>This page is a showcase. Packs are published by version and replaced whole, so
-          nothing here can be edited from the console.</span>
+        <span>This page is a showcase. Packs are replaced whole, so nothing here can be edited
+          from the console.</span>
       </div>
 
-      <!-- Shown only for a pack that is not downloaded. The service is where its text came
-           from; downloading is what puts it in the library the agent can draw on. -->
-      <div class="callout callout--warn download-note" id="download-panel" hidden>
-        <span class="callout__icon" aria-hidden="true">&#8681;</span>
-        <div class="download-note__body">
-          <p class="download-note__text">You do not have this pack. It is being shown from the
-            knowledge service — download it to store it on this machine, where the agent can
-            use it and it keeps working offline.</p>
-          <div class="btn-row">
-            <button class="btn btn--primary" type="button" id="download-pack">Download</button>
-            <span class="sync-note" id="download-note"></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Only for a pack that is stored. Checking an update and removing the copy are both
-           about a pack this machine has; neither means anything for one it does not. -->
-      <section class="panel" id="stored-actions" hidden>
+      <section class="panel" id="stored-actions">
         <h2>This copy</h2>
-        <p class="muted field-note">Both act on your machine only. Nothing here changes what
-          the service publishes.</p>
+        <p class="muted field-note">Acts on your machine only.</p>
         <div class="btn-row">
-          <button class="btn" type="button" id="check-update">Check for update</button>
           <button class="btn btn--danger" type="button" id="delete-pack">Delete</button>
           <span class="sync-note" id="stored-note"></span>
         </div>

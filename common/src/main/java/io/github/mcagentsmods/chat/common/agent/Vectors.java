@@ -10,8 +10,7 @@ import java.util.Optional;
 /**
  * Reading stored embeddings and comparing them.
  *
- * <p>A pack's embedding arrives from the central service as a JSON array of numbers and is
- * stored exactly as published — see {@code KnowledgeContent#embeddedData()}. Nothing
+ * <p>A pack's embedding is a JSON array of numbers, stored exactly as written — see {@code KnowledgeContent#embeddedData()}. Nothing
  * re-encodes it, so this is the one place that knows the format.
  */
 final class Vectors {

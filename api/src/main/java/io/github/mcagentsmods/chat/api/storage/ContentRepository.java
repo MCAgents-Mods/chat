@@ -26,9 +26,9 @@ public interface ContentRepository {
     CompletableFuture<List<ContentCategory>> findAllCategories();
 
     /**
-     * Stores a category under the id the central service gave it, replacing what is there.
+     * Stores a category under the id it is given, replacing what is there.
      *
-     * @param id          the identifier from the central service
+     * @param id          the category's identifier
      * @param displayName what the player sees
      */
     CompletableFuture<ContentCategory> saveCategory(long id, String displayName);
@@ -52,8 +52,7 @@ public interface ContentRepository {
     /**
      * The stored version of every pack, keyed by pack id.
      *
-     * <p>This is what an update check sends to the central service: comparing the stored
-     * version against the published one is the whole protocol.
+     * <p>Comparing a stored version against another is all a version check needs.
      */
     CompletableFuture<Map<String, String>> findStoredVersions();
 

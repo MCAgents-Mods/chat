@@ -11,9 +11,6 @@
 
   var PAGE_SIZE = 20;
 
-  /* Refresh on this page re-reads what is here and what is published. It downloads nothing —
-   * see the button's own comment. */
-
   var list;
   var scroller;
   var sentinel;
@@ -32,11 +29,7 @@
     hasMore: true,
     loading: false,
     /* Bumped whenever the filter changes; a response from an older run is discarded. */
-    run: 0,
-    /* id -> published version, for the stored packs the service has moved past. Filled by
-     * the catalog read; empty until then, and empty whenever the service cannot be asked,
-     * so a pack is never marked stale on a guess. */
-    behind: {}
+    run: 0
   };
 
   function card(item) {
@@ -57,111 +50,10 @@
     } else {
       more.appendChild(M.el('span', 'badge badge--warn', 'No embedding'));
     }
-    /* Only ever from a version the service actually reported. The map is empty until the
-     * catalog has been read and empty again if it could not be, so an unreachable service
-     * shows no badge rather than a wrong one. */
-    if (state.behind[item.id]) {
-      more.appendChild(M.el('span', 'badge badge--sponsor',
-        'v' + state.behind[item.id] + ' published'));
-    }
     more.appendChild(M.el('span', '', M.formatDate(item.updatedAt)));
     node.appendChild(more);
 
     return node;
-  }
-
-  /**
-   * A pack the player does not have yet.
-   *
-   * Same card, one badge different, and it links to the same detail page — which is where
-   * the download button lives, because that is the only page about one pack.
-   */
-  function availableCard(item) {
-    var M = window.MCAgents;
-    var node = document.createElement('a');
-    node.className = 'card';
-    node.href = M.link('knowledge/' + encodeURIComponent(item.id));
-
-    node.appendChild(M.el('div', 'card__title', item.title || item.id));
-    node.appendChild(M.el('p', 'card__desc', item.id));
-
-    var more = M.el('div', 'card__more');
-    more.appendChild(M.el('span', 'badge badge--accent', 'v' + item.version));
-    more.appendChild(M.el('span', 'badge' + (item.premium ? ' badge--sponsor' : ''),
-      item.premium ? 'Premium' : 'Free'));
-    more.appendChild(M.el('span', 'badge badge--warn', 'Not downloaded'));
-    node.appendChild(more);
-
-    return node;
-  }
-
-  /**
-   * Asks the service what it publishes that is not here.
-   *
-   * The section stays on the page whatever the answer is. It used to hide itself when there
-   * was nothing to download, which meant pressing Refresh — the one action guaranteed to
-   * empty it — collapsed the page from two panels to one under the reader's cursor. A panel
-   * that says "nothing here" is information; a panel that vanishes is a page rearranging
-   * itself.
-   *
-   * Failure is reported in the same place rather than thrown at the page: the library above
-   * is the page, and this section is an extra. A service that is asleep should say so here,
-   * not put an error across a view that is working.
-   */
-  async function loadAvailable() {
-    var M = window.MCAgents;
-    var list = document.getElementById('available-list');
-    var count = document.getElementById('available-count');
-
-    try {
-      var payload = await M.api('/catalog');
-
-      /* The same request answers both questions: what is published that is not here, and
-       * which of the packs that *are* here the service has moved past. Asking twice would
-       * be two listings of the same catalog. */
-      var behind = {};
-      (payload.outdatedItems || []).forEach(function (row) {
-        behind[row.id] = row.publishedVersion;
-      });
-      var changed = JSON.stringify(behind) !== JSON.stringify(state.behind);
-      state.behind = behind;
-      if (changed && typeof onBehindChanged === 'function') {
-        onBehindChanged();
-      }
-
-      if (payload.items.length === 0) {
-        count.textContent = '';
-        M.showState(list, payload.published > 0
-          ? 'Everything published is already downloaded.'
-          : 'The service publishes nothing yet.');
-        return;
-      }
-      M.replace(list, payload.items.map(availableCard));
-      count.textContent =
-        payload.items.length + (payload.items.length === 1 ? ' pack' : ' packs');
-    } catch (ignored) {
-      count.textContent = '';
-      /* Forget what was known rather than keep showing it. A badge saying "v2 published"
-       * is a claim about the service, and this is the moment the service stopped
-       * answering. */
-      var hadBadges = Object.keys(state.behind).length > 0;
-      state.behind = {};
-      if (hadBadges && typeof onBehindChanged === 'function') {
-        onBehindChanged();
-      }
-      M.showState(list, 'The knowledge service is not answering, so there is nothing to '
-        + 'show here yet.');
-    }
-  }
-
-  /* Set once the list exists; re-renders the library so the badges match what was just
-   * learned. Declared here rather than inlined so loadAvailable does not need to know what
-   * a library list is. */
-  var onBehindChanged = null;
-
-  /** How many stored packs the service has moved past. */
-  function behindCount() {
-    return Object.keys(state.behind).length;
   }
 
   function describe() {
@@ -215,7 +107,7 @@
       if (page.total === 0) {
         M.showState(list, state.query || state.categoryId
           ? 'No packs match that.'
-          : 'No Knowledge Packs downloaded yet.');
+          : 'No Knowledge Packs stored yet.');
       }
     } catch (error) {
       if (run === state.run && state.offset === 0) {
@@ -316,60 +208,19 @@
     // the same failure the chat sidebar had.
     sentinelVisible = window.MCAgents.onVisible(sentinel, loadMore, scrollRoot());
 
-    // Said before the health check answers, so the panel is never a blank box while the
-    // service is being woken up.
-    M.showState(document.getElementById('available-list'), 'Loading…');
-
-    /* A catalog read can change which cards need a badge, and the cards may already be on
-     * screen — the two lists load independently and the local one is always faster. */
-    onBehindChanged = reset;
-
-    /* The catalog gets its own button. It is the half of this page that depends on the
-     * service, so it is the half a reader will want to try again after the banner clears —
-     * and making them reload the library to do it would re-read a table that had not
-     * changed. */
-    var availableButton = document.getElementById('refresh-available');
-    var availableNote = document.getElementById('available-note');
-    availableButton.addEventListener('click', async function () {
-      availableButton.disabled = true;
-      availableNote.textContent = 'Checking…';
-      availableNote.className = 'sync-note';
-      try {
-        await loadAvailable();
-        availableNote.textContent = '';
-      } catch (error) {
-        availableNote.textContent = error.message;
-        availableNote.className = 'sync-note is-error';
-      } finally {
-        availableButton.disabled = false;
-      }
-    });
-
     var refreshButton = document.getElementById('refresh-knowledge');
     var note = document.getElementById('sync-note');
 
-    /* Re-reads both lists and downloads nothing.
-     *
-     * It used to fetch every pack the service published that this machine did not have,
-     * which is not what "refresh" means anywhere else and is not what a reader wants from a
-     * button next to a search box. Taking a pack is done from that pack's page, one at a
-     * time, where they can see what they are taking. */
+    /* Re-reads the local library: the categories, then the list. Nothing leaves the machine. */
     refreshButton.addEventListener('click', async function () {
       refreshButton.disabled = true;
       note.textContent = 'Reloading…';
       note.className = 'sync-note';
       try {
         await loadCategories();
-        /* The catalog first: it is what says which stored packs are behind, and the list
-         * below has to be rendered knowing that or every card would be drawn twice. */
-        await loadAvailable();
         reset();
-        var stale = behindCount();
-        note.textContent = stale === 0
-          ? 'Reloaded. Every pack you have is the published version.'
-          : 'Reloaded. ' + stale + (stale === 1 ? ' pack has' : ' packs have')
-            + ' a newer version published.';
-        note.className = 'sync-note' + (stale === 0 ? ' is-ok' : '');
+        note.textContent = 'Reloaded.';
+        note.className = 'sync-note is-ok';
       } catch (error) {
         note.textContent = error.message;
         note.className = 'sync-note is-error';
@@ -378,12 +229,6 @@
       }
     });
 
-    /* Reachability changes what the second panel can show, not whether this button works:
-     * reloading the local library needs nothing but the local library. */
-    window.MCAgentsService.onChange(function () {
-      loadAvailable();
-    });
-    window.MCAgentsService.start();
     reset();
     searchBox.focus();
   });

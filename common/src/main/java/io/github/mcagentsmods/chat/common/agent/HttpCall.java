@@ -29,7 +29,7 @@ public record HttpCall(String method, String url, Map<String, String> headers, S
         return new HttpCall("POST", url, headers, body);
     }
 
-    /** A GET — what the central service's reads take. */
+    /** A GET. */
     public static HttpCall get(String url, Map<String, String> headers) {
         return new HttpCall("GET", url, headers, "");
     }
