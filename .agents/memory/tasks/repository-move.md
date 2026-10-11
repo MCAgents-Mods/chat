@@ -61,3 +61,25 @@ tool session, and a model identifier does not belong in a commit either; commits
 neither.
 
 *(each task appends below as it lands)*
+
+### Task 2 — refactor/package-namespace
+
+**Landed.** Every source set moved from `io/github/mcagents/clientfabric` to
+`io/github/mcagentsmods/chat` with `git mv`, so history follows the files, and every
+`package`, `import` and fully qualified reference was rewritten. The Gradle group is
+`io.github.mcagentsmods`, the root project is `chat`, the jar is `mcagents-chat`, and
+`fabric.mod.json` names the new entrypoint class. `gradle.properties` carries
+`git-org=MCAgents-Mods` and `git-repo=chat`; `project-version` is untouched.
+
+**Proven.** `./gradlew build` passes for all four modules, tests included. The built jar holds
+206 entries under `io/github/mcagentsmods/chat/`, none under the old path, and the entrypoint
+class named in `fabric.mod.json` is in it.
+
+**Not proven.** That the mod loads in a running client. The entrypoint string and the class
+agree, which is what a rename can break, but nothing here launched Minecraft.
+
+**One trap.** `CachingModelClient.java` contains a byte that makes grep treat it as binary, so
+`grep -I` skipped it and the first rewrite missed it. The compile caught it. Searches for
+leftover coordinates here need `grep -a`.
+
+**For the next task.** The docs still state the old coordinates; task 3 and task 4 own those.
