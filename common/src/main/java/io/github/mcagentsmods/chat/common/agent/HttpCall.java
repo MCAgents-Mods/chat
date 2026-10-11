@@ -10,10 +10,10 @@ import java.util.Objects;
  * transport, so retry, key rotation, and JSON handling are all exercised without a network
  * or an API key.
  *
- * @param method  HTTP method; {@code GET} carries no body
+ * @param method  HTTP method
  * @param url     absolute endpoint
  * @param headers request headers, including authorization
- * @param body    JSON body, empty for a GET
+ * @param body    JSON body
  */
 public record HttpCall(String method, String url, Map<String, String> headers, String body) {
 
@@ -29,8 +29,4 @@ public record HttpCall(String method, String url, Map<String, String> headers, S
         return new HttpCall("POST", url, headers, body);
     }
 
-    /** A GET. */
-    public static HttpCall get(String url, Map<String, String> headers) {
-        return new HttpCall("GET", url, headers, "");
-    }
 }
