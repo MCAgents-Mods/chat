@@ -15,7 +15,7 @@ not what the design documents describe. The design lives in
 AGENTS.md            entry point for agents
 .claude/CLAUDE.md    one import of AGENTS.md, so Claude Code reads the same file
 README.md            human overview
-LICENSE              MCAgents commercial license, 2026
+LICENSE              MIT license, MCAgents, 2026
 .agents/             this repository's local instruction set, indexes, agent wiki, memory
 wiki/                human documentation and versioned change logs
 settings.gradle      module map and plugin repositories
@@ -163,8 +163,8 @@ What matters before changing any of it:
 `gradle.properties` carries the project's identity and nothing else:
 
 ```
-git-org=MCAgents
-git-repo=client-fabric
+git-org=MCAgents-Mods
+git-repo=chat
 project-version=0.0.0
 ```
 
@@ -183,8 +183,8 @@ names cannot be dereferenced as `project.gitOrg`.
 | Fabric Loom | 1.17.19 |
 | Java | 25 (Minecraft 26.2 requires it) |
 | Gradle | 9.7.0, via the committed wrapper |
-| Group | `io.github.mcagents` |
-| Base package | `io.github.mcagents.clientfabric` |
+| Group | `io.github.mcagentsmods` |
+| Base package | `io.github.mcagentsmods.chat` |
 | Version | `0.0.0` |
 
 Two things about Minecraft 26.x that will waste your time if you assume otherwise:

@@ -13,8 +13,8 @@
 `gradle.properties` holds the project's identity only:
 
 ```properties
-git-org=MCAgents
-git-repo=client-fabric
+git-org=MCAgents-Mods
+git-repo=chat
 project-version=0.0.0
 ```
 

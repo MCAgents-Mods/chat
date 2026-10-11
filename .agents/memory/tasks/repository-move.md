@@ -99,3 +99,21 @@ unchanged — it is the service, not the repository.
 
 **Left for task 4.** The commercial license is still described in
 `.agents/wiki/context/repository-map.md`, which owns that line.
+
+### Task 4 — docs/repository-move
+
+**Landed.** The documents that state the repository's coordinates now state the new ones:
+`AGENTS.md` (the repository name in its opening line), the repository map (the license line,
+the `gradle.properties` block, the group and base package rows), the state file's stack
+line, and the setup page's `gradle.properties` block.
+
+**Left as it was, on purpose.** Task records under `.agents/memory/tasks/` keep
+`MCAgents/client-fabric` — it was true when they were written and the pull requests they cite
+say the same. The `{minecraft_dir}/MCAgents/` paths are player data, not the repository. The
+references to `MCAgents/server-fabric-expressjs` name a different repository, which this move
+did not touch; whether it moved too is the owner's to say. `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY`
+keeps its name, per the decision above.
+
+**Verified.** A search of `AGENTS.md`, `.agents/`, `wiki/`, the README and the build files
+for `client-fabric`, `clientfabric` and `commercial`, outside the historical records and the
+changelog, finds nothing.
