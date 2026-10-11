@@ -25,11 +25,11 @@ bumps after this work lands.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/repository-move-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Namespace and coordinates | Package rename, Gradle group and names, mod entrypoint, properties | `MCAgents-Mods/chat` | `refactor/package-namespace` | every Java source set, `build.gradle`, `settings.gradle`, `platforms/fabric/`, `gradle.properties` | |
-| 3 | License and repository metadata | MIT `LICENSE`, mod metadata, README | `MCAgents-Mods/chat` | `docs/mit-license` | `LICENSE`, `fabric.mod.json`, `README.md` | |
-| 4 | Docs sync | Instructions, both wikis, and state that named the old coordinates | `MCAgents-Mods/chat` | `docs/repository-move` | `AGENTS.md`, `.agents/`, `wiki/environments/` | |
-| 5 | The release | Changelog entry, the `PR` column, and the closing entry | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, this file | |
+| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/repository-move-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #1 |
+| 2 | Namespace and coordinates | Package rename, Gradle group and names, mod entrypoint, properties | `MCAgents-Mods/chat` | `refactor/package-namespace` | every Java source set, `build.gradle`, `settings.gradle`, `platforms/fabric/`, `gradle.properties` | #2 |
+| 3 | License and repository metadata | MIT `LICENSE`, mod metadata, README | `MCAgents-Mods/chat` | `docs/mit-license` | `LICENSE`, `fabric.mod.json`, `README.md` | #3 |
+| 4 | Docs sync | Instructions, both wikis, and state that named the old coordinates | `MCAgents-Mods/chat` | `docs/repository-move` | `AGENTS.md`, `.agents/`, `wiki/environments/` | #4 |
+| 5 | The release | Changelog entry, the `PR` column, and the closing entry | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, this file | #5 |
 
 ## Decisions not to relitigate
 
@@ -148,8 +148,8 @@ own license metadata, description and topics set; those are repository settings,
 ## Closed
 
 Five branches stacked in order — `chore/repository-move-plan`, `refactor/package-namespace`,
-`docs/mit-license`, `docs/repository-move`, `release/0.0.0` — each from the one before. No pull
-requests are open, so the `PR` column is empty; fill it when they are opened.
+`docs/mit-license`, `docs/repository-move`, `release/0.0.0` — each from the one before. Opened as
+pull requests #1 to #5 (the release commit rides in #5) in one chain of 13 that merges in task order, rebasing the remaining branches onto `master` after each merge.
 
 `release/0.0.0` was later moved forward to the tip of the stack, so it carries this work too;
 see [`service-leftovers.md`](service-leftovers.md).

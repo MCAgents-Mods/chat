@@ -25,10 +25,10 @@ before it can hold a pack). No version bump.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/service-leftovers-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Ignore plans | `.agents/plans/` in `.gitignore`, verified with git itself | `MCAgents-Mods/chat` | `chore/ignore-plans` | `.gitignore` | |
-| 3 | Remove the leftovers | The unused GET path and `findStoredVersions`, with their tests and the document naming it | `MCAgents-Mods/chat` | `refactor/service-leftovers` | `common/agent`, `api/storage`, `common/storage`, tests, `.agents/wiki/context/` | |
-| 4 | The release | Closing entries and the changelog, and `release/0.0.0` moved to the tip | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, the three records | |
+| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/service-leftovers-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #8 |
+| 2 | Ignore plans | `.agents/plans/` in `.gitignore`, verified with git itself | `MCAgents-Mods/chat` | `chore/ignore-plans` | `.gitignore` | #9 |
+| 3 | Remove the leftovers | The unused GET path and `findStoredVersions`, with their tests and the document naming it | `MCAgents-Mods/chat` | `refactor/service-leftovers` | `common/agent`, `api/storage`, `common/storage`, tests, `.agents/wiki/context/` | #10 |
+| 4 | The release | Closing entries and the changelog, and `release/0.0.0` moved to the tip | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, the three records | #11 |
 
 ## Decisions not to relitigate
 
@@ -90,5 +90,5 @@ records.
 ## Closed
 
 Four branches in order — `chore/service-leftovers-plan`, `chore/ignore-plans`,
-`refactor/service-leftovers`, `release/0.0.0` — stacked on `docs/central-service-removal`. Not
-pushed, and no pull requests are open, so the `PR` column is empty.
+`refactor/service-leftovers`, `release/0.0.0` — stacked on `docs/central-service-removal`. Opened
+as pull requests #8 to #11 (the release commit rides in #11) in one chain of 13 that merges in task order, rebasing the remaining branches onto `master` after each merge.
