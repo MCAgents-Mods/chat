@@ -1,6 +1,6 @@
 ---
 name: memory-task-repository-move
-status: open
+status: done
 description: Moving the repository to MCAgents-Mods/chat — the new namespace, the MIT license, what was deliberately left alone, and the plan.
 ---
 
@@ -117,3 +117,36 @@ keeps its name, per the decision above.
 **Verified.** A search of `AGENTS.md`, `.agents/`, `wiki/`, the README and the build files
 for `client-fabric`, `clientfabric` and `commercial`, outside the historical records and the
 changelog, finds nothing.
+
+### Task 5 — release/0.0.0
+
+**Recorded in the `0.0.0` changelog, with no version bump.** `0.0.0` has not shipped, so its log
+describes what the first release contains: the license bullet now says MIT rather than the
+commercial agreement, the group and base package note carries the new names, and a new bullet
+records the repository's home. The owner bumps `project-version` after this work; nothing here
+touches it, `logs-index.md`, or a version directory.
+
+## What is proven, and what is not
+
+**Proven.** `./gradlew build` passes on the final branch: all four modules compile, every test
+passes, and the jar is `mcagents-chat-0.0.0.jar` with the entrypoint class at its new path and
+nothing under the old one. `fabric.mod.json` parses and declares `MIT`. `LICENSE` is the
+supplied text. No file outside the historical records and the changelog's account of the move
+still says `client-fabric`, `clientfabric` or `commercial`.
+
+**Not proven.** That the mod loads in a running Minecraft client — the entrypoint string and
+class agree, but no client was launched. That `https://github.com/MCAgents-Mods/chat` has its
+own license metadata, description and topics set; those are repository settings, not files.
+
+## Open questions for the owner
+
+* `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` still carries the old repository name. Renaming it
+  is cheap now, at `0.0.0`, and costs players their stored keys once anyone has set the old one.
+* `MCAgents/server-fabric-expressjs` is named in four documents as the central service's
+  repository. Whether it moved too is not known here.
+
+## Closed
+
+Five branches stacked in order — `chore/repository-move-plan`, `refactor/package-namespace`,
+`docs/mit-license`, `docs/repository-move`, `release/0.0.0` — each from the one before. No pull
+requests are open, so the `PR` column is empty; fill it when they are opened.

@@ -147,9 +147,12 @@ project is developed under.
   `.agents/memory/tasks/agents-setup.md`.
 * **Human documentation.** `wiki/information/overview.md`,
   `wiki/information/architecture.md`, and `wiki/environments/setup.md`.
-* **License.** `LICENSE` — the MCAgents commercial license, copyright 2026 MCAgents.
-  Proprietary; three categories of authorized licensee; publisher-verification warning for
-  third-party distribution platforms.
+* **License.** `LICENSE` — the MIT license, copyright 2026 MCAgents, declared as `MIT` in
+  `fabric.mod.json` and summarized in the README. The jar carries it.
+* **Repository home.** The project lives at `MCAgents-Mods/chat` on GitHub. `gradle.properties`
+  names it (`git-org=MCAgents-Mods`, `git-repo=chat`), `fabric.mod.json` links its sources and
+  issues, and the Gradle root project is `chat` and the jar `mcagents-chat`. The README no
+  longer names an author.
 * **README.** Rewritten as an overview pointing at the wiki.
 * **Server context.** The agent is told where the player is playing: the address of the
   server they are connected to, or exactly `Player is playing in single player.`
@@ -353,7 +356,8 @@ project is developed under.
 
 ## Notes
 
-* Group `io.github.mcagents`, base package `io.github.mcagents.clientfabric`.
+* Group `io.github.mcagentsmods`, base package `io.github.mcagentsmods.chat`. The sub-packages
+  `api`, `common`, `website` and `fabric` are unchanged.
 * Minecraft 26.x publishes no Yarn mappings and no intermediary; Fabric Loom uses Mojang's
   official mappings and **no `remapJar` task runs** — `jar` produces the final artifact.
 * Dependency scopes, measured rather than assumed. In Loom, `implementation` bundles
