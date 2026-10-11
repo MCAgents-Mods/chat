@@ -37,12 +37,12 @@ class PackRoutesTest {
     Path gameDirectory;
 
     private LocalDatabase database;
-    private LocalWebConsole console;
+    private ConsoleUnderTest console;
 
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
-        console = LocalWebConsole.start(database,
+        console = ConsoleUnderTest.start(database,
                 (sessionId, prompt) -> CompletableFuture.completedFuture("answer"));
     }
 
@@ -56,7 +56,7 @@ class PackRoutesTest {
     void showsAStoredPackInFull() {
         store("have-it", "1.0.0");
 
-        JsonObject body = json("/api/knowledge/have-it");
+        JsonObject body = json("/api/chat/knowledge/have-it");
 
         assertEquals("have-it", body.get("id").getAsString());
         assertEquals("1.0.0", body.get("version").getAsString());
@@ -65,7 +65,7 @@ class PackRoutesTest {
     @Test
     void answersNotFoundForAPackThatIsNotStored() {
         HttpResponse<String> response = send(HttpRequest.newBuilder()
-                .uri(URI.create(base() + "/api/knowledge/unknown"))
+                .uri(URI.create(base() + "/api/chat/knowledge/unknown"))
                 .header("X-MCAgents-Token", token()));
 
         assertEquals(404, response.statusCode());
@@ -76,7 +76,7 @@ class PackRoutesTest {
         store("unwanted", "1.0.0");
 
         HttpResponse<String> response = send(HttpRequest.newBuilder()
-                .uri(URI.create(base() + "/api/knowledge/unwanted"))
+                .uri(URI.create(base() + "/api/chat/knowledge/unwanted"))
                 .header("X-MCAgents-Token", token())
                 .DELETE());
 
@@ -87,7 +87,7 @@ class PackRoutesTest {
     @Test
     void reportsAPackThatCannotBeDeletedBecauseItIsNotThere() {
         HttpResponse<String> response = send(HttpRequest.newBuilder()
-                .uri(URI.create(base() + "/api/knowledge/never-had-it"))
+                .uri(URI.create(base() + "/api/chat/knowledge/never-had-it"))
                 .header("X-MCAgents-Token", token())
                 .DELETE());
 
@@ -96,8 +96,8 @@ class PackRoutesTest {
 
     @Test
     void hasNoRouteForTheRemovedCatalogOrDownloads() {
-        for (String path : new String[] {"/api/catalog", "/api/service/health",
-                "/api/service/updates"}) {
+        for (String path : new String[] {"/api/chat/catalog", "/api/chat/service/health",
+                "/api/chat/service/updates"}) {
             assertEquals(404, send(HttpRequest.newBuilder()
                     .uri(URI.create(base() + path))
                     .header("X-MCAgents-Token", token())).statusCode(), path);

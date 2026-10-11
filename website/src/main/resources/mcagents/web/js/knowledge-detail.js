@@ -8,12 +8,12 @@
 (function () {
   'use strict';
 
-  /** The id is the last path segment: /knowledge/<id>. */
+  /** The id is the last path segment: /chat/knowledge/<id>. */
   function packId() {
     var parts = window.location.pathname.split('/').filter(function (part) {
       return part.length > 0;
     });
-    return parts.length > 1 ? decodeURIComponent(parts[parts.length - 1]) : '';
+    return parts.length > 2 ? decodeURIComponent(parts[parts.length - 1]) : '';
   }
 
   function row(term, value) {

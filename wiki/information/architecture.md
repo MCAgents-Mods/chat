@@ -45,9 +45,11 @@ agent, syncing knowledge, and filing wallets, so the console depends on those
 implementations. Nothing in `common/` may depend back on it, and the day something wants to
 is the day that logic belongs in `common/` instead.
 
-**`WebConsole` stays in `api/`** while `LocalWebConsole` lives in `website/`. A contract
-that follows its implementation out of the contracts module is a rule that has quietly
-stopped applying.
+**The server is MCAgents core's.** `website/` holds `ChatWebModule`, which core's
+`CoreWebRegistry` serves under `/chat/`, `/assets/chat/` and `/api/chat/` beside every other
+mod's pages. The port, the token, the `Host` check, the content security policy and the page
+shell — header, footer, `main.css`, `layout.css`, `components.css`, `site.js` — are core's,
+and chat's pages load the shell from `/assets/core/`.
 
 `platforms/fabric` merges all three lower modules into the mod jar rather than nesting them
 as separate Fabric mods, so the split is a build-time and reading-time boundary; the shipped

@@ -48,12 +48,12 @@ class WebConsolePagesTest {
     Path gameDirectory;
 
     private LocalDatabase database;
-    private LocalWebConsole console;
+    private ConsoleUnderTest console;
 
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
-        console = LocalWebConsole.start(database,
+        console = ConsoleUnderTest.start(database,
                 (sessionId, prompt) -> CompletableFuture.completedFuture("ok"));
     }
 
@@ -69,20 +69,20 @@ class WebConsolePagesTest {
 
     @Test
     void servesEveryPage() {
-        assertEquals(200, statusOf(url("/knowledge/")));
-        assertEquals(200, statusOf(url("/chat/")));
+        assertEquals(200, statusOf(url("/chat/knowledge/")));
+        assertEquals(200, statusOf(url("/chat/chat/")));
         // Any path under /knowledge/ is a pack id; the detail page reads it from the
         // address bar rather than being handed it by the server.
-        assertEquals(200, statusOf(url("/knowledge/some-pack-id")));
-        assertEquals(200, statusOf(url("/keys/")));
-        assertEquals(200, statusOf(url("/model/")));
-        assertEquals(200, statusOf(url("/wallets/")));
+        assertEquals(200, statusOf(url("/chat/knowledge/some-pack-id")));
+        assertEquals(200, statusOf(url("/chat/keys/")));
+        assertEquals(200, statusOf(url("/chat/model/")));
+        assertEquals(200, statusOf(url("/chat/wallets/")));
     }
 
     @Test
     void everyAssetEachPageReferencesActuallyExists() {
-        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
-                "/keys/", "/model/", "/wallets/")) {
+        for (String page : List.of("/chat/knowledge/", "/chat/chat/", "/chat/knowledge/any-pack",
+                "/chat/keys/", "/chat/model/", "/chat/wallets/")) {
             String markup = body(url(page));
             Matcher matcher = ASSET_REFERENCE.matcher(markup);
             int checked = 0;
@@ -106,34 +106,34 @@ class WebConsolePagesTest {
     void servesStylesheetsAndScriptsWithoutATokenBecauseATagCannotCarryOne() {
         // A <link> in a static page has no query string. These files ship in the jar, are
         // the same for every player, and carry no data of theirs.
-        assertEquals(200, statusOf(base() + "/assets/css/main.css"));
-        assertEquals(200, statusOf(base() + "/assets/js/site.js"));
-        assertEquals(200, statusOf(base() + "/assets/partials/header.html"));
+        assertEquals(200, statusOf(base() + "/assets/core/css/main.css"));
+        assertEquals(200, statusOf(base() + "/assets/core/js/site.js"));
+        assertEquals(200, statusOf(base() + "/assets/core/partials/header.html"));
     }
 
     @Test
     void stillGuardsThePagesAndTheDataBehindThem() {
         // The exemption is for assets only. Anything that reads the database, and every
         // page that would then ask for it, stays behind the token.
-        assertEquals(403, statusOf(base() + "/knowledge/"));
-        assertEquals(403, statusOf(base() + "/chat/"));
-        assertEquals(403, statusOf(base() + "/api/chats"));
-        assertEquals(403, statusOf(base() + "/api/knowledge"));
+        assertEquals(403, statusOf(base() + "/chat/knowledge/"));
+        assertEquals(403, statusOf(base() + "/chat/chat/"));
+        assertEquals(403, statusOf(base() + "/api/chat/chats"));
+        assertEquals(403, statusOf(base() + "/api/chat/knowledge"));
     }
 
     @Test
     void servesPagesThatFetchNothingFromOffTheMachine() {
         // The design system's hard rule. A page that reaches for a CDN renders unstyled on
         // the machine that needed it most.
-        for (String page : List.of("/knowledge/", "/chat/", "/knowledge/any-pack",
-                "/keys/", "/model/", "/wallets/")) {
+        for (String page : List.of("/chat/knowledge/", "/chat/chat/", "/chat/knowledge/any-pack",
+                "/chat/keys/", "/chat/model/", "/chat/wallets/")) {
             String markup = body(url(page));
             assertFalse(markup.contains("http://") || markup.contains("https://"),
                     page + " must not reference anything off this machine");
         }
-        for (String asset : List.of("/assets/css/main.css", "/assets/js/site.js",
-                "/assets/js/chat.js", "/assets/js/knowledge.js", "/assets/js/keys.js",
-                "/assets/js/model.js", "/assets/css/shared/components.css")) {
+        for (String asset : List.of("/assets/core/css/main.css", "/assets/core/js/site.js",
+                "/assets/chat/js/chat.js", "/assets/chat/js/knowledge.js", "/assets/chat/js/keys.js",
+                "/assets/chat/js/model.js", "/assets/core/css/components.css")) {
             String source = body(base() + asset);
             assertFalse(source.contains("https://") || source.contains("cdn."),
                     asset + " must not fetch anything off this machine");
@@ -142,7 +142,7 @@ class WebConsolePagesTest {
 
     @Test
     void asksForAKeysPlatformWithASelectorThatStillTakesAnythingTyped() {
-        String markup = body(url("/keys/"));
+        String markup = body(url("/chat/keys/"));
 
         assertTrue(markup.contains("<select class=\"field field--platform\" id=\"key-platform\">"),
                 "the platform is picked from a list, not spelled from memory");
@@ -156,7 +156,7 @@ class WebConsolePagesTest {
 
     @Test
     void asksWhoAnswersOnTheChatPageItself() {
-        String markup = body(url("/chat/"));
+        String markup = body(url("/chat/chat/"));
 
         assertTrue(markup.contains("id=\"chat-provider\""),
                 "the provider that answers is chosen beside the question, not only on /model/");
@@ -172,7 +172,7 @@ class WebConsolePagesTest {
         // out of a file nobody escapes.
         await(database.chat().createSession("A conversation title"));
 
-        assertFalse(body(url("/chat/")).contains("A conversation title"));
+        assertFalse(body(url("/chat/chat/")).contains("A conversation title"));
     }
 
     // -------------------------------------------------------------- helpers

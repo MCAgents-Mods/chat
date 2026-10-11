@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  The chat page. Served at /chat/.
+  The chat page. Served at /chat/chat/.
 
   Writes as well as reads: a question asked here goes to the same store and the same agent
   the in-game screen uses. The page polls a revision counter so a message typed in Minecraft
@@ -16,16 +16,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Chat · MCAgents Console</title>
-  <script>
-    window.SITE_ROOT = '../';
-    window.PAGE_SECTION = 'chat';
-  </script>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/shared/layout.css">
-  <link rel="stylesheet" href="../assets/css/shared/components.css">
-  <link rel="stylesheet" href="../assets/css/chat/chat.css">
+  <link rel="stylesheet" href="/assets/core/css/main.css">
+  <link rel="stylesheet" href="/assets/core/css/layout.css">
+  <link rel="stylesheet" href="/assets/core/css/components.css">
+  <link rel="stylesheet" href="/assets/chat/css/chat/chat.css">
 </head>
-<body>
+<body data-module="chat" data-section="chat">
 <div id="site-header"></div>
 
 <main>
@@ -87,7 +83,7 @@
 </main>
 
 <div id="site-footer"></div>
-<script src="../assets/js/site.js"></script>
-<script src="../assets/js/chat.js"></script>
+<script src="/assets/core/js/site.js"></script>
+<script src="/assets/chat/js/chat.js"></script>
 </body>
 </html>

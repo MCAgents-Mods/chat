@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Wallets. Served at /wallets/.
+  Wallets. Served at /chat/wallets/.
 
   One panel per account, because the account is the boundary: a wallet belongs to exactly
   one, every button on a panel names its own account, and the mod checks that rather than
@@ -13,16 +13,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Wallets · MCAgents Console</title>
-  <script>
-    window.SITE_ROOT = '../';
-    window.PAGE_SECTION = 'wallets';
-  </script>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/shared/layout.css">
-  <link rel="stylesheet" href="../assets/css/shared/components.css">
-  <link rel="stylesheet" href="../assets/css/wallets/wallets.css">
+  <link rel="stylesheet" href="/assets/core/css/main.css">
+  <link rel="stylesheet" href="/assets/core/css/layout.css">
+  <link rel="stylesheet" href="/assets/core/css/components.css">
+  <link rel="stylesheet" href="/assets/chat/css/wallets/wallets.css">
 </head>
-<body>
+<body data-module="chat" data-section="wallets">
 <div id="site-header"></div>
 
 <main>
@@ -56,7 +52,7 @@
 </main>
 
 <div id="site-footer"></div>
-<script src="../assets/js/site.js"></script>
-<script src="../assets/js/wallets.js"></script>
+<script src="/assets/core/js/site.js"></script>
+<script src="/assets/chat/js/wallets.js"></script>
 </body>
 </html>

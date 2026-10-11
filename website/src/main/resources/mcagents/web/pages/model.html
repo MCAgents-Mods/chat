@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<!-- Model selection. Served at /model/. Static; the page fetches what it shows. -->
+<!-- Model selection. Served at /chat/model/. Static; the page fetches what it shows. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Models · MCAgents Console</title>
-  <script>
-    window.SITE_ROOT = '../';
-    window.PAGE_SECTION = 'model';
-  </script>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/shared/layout.css">
-  <link rel="stylesheet" href="../assets/css/shared/components.css">
-  <link rel="stylesheet" href="../assets/css/model/model.css">
+  <link rel="stylesheet" href="/assets/core/css/main.css">
+  <link rel="stylesheet" href="/assets/core/css/layout.css">
+  <link rel="stylesheet" href="/assets/core/css/components.css">
+  <link rel="stylesheet" href="/assets/chat/css/model/model.css">
 </head>
-<body>
+<body data-module="chat" data-section="model">
 <div id="site-header"></div>
 
 <main>
@@ -75,7 +71,7 @@
 </main>
 
 <div id="site-footer"></div>
-<script src="../assets/js/site.js"></script>
-<script src="../assets/js/model.js"></script>
+<script src="/assets/core/js/site.js"></script>
+<script src="/assets/chat/js/model.js"></script>
 </body>
 </html>

@@ -190,16 +190,19 @@ the confirming button: the dialog opens under wherever the reader was already cl
 
 ## Runtime include system
 
-Header and footer are injected at runtime so navigation lives in one place.
+Header and footer are injected at runtime so navigation lives in one place. **All of it is
+MCAgents core's**: core serves the shell for every mod's pages, and chat ships none of it.
 
-* **Partials** — `partials/header.html`, `partials/footer.html`. Internal links inside them
-  use a `{{ROOT}}` token.
-* **Loader** — `js/site.js` reads two globals the page sets in `<head>`:
-  `window.SITE_ROOT` (relative path back to the root, `""`, `"../"`, `"../../"`) and
-  `window.PAGE_SECTION` (for active-nav highlighting). It fetches the partials, replaces
-  `{{ROOT}}`, wires the mobile menu and the active link, injects a favicon, and stamps the
-  footer year.
+* **Partials** — `/assets/core/partials/header.html` and `footer.html`. The header's links are
+  built from every registered mod's `navigation()`, as text, never as markup.
+* **Loader** — `/assets/core/js/site.js`, loaded at the end of `<body>`. A page names itself
+  on `<body>`: `data-module="chat"` (its mod, which is also its URL prefix) and
+  `data-section` (which navigation link to mark active). There are no globals to set and no
+  inline script: the console's content security policy runs none.
 * **Mount points** — `<div id="site-header"></div>` and `<div id="site-footer"></div>`.
+* **`window.MCAgents`** — `api('/knowledge')` calls `/api/chat/knowledge` with the token;
+  `link('chat/')` is `/chat/chat/` with the token. Core's `wiki/guides/web-pages.md` lists
+  the rest.
 
 It uses `fetch()`, so pages only work when served over HTTP. Opening one from the filesystem
 shows unstyled chrome — that is expected, not a bug to route around.
@@ -207,24 +210,23 @@ shows unstyled chrome — that is expected, not a bug to route around.
 ## File organisation
 
 ```
-css/
-  main.css              :root tokens and base element styles
-  shared/
-    layout.css          header, nav, footer, breadcrumbs
-    components.css      cards, accordions, tables, badges, buttons, callouts
-  <section>/
-    <section>.css       page-specific layout only
+core:  /assets/core/css/main.css        :root tokens and base element styles
+       /assets/core/css/layout.css      header, nav, footer, breadcrumbs
+       /assets/core/css/components.css  cards, accordions, tables, badges, buttons, callouts
+chat:  /assets/chat/css/<section>/<section>.css   page-specific layout only
+       /assets/chat/js/<page>.js
 ```
 
-A page links them in order: `main.css` → `shared/layout.css` → `shared/components.css` →
-`<section>/<section>.css`.
+A page links them in order: `main.css` → `layout.css` → `components.css` →
+`<section>/<section>.css`, every one by its absolute `/assets/…` path.
 
-In this repository these live under `website/src/main/resources/mcagents/web/` and are
-served from the jar. Adding a file there means it ships; the resource path is the URL path.
+Chat's own files live under `website/src/main/resources/mcagents/web/` and are served from
+the jar at `/assets/chat/…`; the resource path below that root is the URL path. A change to
+the shared shell or the tokens is made in core.
 
 ## Rebranding
 
-Edit **tokens only** in `main.css` — palette, accent, radius, fonts — and every component
+Edit **tokens only** in core's `main.css` — palette, accent, radius, fonts — and every component
 follows. To move off silver, adjust `--silver-*`, `--accent*`, and the body background
 gradient, and leave the `--glass-*`, shadow, and geometry tokens alone so the feel survives.
 

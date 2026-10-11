@@ -49,12 +49,12 @@ class WalletRoutesTest {
     Path gameDirectory;
 
     private LocalDatabase database;
-    private LocalWebConsole console;
+    private ConsoleUnderTest console;
 
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
-        console = LocalWebConsole.start(database,
+        console = ConsoleUnderTest.start(database,
                 (sessionId, prompt) -> CompletableFuture.completedFuture("answer"));
     }
 
@@ -72,7 +72,7 @@ class WalletRoutesTest {
         await(database.wallets().createWallet(MINE, "Trading"));
         await(database.wallets().createWallet(THEIRS, "Theirs"));
 
-        JsonObject body = json("/api/wallets");
+        JsonObject body = json("/api/chat/wallets");
 
         assertEquals(2, body.get("accountCount").getAsInt());
         assertEquals(3, body.get("total").getAsInt());
@@ -88,28 +88,28 @@ class WalletRoutesTest {
     void hasNoAccountUntilAWalletNamesOne() {
         // Accounts have no table: one exists exactly as long as a wallet names it, which is
         // what stops a player collecting empty accounts they then have to tidy up.
-        assertEquals(0, json("/api/wallets").get("accountCount").getAsInt());
+        assertEquals(0, json("/api/chat/wallets").get("accountCount").getAsInt());
 
-        assertEquals(201, post("/api/wallets", "{\"accountId\":\"" + MINE + "\"}").statusCode());
+        assertEquals(201, post("/api/chat/wallets", "{\"accountId\":\"" + MINE + "\"}").statusCode());
 
-        assertEquals(1, json("/api/wallets").get("accountCount").getAsInt());
+        assertEquals(1, json("/api/chat/wallets").get("accountCount").getAsInt());
     }
 
     @Test
     void refusesAWalletWithNoAccountToBelongTo() {
-        assertEquals(400, post("/api/wallets", "{\"accountId\":\"  \"}").statusCode());
-        assertEquals(0, json("/api/wallets").get("accountCount").getAsInt());
+        assertEquals(400, post("/api/chat/wallets", "{\"accountId\":\"  \"}").statusCode());
+        assertEquals(0, json("/api/chat/wallets").get("accountCount").getAsInt());
     }
 
     @Test
     void provesAnAddressWithoutAnySecondServer() {
         // The whole browser half of the handshake, over the console's own routes.
-        JsonObject challenge = json("/api/wallets/challenge?accountId=" + encode(MINE)
+        JsonObject challenge = json("/api/chat/wallets/challenge?accountId=" + encode(MINE)
                 + "&address=" + encode(address()));
         assertTrue(challenge.get("message").getAsString().contains("Account: " + MINE));
         assertTrue(challenge.get("message").getAsString().contains("Address: " + address()));
 
-        JsonObject result = json(post("/api/wallets/verify", verifyBody(
+        JsonObject result = json(post("/api/chat/wallets/verify", verifyBody(
                 MINE, challenge.get("nonce").getAsString(), address(), sign(challenge), "0x1")));
 
         assertEquals(address(), result.get("address").getAsString());
@@ -122,10 +122,10 @@ class WalletRoutesTest {
 
     @Test
     void refusesASignatureThatDoesNotMatchTheAddressItArrivedWith() {
-        JsonObject challenge = json("/api/wallets/challenge?accountId=" + encode(MINE)
+        JsonObject challenge = json("/api/chat/wallets/challenge?accountId=" + encode(MINE)
                 + "&address=" + encode(address()));
 
-        HttpResponse<String> response = post("/api/wallets/verify", verifyBody(MINE,
+        HttpResponse<String> response = post("/api/chat/wallets/verify", verifyBody(MINE,
                 challenge.get("nonce").getAsString(),
                 "0x0000000000000000000000000000000000000001", sign(challenge), "0x1"));
 
@@ -135,32 +135,32 @@ class WalletRoutesTest {
 
     @Test
     void spendsANonceOnTheFirstAnswerToIt() {
-        JsonObject challenge = json("/api/wallets/challenge?accountId=" + encode(MINE)
+        JsonObject challenge = json("/api/chat/wallets/challenge?accountId=" + encode(MINE)
                 + "&address=" + encode(address()));
         String body = verifyBody(MINE, challenge.get("nonce").getAsString(),
                 address(), sign(challenge), "0x1");
 
-        assertEquals(200, post("/api/wallets/verify", body).statusCode());
-        assertEquals(400, post("/api/wallets/verify", body).statusCode(),
+        assertEquals(200, post("/api/chat/wallets/verify", body).statusCode());
+        assertEquals(400, post("/api/chat/wallets/verify", body).statusCode(),
                 "a signature captured in flight must not be worth a second wallet");
     }
 
     @Test
     void refusesAChallengeThatNamesNoAddressOrNoAccount() {
-        assertEquals(400, get("/api/wallets/challenge?accountId=" + encode(MINE)).statusCode());
-        assertEquals(400, get("/api/wallets/challenge?address=" + encode(address())).statusCode());
+        assertEquals(400, get("/api/chat/wallets/challenge?accountId=" + encode(MINE)).statusCode());
+        assertEquals(400, get("/api/chat/wallets/challenge?address=" + encode(address())).statusCode());
     }
 
     @Test
     void renamesAndDeletesAWalletInTheAccountThatNamesIt() {
         Wallet mine = await(database.wallets().createWallet(MINE, "Main"));
 
-        assertEquals(200, put("/api/wallets/" + mine.id(),
+        assertEquals(200, put("/api/chat/wallets/" + mine.id(),
                 "{\"accountId\":\"" + MINE + "\",\"label\":\"Renamed\"}").statusCode());
         assertEquals("Renamed",
                 await(database.wallets().findWalletById(mine.id())).orElseThrow().label());
 
-        assertEquals(200, delete("/api/wallets/" + mine.id() + "?accountId=" + encode(MINE))
+        assertEquals(200, delete("/api/chat/wallets/" + mine.id() + "?accountId=" + encode(MINE))
                 .statusCode());
         assertTrue(await(database.wallets().findWalletById(mine.id())).isEmpty());
     }
@@ -172,11 +172,11 @@ class WalletRoutesTest {
         // there is not.
         Wallet theirs = await(database.wallets().createWallet(THEIRS, "Theirs"));
 
-        assertEquals(404, put("/api/wallets/" + theirs.id(),
+        assertEquals(404, put("/api/chat/wallets/" + theirs.id(),
                 "{\"accountId\":\"" + MINE + "\",\"label\":\"Mine now\"}").statusCode());
-        assertEquals(404, delete("/api/wallets/" + theirs.id() + "?accountId=" + encode(MINE))
+        assertEquals(404, delete("/api/chat/wallets/" + theirs.id() + "?accountId=" + encode(MINE))
                 .statusCode());
-        assertEquals(400, post("/api/wallets/" + theirs.id() + "/addresses",
+        assertEquals(400, post("/api/chat/wallets/" + theirs.id() + "/addresses",
                 "{\"accountId\":\"" + MINE + "\",\"platform\":\"ETHEREUM\","
                         + "\"address\":\"" + address() + "\"}").statusCode());
 
@@ -191,7 +191,7 @@ class WalletRoutesTest {
         // alike would make the tick beside a proved one mean nothing.
         Wallet mine = await(database.wallets().createWallet(MINE, "Main"));
 
-        JsonObject body = json(post("/api/wallets/" + mine.id() + "/addresses",
+        JsonObject body = json(post("/api/chat/wallets/" + mine.id() + "/addresses",
                 "{\"accountId\":\"" + MINE + "\",\"platform\":\"BITCOIN\","
                         + "\"address\":\"bc1qexampleaddress\"}"));
 
@@ -206,7 +206,7 @@ class WalletRoutesTest {
         Wallet mine = await(database.wallets().createWallet(MINE, "Main"));
         await(database.wallets().addOrUpdateAddress(mine.id(), ChainPlatform.SOLANA, "So1ana", false));
 
-        assertEquals(200, delete("/api/wallets/" + mine.id() + "/addresses/SOLANA?accountId="
+        assertEquals(200, delete("/api/chat/wallets/" + mine.id() + "/addresses/SOLANA?accountId="
                 + encode(MINE)).statusCode());
 
         assertTrue(await(database.wallets().findWalletById(mine.id()))
@@ -215,9 +215,9 @@ class WalletRoutesTest {
 
     @Test
     void keepsEveryWalletRouteBehindTheToken() {
-        assertEquals(403, statusOf("http://127.0.0.1:" + console.port() + "/api/wallets"));
+        assertEquals(403, statusOf("http://127.0.0.1:" + console.port() + "/api/chat/wallets"));
         assertEquals(403, statusOf("http://127.0.0.1:" + console.port()
-                + "/api/wallets/challenge?accountId=" + encode(MINE)));
+                + "/api/chat/wallets/challenge?accountId=" + encode(MINE)));
     }
 
     // ------------------------------------------------------------- plumbing

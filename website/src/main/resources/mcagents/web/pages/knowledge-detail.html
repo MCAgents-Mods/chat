@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  One Knowledge Pack, read-only. Served at /knowledge/<id>.
+  One Knowledge Pack, read-only. Served at /chat/knowledge/<id>.
 
   The id is not substituted into this file: the page reads it out of the address bar and
   asks the API for it, so the markup stays static and carries no player data.
@@ -11,16 +11,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Pack · MCAgents Console</title>
-  <script>
-    window.SITE_ROOT = '../';
-    window.PAGE_SECTION = 'knowledge';
-  </script>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/shared/layout.css">
-  <link rel="stylesheet" href="../assets/css/shared/components.css">
-  <link rel="stylesheet" href="../assets/css/knowledge/knowledge.css">
+  <link rel="stylesheet" href="/assets/core/css/main.css">
+  <link rel="stylesheet" href="/assets/core/css/layout.css">
+  <link rel="stylesheet" href="/assets/core/css/components.css">
+  <link rel="stylesheet" href="/assets/chat/css/knowledge/knowledge.css">
 </head>
-<body>
+<body data-module="chat" data-section="knowledge">
 <div id="site-header"></div>
 
 <main>
@@ -75,7 +71,7 @@
 </main>
 
 <div id="site-footer"></div>
-<script src="../assets/js/site.js"></script>
-<script src="../assets/js/knowledge-detail.js"></script>
+<script src="/assets/core/js/site.js"></script>
+<script src="/assets/chat/js/knowledge-detail.js"></script>
 </body>
 </html>

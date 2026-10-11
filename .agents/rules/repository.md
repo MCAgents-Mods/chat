@@ -70,9 +70,13 @@ diagram and the reasoning.
   `net.fabricmc.*`. Nothing in `platforms/fabric/` re-implements logic that belongs below
   it.
 
-**A contract stays in `api/` even when only one module implements it.** `WebConsole` lives
-there while `LocalWebConsole` lives in `website/`, because `api/` is where contracts go and
-a contract that follows its implementation out is a rule that has stopped applying.
+**A contract stays in `api/` even when only one module implements it.** `api/` is where
+contracts go, and a contract that follows its implementation out is a rule that has stopped
+applying.
+
+**The web console's server is core's.** `website/` holds chat's `WebModule` and its pages
+and never opens a port, checks a token, or ships the page shell; those are
+`CoreWebRegistry`'s, shared by every MCAgents mod.
 
 **A test double used by two modules lives in `common/src/testFixtures/`.** A test source set
 is private to its own Gradle project, so the alternative is a copy in each — and a

@@ -1,8 +1,14 @@
 # The Web Console
 
 MCAgentsClient can serve your own data to your own browser. Press `G` in game, then the
-globe button beside the key button, and the mod opens a small web server on `127.0.0.1`
-with your Knowledge Packs, your chats, your models, your wallets, and your API keys.
+globe button beside the key button, and the mod opens the MCAgents web console on
+`127.0.0.1` with your Knowledge Packs, your chats, your models, your wallets, and your API
+keys.
+
+The console itself belongs to **MCAgents core**, which every MCAgents mod runs on. There is
+one console for all of them: each mod registers its pages, and core serves them under one
+header, behind one token. MCAgentsClient's pages are under `/chat/`; another mod's pages
+appear beside them in the header when it is installed.
 
 It exists because a Minecraft screen is a good place to ask a question and a poor place to
 read a thousand-word pack or scan a year of conversations. A browser has a scrollbar, a find
@@ -20,7 +26,7 @@ runs from when you start it until you stop it, because a browser tab whose serve
 a page that stops working while you are reading it.
 
 The console has no need of that bridge for itself. The bridge exists because a Minecraft
-screen has no `window.ethereum` and something has to hand the browser a page; `/wallets/`
+screen has no `window.ethereum` and something has to hand the browser a page; `/chat/wallets/`
 *is* a page in the browser, so it asks MetaMask directly.
 
 **Not a network dependency.** Everything except asking a new question is local. Closing the
@@ -28,7 +34,7 @@ console changes nothing about the game.
 
 ## The pages
 
-### `/knowledge/`
+### `/chat/knowledge/`
 
 Every pack stored on this machine, twenty at a time in a panel that scrolls on its own —
 so the search box and the category filters stay where you left them however large the
@@ -42,7 +48,7 @@ three cards and put its own scrollbar inside the page's.
 The list deliberately does not carry pack bodies. An embedding is thousands of numbers, and
 reading twenty of them to render a list of titles would be slow for no benefit.
 
-### `/knowledge/<id>`
+### `/chat/knowledge/<id>`
 
 One pack in full: its identifier, version, category, availability, dates, its text, and its
 embedding.
@@ -54,7 +60,7 @@ It has one button, **Delete**, which removes this machine's copy and returns you
 Nothing can bring the pack back, and embedding it again costs a request to your model
 provider, so the button asks first.
 
-### `/chat/`
+### `/chat/chat/`
 
 Your conversations, ten at a time, with a search box that matches titles *and* what was said
 inside them. Open one and it behaves as the in-game screen does: type, send, get an answer.
@@ -80,11 +86,11 @@ a model id names both halves — who serves it, and which model it is:
 | `deepseek/deepseek-v4-flash` | `groq` | `groq/deepseek-v4-flash` — nothing is suggested for Groq, so your model id is carried over and Groq gets to say whether it serves it |
 
 The note beside it names the model that resulted, and the badge says whether that provider is
-reached **Direct** or **Via openrouter** — the same two routes `/keys/` explains. **Other…**
+reached **Direct** or **Via openrouter** — the same two routes `/chat/keys/` explains. **Other…**
 takes a provider this release has never heard of. OpenRouter itself is not on the list: it is a
 route rather than a provider of models, and `openrouter/gpt-4o-mini` is a model nobody serves.
 
-The choice is the same one `/model/` and the in-game model screen show, in force from your next
+The choice is the same one `/chat/model/` and the in-game model screen show, in force from your next
 question onward wherever you ask it. The game screen has the same row, on the settings screen
 behind the gear rather than beside the prompt — see
 [`overview.md`](overview.md) — so a player who never opens a browser chooses a provider too.
@@ -96,7 +102,7 @@ nothing. The text is fetched when the button is pressed rather than when the pag
 a tab left open all evening cannot save a stale copy over something you typed in game since.
 Enter is a new line here, not a save — the buttons, or Ctrl+Enter, commit.
 
-### `/model/`
+### `/chat/model/`
 
 The chat model and the embedding model, with the suggested ids and the defaults. The lists
 are suggestions — type any id your provider serves. Changing the embedding model changes
@@ -114,11 +120,11 @@ to behave differently, applying at once because that page has no Save button. Th
 model screen keeps its own copy, for a player who never opens a browser.
 
 **The chat page's provider selector writes the chat model this page shows.** That is one
-setting with one home, reached two ways rather than copied: `/chat/` sends the provider and the
+setting with one home, reached two ways rather than copied: `/chat/chat/` sends the provider and the
 mod decides the id, so what appears in the box above is what was stored, whichever page it was
 chosen from.
 
-### `/wallets/`
+### `/chat/wallets/`
 
 Every account you keep wallets under, **one panel per account**, side by side. Each panel
 shows five wallets and scrolls past that, so an account with forty of them cannot make its
@@ -140,7 +146,7 @@ one account and a wallet in another changes nothing.
 
 Wallets live on this machine and nothing about them leaves it.
 
-### `/keys/`
+### `/chat/keys/`
 
 Your API keys, ten at a time, with add and remove — and, above them, where each platform is
 called.
@@ -195,13 +201,16 @@ second one, and a "delete this?" that has been silenced is a deletion.
 
 ## What keeps it safe
 
+Every measure here is core's, and covers every mod's pages alike.
+
 | Measure | What it stops |
 |---|---|
 | Loopback bind, operating-system-assigned port | Anything off the machine reaching it |
 | A 256-bit token minted per run, required on every request | Another program on the machine driving it; another web page cannot read it |
 | `Host` must be a loopback name | DNS rebinding — a hostile site pointing its own domain at `127.0.0.1` |
 | No CORS headers | Another origin reading a reply even if it could send a request |
-| Bounded request bodies | A local socket being used to exhaust the game's memory |
+| Bounded request bodies (256 KiB) and a bounded request queue | A local socket being used to exhaust the game's memory |
+| A content security policy that runs only the console's own scripts, styles and requests | A pack's text, or anything else a page shows, running as script; a page reaching off the machine |
 | Keys as masks and handles only | Your OpenRouter key reaching a page, a fetch, or the browser's memory |
 
 The token is in the address, which means it is in your browser history. That is acceptable
@@ -209,13 +218,14 @@ for something only reachable from your own machine, but it is why the address is
 treating as private and why a fresh one is minted every time the console starts.
 
 Stylesheets and scripts are served without the token, because a `<link>` in a page cannot
-carry one. They are files from the mod jar, identical for every player, and carry nothing of
+carry one. They are files from the mod jars, identical for every player, and carry nothing of
 yours. Every page and every data route stays behind the token.
 
 ## Using it
 
 * The console keeps running when you close the screen — that is the point of it. Stop it
-  from the same screen when you are done, or it stops when the game exits.
+  from the same screen when you are done, or it stops when the game exits. Stopping it stops
+  every mod's pages, since there is one console.
 * The address is shown as well as opened, because the browser that opens by default is often
   not the one you want to read in. Copy it and paste it wherever you like.
 * Starting it twice is harmless: you get the same address back rather than a second server.
@@ -224,10 +234,11 @@ yours. Every page and every data route stays behind the token.
 
 | Layer | What it holds |
 |---|---|
-| `api/` | `WebConsole`, `WebConsoleException`, `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary`, `PersonaStore` |
+| core | The server, the token, the `Host` check, the content security policy, the body limit, the header, footer and stylesheets every mod's pages share — `CoreWebRegistry`, `WebModule`, `WebConsole` |
+| `api/` | `ChangeFeed`, `Page`, `PageRequest`, `KnowledgeSummary`, `PersonaStore` |
 | `common/` | `RevisionedChatRepository`, `WalletChallenges`, `AccountWallets`, `FilePersonaStore` — what the console reads, drives, and writes through |
-| `website/` | `LocalWebConsole`, `WebApi`, `WebJson`, `WebAssets`, `ApiKeyHandles`, and the pages under `resources/mcagents/web/` |
-| `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder`, and the button on `AgentChatScreen` |
+| `website/` | `ChatWebModule` — chat's pages, registered with core — `WebApi`, `WebJson`, `ApiKeyHandles`, and the pages, scripts and styles under `resources/mcagents/web/` |
+| `platforms/fabric/` | `WebConsoleScreen`, `WebConsoleHolder` — which registers chat's pages the first time the console is asked for — and the button on `AgentChatScreen` |
 
 **The console is a module of its own**, `website/`, holding everything a browser ever sees
 and nothing else. It sits above `common/`: serving a page means reading storage, driving the
@@ -244,5 +255,5 @@ fetched from anywhere, so the console looks the same with no internet at all.
 
 * [`architecture.md`](architecture.md) — the module split these layers follow.
 * [`knowledge-retrieval.md`](knowledge-retrieval.md) — what the Embedding switch governs.
-* [`wallet-binding.md`](wallet-binding.md) — what `/wallets/` manages, and why the in-game
+* [`wallet-binding.md`](wallet-binding.md) — what `/chat/wallets/` manages, and why the in-game
   handshake runs its own short-lived server while this page does not need one.
