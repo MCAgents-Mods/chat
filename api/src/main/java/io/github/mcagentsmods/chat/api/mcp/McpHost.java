@@ -9,8 +9,8 @@ import java.util.function.Consumer;
  * merged registry of what they offer.
  *
  * <p>Everything here is optional to the mod. A host that finds no servers, or fails to
- * start every one it finds, is a host in a normal state — the offline-first mandate applies
- * to MCP exactly as it applies to the central service. Nothing in this interface throws
+ * start every one it finds, is a host in a normal state — the mod stays usable with every
+ * server absent. Nothing in this interface throws
  * because a server is missing.
  *
  * <p>Discovery is continuous, not a startup step. {@link #start()} takes the first reading

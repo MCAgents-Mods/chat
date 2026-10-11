@@ -2,13 +2,8 @@
  * One Knowledge Pack, in full.
  *
  * The pack's *content* is read-only: there is no form, no save button, and no endpoint
- * behind this page that could change a pack. A pack is published by the central service and
- * replaced by version, so editing a stored copy would only put the player out of step with
- * the next update.
- *
- * Downloading is a different thing and is offered here. This page opens for a pack the
- * player does not have — the console falls back to the service to show it — and that is the
- * one place a download button belongs, because it is the only page that is about one pack.
+ * behind this page that could change a pack. The one action here is removing the stored copy
+ * from this machine.
  */
 (function () {
   'use strict';
@@ -41,12 +36,8 @@
       M.el('span', 'badge' + (pack.premium ? ' badge--sponsor' : ''),
         pack.premium ? 'Premium' : 'Free')
     ];
-    /* An undownloaded pack has no embedding by definition — nothing has embedded it — so
-     * saying "No embedding" about it would report a problem where there is none. */
-    badges.push(pack.stored
-      ? M.el('span', 'badge' + (pack.hasEmbedding ? ' badge--ok' : ' badge--warn'),
-        pack.hasEmbedding ? 'Embedded' : 'No embedding')
-      : M.el('span', 'badge badge--warn', 'Not downloaded'));
+    badges.push(M.el('span', 'badge' + (pack.hasEmbedding ? ' badge--ok' : ' badge--warn'),
+      pack.hasEmbedding ? 'Embedded' : 'No embedding'));
     M.replace(document.getElementById('pack-badges'), badges);
 
     M.replace(document.getElementById('pack-facts'), [
@@ -54,25 +45,17 @@
       row('Version', pack.version),
       row('Category', String(pack.categoryId)),
       row('Availability', pack.premium ? 'Premium' : 'Free'),
-      row(pack.stored ? 'Downloaded' : 'Published', M.formatDate(pack.createdAt)),
+      row('Stored', M.formatDate(pack.createdAt)),
       row('Updated', M.formatDate(pack.updatedAt))
     ]);
 
-    document.getElementById('download-panel').hidden = pack.stored;
-    document.getElementById('stored-actions').hidden = !pack.stored;
-    /* The embedding section is about a stored pack's vector. There is nothing truthful to
-     * put in it for a pack that has not been downloaded. */
-    document.getElementById('embedding-panel').hidden = !pack.stored;
-
-    /* textContent, not innerHTML. A pack body is text published by somebody else, and this
+    /* textContent, not innerHTML. A pack body is text written by somebody else, and this
      * page renders it rather than trusting it. */
     document.getElementById('pack-detail').textContent =
       pack.rawContent && pack.rawContent.length > 0 ? pack.rawContent : 'This pack has no text.';
 
     var embedding = document.getElementById('pack-embedding');
-    if (!pack.stored) {
-      embedding.textContent = '';
-    } else if (pack.hasEmbedding) {
+    if (pack.hasEmbedding) {
       embedding.textContent = pack.embeddedData;
       document.getElementById('embedding-size').textContent =
         pack.embeddedData.length.toLocaleString() + ' characters as stored';
@@ -101,64 +84,20 @@
       render(pack);
     }
 
-    var button = document.getElementById('download-pack');
-    var note = document.getElementById('download-note');
-    button.addEventListener('click', async function () {
-      button.disabled = true;
-      note.textContent = 'Downloading…';
-      note.className = 'sync-note';
-      try {
-        await M.api('/knowledge/' + encodeURIComponent(id) + '/download', { method: 'POST' });
-        /* Re-read rather than patching the page from the reply: the pack is now stored, and
-         * the stored copy is what every other part of this page is describing. */
-        await load();
-        note.textContent = 'Downloaded. Embed it from the chat page to let the agent use it.';
-        note.className = 'sync-note is-ok';
-      } catch (error) {
-        note.textContent = error.message;
-        note.className = 'sync-note is-error';
-      } finally {
-        button.disabled = false;
-      }
-    });
-
     var storedNote = document.getElementById('stored-note');
     function say(message, kind) {
       storedNote.textContent = message || '';
       storedNote.className = 'sync-note' + (kind ? ' is-' + kind : '');
     }
 
-    var checkButton = document.getElementById('check-update');
-    checkButton.addEventListener('click', async function () {
-      checkButton.disabled = true;
-      say('Checking…');
-      try {
-        /* This pack only. The chat page is where the whole library is checked; asking about
-         * every other pack from here would cost a listing the reader did not ask for. */
-        var status = await M.api('/knowledge/' + encodeURIComponent(id) + '/update');
-        say(status.updateAvailable
-          ? 'Version ' + status.publishedVersion + ' is published. Download it to update — '
-            + 'the current embedding is dropped, because the new version is new text.'
-          : 'This is the published version.', status.updateAvailable ? '' : 'ok');
-        /* An update turns the page back into a download offer, so the button that applies it
-         * is on screen rather than a page reload away. */
-        document.getElementById('download-panel').hidden = !status.updateAvailable;
-      } catch (error) {
-        say(error.message, 'error');
-      } finally {
-        checkButton.disabled = false;
-      }
-    });
-
     var deleteButton = document.getElementById('delete-pack');
     deleteButton.addEventListener('click', async function () {
-      /* Confirmed, because it is not undoable from here — the pack has to be downloaded
-       * again, and its embedding recomputed and paid for. */
+      /* Confirmed, because it is not undoable from here — the pack's text and its embedding
+       * are both gone, and the embedding cost a request to the model provider. */
       var confirmed = await M.confirm({
         title: 'Delete this pack?',
-        message: 'It is removed from this machine only. You can download it again from the '
-          + 'knowledge page, but it will need embedding again — and that costs a request to '
-          + 'your model provider.',
+        message: 'It is removed from this machine, and there is nothing to download it '
+          + 'from again.',
         confirmLabel: 'Delete pack',
         danger: true
       });
@@ -169,13 +108,10 @@
       say('Deleting…');
       try {
         await M.api('/knowledge/' + encodeURIComponent(id), { method: 'DELETE' });
-        /* Re-read rather than patched: the pack is gone, so this page is now the view of a
-         * pack the service has and this machine does not — which it already knows how to be. */
-        await load();
-        say('Deleted. It is available to download again.', 'ok');
+        /* The pack is gone, so this page has nothing left to show: back to the list. */
+        window.location.href = M.link('knowledge/');
       } catch (error) {
         say(error.message, 'error');
-      } finally {
         deleteButton.disabled = false;
       }
     });

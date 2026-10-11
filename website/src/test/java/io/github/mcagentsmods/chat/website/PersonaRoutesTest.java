@@ -6,8 +6,6 @@ import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.agent.FilePersonaStore;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
-import io.github.mcagentsmods.chat.common.service.CentralService;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,9 +54,7 @@ class PersonaRoutesTest {
     void open() {
         database = SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")).join();
         persona = new FilePersonaStore(personaFile());
-        console = LocalWebConsole.start(database, agent,
-                new CentralService(new StubTransport().reply(404, "{}"), "https://example.invalid"),
-                persona);
+        console = LocalWebConsole.start(database, agent, persona);
     }
 
     @AfterEach

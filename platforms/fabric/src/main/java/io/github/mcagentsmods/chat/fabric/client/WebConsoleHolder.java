@@ -60,7 +60,6 @@ public final class WebConsoleHolder {
             LocalWebConsole started = LocalWebConsole.start(
                     database,
                     AgentFactory.create(database, paths),
-                    KnowledgeSyncFactory.service(),
                     AgentFactory.modelClient(database),
                     AgentFactory.personaStore(paths));
             console = started;

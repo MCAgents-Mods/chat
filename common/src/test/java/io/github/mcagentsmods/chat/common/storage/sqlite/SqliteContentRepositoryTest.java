@@ -51,7 +51,7 @@ class SqliteContentRepositoryTest {
     }
 
     @Test
-    void keepsTheCategoryIdTheCentralServiceAssigned() {
+    void keepsTheCategoryIdItIsGiven() {
         assertEquals(
                 List.of("Guides", "Server rules"),
                 await(contents.findAllCategories()).stream()
@@ -83,8 +83,8 @@ class SqliteContentRepositoryTest {
 
     @Test
     void replacesAPackWhenANewerVersionIsDownloaded() {
-        // The central service publishes a new version rather than editing the old one, so
-        // storing an update must overwrite in place and not accumulate rows.
+        // A new version replaces the old one whole, so storing an update must overwrite in
+        // place and not accumulate rows.
         await(contents.save(pack("skyblock-intro", GUIDES, "1.0.0", false,
                 "Skyblock basics", "Old text", "[0.1]")));
         await(contents.save(pack("skyblock-intro", GUIDES, "1.1.0", false,

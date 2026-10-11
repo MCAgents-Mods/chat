@@ -225,7 +225,7 @@ public final class OpenRouterClient implements ModelClient {
         if (route.isThroughOpenRouter()) {
             // OpenRouter uses these for attribution; neither identifies the player. They mean
             // nothing to a platform's own API, so they are not sent there.
-            headers.put("HTTP-Referer", "https://mcagents.mcrealms.space");
+            headers.put("HTTP-Referer", "https://github.com/MCAgents-Mods/chat");
             headers.put("X-Title", "MCAgentsClient");
         }
         return headers;

@@ -18,11 +18,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * <h2>Why this exists at all</h2>
  *
- * <p>Packs are published as text with no vector. That is deliberate: an embedding is only
- * comparable inside the space of the model that produced it, so a vector shipped by the
- * service would silently force every player onto whichever model the service happened to
- * use, and would be wrong for everyone who chose another. The client embeds what it stores,
- * with the model that player chose.
+ * <p>Packs are stored as text with no vector. That is deliberate: an embedding is only
+ * comparable inside the space of the model that produced it, so a vector that arrived with a
+ * pack would silently force every player onto whichever model produced it, and would be wrong
+ * for everyone who chose another. The client embeds what it stores, with the model that player
+ * chose.
  *
  * <p>The consequence is that a freshly downloaded pack is inert until this has run over it,
  * which is why there is a button for it rather than a hope.
@@ -173,9 +173,8 @@ public final class EmbeddingBackfill {
         }
         json.append(']');
 
-        // Everything else is left exactly as published. This writes a vector and nothing
-        // more: the version in particular must keep matching what the service published, or
-        // the next update check would think the pack had changed.
+        // Everything else is left exactly as stored. This writes a vector and nothing more:
+        // the version in particular must not change.
         return new KnowledgeContent(pack.id(), pack.categoryId(), pack.version(),
                 pack.premium(), pack.title(), pack.rawContent(), json.toString(),
                 pack.createdAt(), pack.updatedAt());

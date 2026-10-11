@@ -29,7 +29,7 @@
     <section class="hero">
       <p class="eyebrow">Local library</p>
       <h1>Knowledge Packs</h1>
-      <p class="lead">Everything downloaded to this machine. Twenty load at a time — keep
+      <p class="lead">Every pack stored on this machine. Twenty load at a time — keep
         scrolling for more.</p>
     </section>
 
@@ -54,32 +54,11 @@
       <div class="card-grid" id="knowledge-list"></div>
       <div id="scroll-sentinel" aria-hidden="true"></div>
     </div>
-
-    <!-- Kept out of the list above rather than merged into it. That list is a window over a
-         local table and pages with an offset; this comes from the network and disappears
-         when the service is asleep. Interleaving them would page a union of two sources with
-         different costs and different failure modes. -->
-    <section class="available" id="available-section">
-      <div class="toolbar">
-        <h2 class="available__title">Available to download</h2>
-        <button class="btn btn--small" type="button" id="refresh-available">Refresh</button>
-        <span class="count" id="available-count"></span>
-        <span class="sync-note" id="available-note"></span>
-      </div>
-      <!-- Its own scroller, like the library above. A catalog that grew would otherwise
-           push the page down indefinitely, and the heading a reader is using to tell the
-           two lists apart would scroll away with it. -->
-      <div class="pack-scroller pack-scroller--available" id="available-scroller" tabindex="0"
-           role="region" aria-label="Packs available to download">
-        <div class="card-grid" id="available-list"></div>
-      </div>
-    </section>
   </div>
 </main>
 
 <div id="site-footer"></div>
 <script src="../assets/js/site.js"></script>
-<script src="../assets/js/service.js"></script>
 <script src="../assets/js/knowledge.js"></script>
 </body>
 </html>

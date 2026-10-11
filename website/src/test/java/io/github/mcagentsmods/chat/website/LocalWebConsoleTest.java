@@ -7,8 +7,6 @@ import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
-import io.github.mcagentsmods.chat.common.service.CentralService;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,13 +60,7 @@ class LocalWebConsoleTest {
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
-        // A stubbed service, not the real one. The detail route falls back to the catalog
-        // for a pack that is not stored, so the default CentralService would put this whole
-        // class on the network — and make it pass or fail depending on whether a host that
-        // idles happened to be awake.
-        console = LocalWebConsole.start(database, agent,
-                new CentralService(new StubTransport().reply(404, "{}"),
-                        "https://example.invalid"));
+        console = LocalWebConsole.start(database, agent);
     }
 
     @AfterEach

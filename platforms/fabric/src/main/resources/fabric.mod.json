@@ -3,12 +3,12 @@
   "id": "mcagents",
   "version": "${version}",
   "name": "MCAgentsClient",
-  "description": "A client-side AI assistant for Minecraft. Chat with an LLM agent using your own OpenRouter key, with downloadable Knowledge Packs retrieved by embedding similarity. Works offline once packs are downloaded.",
+  "description": "A client-side AI assistant for Minecraft. Chat with an LLM agent using your own OpenRouter key, with Knowledge Packs kept on your machine and retrieved by embedding similarity.",
   "authors": [
     "MCAgents"
   ],
   "contact": {
-    "homepage": "https://mcagents.mcrealms.space",
+    "homepage": "https://github.com/MCAgents-Mods/chat",
     "sources": "https://github.com/MCAgents-Mods/chat",
     "issues": "https://github.com/MCAgents-Mods/chat/issues"
   },

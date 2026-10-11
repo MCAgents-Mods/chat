@@ -172,8 +172,8 @@ class EmbeddingBackfillTest {
 
     @Test
     void changesNothingButTheVector() {
-        // The version in particular. It must keep matching what the service published, or
-        // the next update check decides the pack has changed and downloads it again.
+        // The version in particular. Writing a vector must not make the stored pack look
+        // like a different version of itself.
         store("pack", "Body text.", "");
 
         await(backfill.run(ModelPreferences.defaults()));

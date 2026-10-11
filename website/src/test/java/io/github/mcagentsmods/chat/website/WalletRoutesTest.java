@@ -6,8 +6,6 @@ import com.google.gson.JsonParser;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.api.wallet.ChainPlatform;
 import io.github.mcagentsmods.chat.api.wallet.Wallet;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
-import io.github.mcagentsmods.chat.common.service.CentralService;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagentsmods.chat.common.wallet.TestSigner;
 import org.junit.jupiter.api.AfterEach;
@@ -57,8 +55,7 @@ class WalletRoutesTest {
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
         console = LocalWebConsole.start(database,
-                (sessionId, prompt) -> CompletableFuture.completedFuture("answer"),
-                new CentralService(new StubTransport().reply(404, "{}"), "https://example.invalid"));
+                (sessionId, prompt) -> CompletableFuture.completedFuture("answer"));
     }
 
     @AfterEach

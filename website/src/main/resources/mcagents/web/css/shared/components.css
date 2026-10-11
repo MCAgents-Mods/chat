@@ -375,17 +375,6 @@ tr:last-child td { border-bottom: 0; }
   white-space: nowrap;
 }
 
-/* The banner shown while the central service is asleep. It is not an error state — the
- * whole page works without that service — so it explains and offers a button rather than
- * shouting. */
-.service-banner {
-  align-items: center;
-}
-
-.service-banner__body { flex: 1; }
-.service-banner__text { line-height: 1.5; }
-.service-banner[hidden] { display: none; }
-
 .sync-note {
   font-size: .82rem;
   color: var(--ink-400);

@@ -419,8 +419,8 @@
 
     document.getElementById('add-account').addEventListener('click', addAccount);
     document.getElementById('refresh-wallets').addEventListener('click', function () {
-      // Local only: wallets live on this machine and the central service knows nothing
-      // about them, so this re-reads storage and never touches the network.
+      // Local only: wallets live on this machine, so this re-reads storage and never
+      // touches the network.
       note('');
       load().catch(function (error) { note(error.message, 'bad'); });
     });
