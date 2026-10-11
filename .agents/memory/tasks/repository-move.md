@@ -83,3 +83,19 @@ agree, which is what a rename can break, but nothing here launched Minecraft.
 leftover coordinates here need `grep -a`.
 
 **For the next task.** The docs still state the old coordinates; task 3 and task 4 own those.
+
+### Task 3 — docs/mit-license
+
+**Landed.** `LICENSE` is the MIT text supplied by the owner, byte for byte, replacing the
+commercial agreement. `fabric.mod.json` declares `"license": "MIT"` and points `sources` and
+`issues` at `MCAgents-Mods/chat`. The README lost the author paragraph the owner asked to
+delete, its "Where the project lives" section names the one repository instead of the old
+organization on two hosts, and its License section is a short MIT summary that defers to
+`LICENSE`.
+
+**Decision.** The GitLab link was dropped with the old organization section, since the
+repository now lives only on GitHub. The central service homepage in `fabric.mod.json` is
+unchanged — it is the service, not the repository.
+
+**Left for task 4.** The commercial license is still described in
+`.agents/wiki/context/repository-map.md`, which owns that line.
