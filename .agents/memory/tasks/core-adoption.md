@@ -1,6 +1,6 @@
 ---
 name: memory-task-core-adoption
-status: in-progress
+status: done
 description: Chat adopting MCAgents-Mods/core — calling core's model client instead of its own, registering its pages into core's web console, the security review, and the 0.1.0 release.
 ---
 
@@ -27,11 +27,11 @@ keeping a Fabric build in core so chat has a core mod to run against.
 
 | # | Title | Scope | Repository | Branch | Files / areas | PR |
 |---|---|---|---|---|---|---|
-| 1 | The record | This file and its index row | `MCAgents-Mods/chat` | `chore/core-adoption-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
-| 2 | Core's model client | Depend on core; delete chat's client, payloads and transport; point every caller at core | `MCAgents-Mods/chat` | `feat/shared-llm-client` | `settings.gradle`, every module's build, `api/agent`, `api/model`, `common/agent`, `common/mcp`, `platforms/fabric`, docs | |
-| 3 | Core's web console | Chat's pages become a `WebModule`; delete the server, the token handling and the shell | `MCAgents-Mods/chat` | `feat/web-registry` | `website/`, `platforms/fabric`, `api/web`, docs | |
-| 4 | Security review | Fixes for confirmed findings | `MCAgents-Mods/chat` | `fix/security-review` | as found | |
-| 5 | The release | `0.1.0`, changelog, closing this record | `MCAgents-Mods/chat` | `release/0.1.0` | `gradle.properties`, `wiki/logs/`, this file | |
+| 1 | The record | This file and its index row | `MCAgents-Mods/chat` | `chore/core-adoption-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | #14 |
+| 2 | Core's model client | Depend on core; delete chat's client, payloads and transport; point every caller at core | `MCAgents-Mods/chat` | `feat/shared-llm-client` | `settings.gradle`, every module's build, `api/agent`, `api/model`, `common/agent`, `common/mcp`, `platforms/fabric`, docs | #15 |
+| 3 | Core's web console | Chat's pages become a `WebModule`; delete the server, the token handling and the shell | `MCAgents-Mods/chat` | `feat/web-registry` | `website/`, `platforms/fabric`, `api/web`, docs | #16 |
+| 4 | Security review | Fixes for confirmed findings | `MCAgents-Mods/chat` | `fix/security-review` | as found | #17 |
+| 5 | The release | `0.1.0`, changelog, closing this record | `MCAgents-Mods/chat` | `release/0.1.0` | `gradle.properties`, `wiki/logs/`, this file | #18 |
 
 ## Decisions not to relitigate
 
@@ -164,5 +164,6 @@ with an Upgrading section, since every player has to install core, approve clone
 and use the console's new addresses; its row is in `logs-index.md`. `fabric.mod.json` takes the
 version from `gradle.properties`, so the jar is `mcagents-chat-0.1.0.jar`.
 
-The PR column above fills in once the owner approves opening the pull requests; they open in
-task order, each based on the branch before it.
+The owner approved opening and merging the pull requests. They were #14 to #18, merged into
+`master` in task order by rebase, with the rest of the stack rebased onto `master` after each
+merge. Core's chain, MCAgents-Mods/core #1 to #8, merged first.
