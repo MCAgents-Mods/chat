@@ -101,9 +101,9 @@ the SQLite repository with it. What matters before changing either:
 * **Writes invalidate, in the same call.** A downloaded pack is visible immediately; expiry
   is a backstop for changes made outside this instance's sight, not the mechanism.
 * **Only two things are cached**: a pack by id (the largest rows, read on every question)
-  and the category list (tiny, read on every render). Searches and `findStoredVersions` are
+  and the category list (tiny, read on every render). Searches are
   deliberately **not** cached — a search key changes on nearly every keystroke and would
-  evict the pack bodies, and a stale version map would re-download or skip a pack.
+  evict the pack bodies.
 * **Absence is never cached.** A pack missing now may be downloaded a moment later.
 * **The size bound is not decoration.** This runs inside Minecraft; memory taken here is
   memory the game does not have.

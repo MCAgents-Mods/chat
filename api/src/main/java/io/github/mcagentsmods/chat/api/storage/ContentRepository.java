@@ -8,7 +8,6 @@ import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,13 +47,6 @@ public interface ContentRepository {
 
     /** One pack, or empty if it has not been downloaded. */
     CompletableFuture<Optional<KnowledgeContent>> findById(String id);
-
-    /**
-     * The stored version of every pack, keyed by pack id.
-     *
-     * <p>Comparing a stored version against another is all a version check needs.
-     */
-    CompletableFuture<Map<String, String>> findStoredVersions();
 
     /**
      * Writes a downloaded pack, replacing any earlier version of the same pack.

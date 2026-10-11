@@ -15,9 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -213,21 +211,6 @@ final class SqliteContentRepository implements ContentRepository {
     @Override
     public CompletableFuture<Optional<KnowledgeContent>> findById(String id) {
         return worker.submit("Reading a downloaded pack", connection -> findContent(connection, id));
-    }
-
-    @Override
-    public CompletableFuture<Map<String, String>> findStoredVersions() {
-        return worker.submit("Reading the stored content versions", connection -> {
-            String sql = "SELECT id, version FROM contents ORDER BY id ASC";
-            try (PreparedStatement statement = connection.prepareStatement(sql);
-                 ResultSet rows = statement.executeQuery()) {
-                Map<String, String> versions = new LinkedHashMap<>();
-                while (rows.next()) {
-                    versions.put(rows.getString("id"), rows.getString("version"));
-                }
-                return Map.copyOf(versions);
-            }
-        });
     }
 
     @Override

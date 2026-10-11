@@ -14,7 +14,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
@@ -94,14 +93,6 @@ class SqliteContentRepositoryTest {
         KnowledgeContent stored = await(contents.findById("skyblock-intro")).orElseThrow();
         assertEquals("1.1.0", stored.version());
         assertEquals("New text", stored.rawContent());
-    }
-
-    @Test
-    void reportsStoredVersionsSoAnUpdateCheckIsAComparison() {
-        await(contents.save(pack("a", GUIDES, "1.0.0", false, "A", "text", null)));
-        await(contents.save(pack("b", RULES, "2.3.1", true, "B", "text", null)));
-
-        assertEquals(Map.of("a", "1.0.0", "b", "2.3.1"), await(contents.findStoredVersions()));
     }
 
     @Test

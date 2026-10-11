@@ -38,7 +38,6 @@ class CachingContentRepositoryTest {
         int findAllCategoriesCalls;
         int findCalls;
         int findSummaryPageCalls;
-        int findStoredVersionsCalls;
 
         @Override
         public CompletableFuture<List<ContentCategory>> findAllCategories() {
@@ -76,14 +75,6 @@ class CachingContentRepositoryTest {
         public CompletableFuture<Optional<KnowledgeContent>> findById(String id) {
             findByIdCalls++;
             return CompletableFuture.completedFuture(Optional.ofNullable(stored.get(id)));
-        }
-
-        @Override
-        public CompletableFuture<Map<String, String>> findStoredVersions() {
-            findStoredVersionsCalls++;
-            Map<String, String> versions = new HashMap<>();
-            stored.forEach((id, pack) -> versions.put(id, pack.version()));
-            return CompletableFuture.completedFuture(Map.copyOf(versions));
         }
 
         @Override
@@ -196,16 +187,6 @@ class CachingContentRepositoryTest {
         await(repository.find(ContentQuery.all()));
 
         assertEquals(2, delegate.findCalls);
-    }
-
-    @Test
-    void neverCachesTheStoredVersionMap() {
-        // This is the input to an update check. A stale answer would re-download a pack the
-        // player already has, or skip one they need.
-        await(repository.findStoredVersions());
-        await(repository.findStoredVersions());
-
-        assertEquals(2, delegate.findStoredVersionsCalls);
     }
 
     @Test

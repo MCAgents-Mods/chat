@@ -55,3 +55,18 @@ workflow asks.
 
 **Not done.** No plan files were written: the task records carried the plan for this work, and
 the working-plan folder is optional scratch. The folder does not exist.
+
+### Task 3 — refactor/service-leftovers
+
+**Landed.** Removed `HttpCall.get` and the GET branch of `JdkHttpTransport` — the transport now
+sends every call with its own method and body — and `ContentRepository.findStoredVersions` from
+the interface, `SqliteContentRepository` and `CachingContentRepository`, with the three tests
+that covered it, the stub's copy of it, the unused imports they left, and the sentence in the
+repository map that said it was deliberately not cached.
+
+**Proven.** `./gradlew build` passes for all four modules with the tests. A search of the
+sources, the documents and the pages for `findStoredVersions` and `HttpCall.get` finds nothing
+outside the historical records.
+
+**Kept.** `HttpTransport`, `HttpReply`, `JdkHttpTransport`, and `saveCategory`/`save`; see the
+decisions above.

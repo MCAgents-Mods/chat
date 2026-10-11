@@ -13,7 +13,6 @@ import io.github.mcagentsmods.chat.common.cache.TtlCache;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -121,13 +120,6 @@ public final class CachingContentRepository implements ContentRepository {
             loaded.ifPresent(pack -> packs.put(id, pack));
             return loaded;
         });
-    }
-
-    @Override
-    public CompletableFuture<Map<String, String>> findStoredVersions() {
-        // Not cached: this is the input to an update check, and a stale answer here would
-        // make the mod re-download a pack it already has, or skip one it needs.
-        return delegate.findStoredVersions();
     }
 
     @Override
