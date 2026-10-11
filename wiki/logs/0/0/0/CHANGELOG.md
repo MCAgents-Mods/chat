@@ -261,7 +261,7 @@ project is developed under.
 * **Stored API keys encrypted at rest.** `TokenCipher` encrypts with AES-256-GCM under a fresh
   nonce per write, so the same key stored twice produces two unrelated strings and nothing in
   the database says two rows hold one secret — the property a hash of any kind cannot give.
-  The key comes from `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` in the environment and from
+  The key comes from `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in the environment and from
   nowhere else: nothing ships in the jar or the repository. Keys already held in the clear are
   encrypted once, at open, in a transaction. **An unset variable is not an error** — keys are
   then stored as they always were, and the console says which of the two states the machine is
@@ -397,7 +397,7 @@ project is developed under.
   only** — no screen has been opened in a real client, and no join event has ever fired, so
   which of single player, a server, a joined LAN world, and a realm report what is still
   unobserved.
-* Stored API keys are encrypted only when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set;
+* Stored API keys are encrypted only when `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set;
   with it unset they are stored as pasted, which is what every earlier version did. That is a
   deliberate fallback, not an oversight — a mod that refused to start without an environment
   variable would be a worse mod for almost every player. What it protects is a database file
@@ -411,7 +411,7 @@ project is developed under.
 * The key page was driven in Chromium against a live console — the platform badges, the route
   badges, adding a key turning its platform direct, an address refused and then accepted and
   then cleared, and no horizontal scroll at 1280, 900, 620 and 380 px. That found one defect
-  the Java suite could not: the encryption note's forty-character variable name has nothing to
+  the Java suite could not: the encryption note's long variable name has nothing to
   break on, and pushed the whole page sideways on a narrow screen. **Neither the in-game key
   screen's platform box nor the encryption of a real player's database has been seen in a
   running client.**

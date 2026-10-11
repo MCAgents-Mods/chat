@@ -178,7 +178,7 @@ else is refused rather than sent your key. Clearing a box goes back to the addre
 ships for that platform.
 
 **A note above says whether your keys are encrypted on this machine.** They are when
-`MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the environment the game runs in, and
+`MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set in the environment the game runs in, and
 stored as you pasted them when it is not. The page says which rather than implying the
 stronger one.
 

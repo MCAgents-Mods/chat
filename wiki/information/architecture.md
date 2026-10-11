@@ -177,7 +177,7 @@ messages are stored one row per turn with a `role` of `user` or `assistant`, whi
 shape the OpenRouter API expects, so the history needs no reshaping before it is sent.
 
 `api_keys` carries the platform each key opens, and the key itself is encrypted with
-AES-GCM when `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set in the environment — under a
+AES-GCM when `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set in the environment — under a
 fresh nonce each write, so one key stored twice leaves two unrelated rows. The encryption key
 is never in the jar, the repository, or the database. With the variable unset, keys are stored
 as the player pasted them.

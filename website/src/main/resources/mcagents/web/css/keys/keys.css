@@ -62,7 +62,7 @@
 
 #scroll-sentinel { height: 1px; }
 
-/* The variable's name is a forty-character word with nothing to break on, so without this the
+/* The variable's name is a long word with nothing to break on, so without this the
  * callout pushes the whole page sideways on a narrow screen. A browser found it; no Java test
  * could have. */
 #encryption-text { overflow-wrap: anywhere; }

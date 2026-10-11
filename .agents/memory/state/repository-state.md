@@ -57,7 +57,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   — all covered by tests against a stub transport, none seen against real OpenRouter.
 * **Platform-aware, encrypted token storage.** `api_keys` carries the platform each key opens
   and `key_value` holds an AES-GCM envelope when
-  `MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` is set. Proven by reading the database file with
+  `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set. Proven by reading the database file with
   its own connection: no token is legible in it, the same token encrypts differently on two
   writes, keys already in the clear are encrypted at the next open, and a wrong key hides rows
   without deleting them. **No real player's database has been migrated**, and the in-game key
