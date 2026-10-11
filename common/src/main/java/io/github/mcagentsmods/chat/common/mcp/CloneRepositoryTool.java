@@ -1,10 +1,10 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
 import com.google.gson.JsonObject;
-import io.github.mcagentsmods.chat.api.agent.ToolDefinition;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
 
 import java.util.concurrent.CompletableFuture;
 

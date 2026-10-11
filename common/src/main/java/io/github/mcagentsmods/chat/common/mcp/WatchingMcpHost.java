@@ -10,7 +10,7 @@ import io.github.mcagentsmods.chat.api.mcp.McpSession;
 import io.github.mcagentsmods.chat.api.mcp.McpToolDescriptor;
 import io.github.mcagentsmods.chat.api.mcp.McpTransport;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.common.agent.HttpTransport;
+import io.github.mcagentsmods.core.api.http.HttpTransport;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;

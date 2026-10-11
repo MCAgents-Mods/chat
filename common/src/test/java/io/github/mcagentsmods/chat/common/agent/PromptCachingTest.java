@@ -1,10 +1,10 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.PromptMessage;
-import io.github.mcagentsmods.chat.api.agent.TokenUsage;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.PromptMessage;
+import io.github.mcagentsmods.core.api.model.TokenUsage;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -47,7 +47,7 @@ class PromptCachingTest {
     private static String cachedPrefix(List<PromptMessage> prompt) {
         StringBuilder prefix = new StringBuilder();
         for (PromptMessage message : prompt) {
-            prefix.append(message.role().wireName()).append(':').append(message.text()).append('\n');
+            prefix.append(message.role().code()).append(':').append(message.text()).append('\n');
             if (message.cacheBreakpoint()) {
                 break;
             }

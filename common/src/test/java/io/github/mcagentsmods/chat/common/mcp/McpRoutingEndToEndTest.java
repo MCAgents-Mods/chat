@@ -1,10 +1,10 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
-import io.github.mcagentsmods.chat.api.agent.ToolCall;
-import io.github.mcagentsmods.chat.api.agent.ToolDefinition;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
+import io.github.mcagentsmods.core.api.model.ToolCall;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
+import io.github.mcagentsmods.core.common.testing.StubTransport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

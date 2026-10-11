@@ -1,11 +1,11 @@
 package io.github.mcagentsmods.chat.common.storage.sqlite;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,8 +78,8 @@ class SqliteChatRepositoryTest {
         List<ChatMessage> messages = await(chat.findMessages(session.id()));
 
         assertEquals(2, messages.size());
-        assertEquals("user", messages.get(0).role().wireName());
-        assertEquals("assistant", messages.get(1).role().wireName());
+        assertEquals("user", messages.get(0).role().code());
+        assertEquals("assistant", messages.get(1).role().code());
         assertEquals("Hello", messages.get(0).content());
     }
 

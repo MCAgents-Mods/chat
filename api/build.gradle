@@ -1,7 +1,7 @@
 // Contracts only: interfaces, records, enums, abstract classes.
 //
-// This module compiles against the JDK and nothing else. It must never gain a dependency
-// on Minecraft, on Fabric, or on any third-party library — see
+// This module compiles against the JDK and MCAgents core's API, and nothing else. It must
+// never gain a dependency on Minecraft, on Fabric, or on any third-party library — see
 // .agents/rules/repository.md.
 
 plugins {
@@ -26,4 +26,11 @@ tasks.withType(JavaCompile).configureEach {
 
 repositories {
     mavenCentral()
+}
+
+dependencies {
+    // Chat's contracts speak core's types — a model request, a tool call, a model name.
+    // compileOnlyApi: every module above sees them, and no jar of chat's carries them,
+    // because the mcagents_core mod provides one copy for every MCAgents mod in game.
+    compileOnlyApi libs.core.api
 }

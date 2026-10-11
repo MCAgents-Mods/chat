@@ -3,8 +3,8 @@ package io.github.mcagentsmods.chat.common.mcp;
 import io.github.mcagentsmods.chat.api.mcp.McpException;
 import io.github.mcagentsmods.chat.api.mcp.McpServerSpec;
 import io.github.mcagentsmods.chat.api.mcp.McpToolResult;
-import io.github.mcagentsmods.chat.common.agent.HttpCall;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
+import io.github.mcagentsmods.core.api.http.HttpCall;
+import io.github.mcagentsmods.core.common.testing.StubTransport;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The HTTP transport, driven against a scripted transport rather than a server.
  *
- * <p>Reusing the model client's {@link io.github.mcagentsmods.chat.common.agent.HttpTransport}
+ * <p>Reusing the model client's {@link io.github.mcagentsmods.core.api.http.HttpTransport}
  * seam is what makes this possible: every byte of the HTTP path is exercised with no
  * network, no port, and nothing to host.
  */

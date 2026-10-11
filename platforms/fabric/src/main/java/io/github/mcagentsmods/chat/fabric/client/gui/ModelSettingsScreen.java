@@ -2,12 +2,12 @@ package io.github.mcagentsmods.chat.fabric.client.gui;
 
 import io.github.mcagentsmods.chat.api.model.ApiKey;
 import io.github.mcagentsmods.chat.api.model.ModelCatalog;
-import io.github.mcagentsmods.chat.api.model.ModelName;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.agent.StoredProviderRoutes;
 import io.github.mcagentsmods.chat.common.ui.ModelSettingsRows;
 import io.github.mcagentsmods.chat.common.ui.StackedRows;
+import io.github.mcagentsmods.core.api.model.ModelName;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;

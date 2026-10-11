@@ -93,8 +93,9 @@ optional thing: an MCP server is not allowed onto the path of anything local.
 
 A Gradle test source set is private to its own project, so a double two modules need cannot
 simply be imported across. `common/` carries `java-test-fixtures` and keeps those doubles in
-`src/testFixtures/` — currently `StubTransport`, which answers HTTP from a script, and
-`TestSigner`, which signs the way MetaMask would.
+`src/testFixtures/` — currently `TestSigner`, which signs the way MetaMask would.
+`StubTransport` and `StubKeySource`, which answer HTTP from a script and hand out keys, come
+from MCAgents core's own test fixtures, because the client they drive is core's.
 
 The alternative is a copy in each module, and a duplicated double drifts until the two are
 testing against different fictions.

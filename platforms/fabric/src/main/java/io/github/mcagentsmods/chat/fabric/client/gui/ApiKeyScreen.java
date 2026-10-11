@@ -2,8 +2,8 @@ package io.github.mcagentsmods.chat.fabric.client.gui;
 
 import io.github.mcagentsmods.chat.api.model.ApiKey;
 import io.github.mcagentsmods.chat.api.model.ModelCatalog;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;

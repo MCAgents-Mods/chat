@@ -1,11 +1,11 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ProviderRoute;
-import io.github.mcagentsmods.chat.api.agent.ProviderRoutes;
-import io.github.mcagentsmods.chat.api.model.ModelName;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.storage.ApiKeyRepository;
 import io.github.mcagentsmods.chat.api.storage.SettingsRepository;
+import io.github.mcagentsmods.core.api.model.ModelName;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
+import io.github.mcagentsmods.core.api.model.ProviderRoute;
+import io.github.mcagentsmods.core.api.model.ProviderRoutes;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;

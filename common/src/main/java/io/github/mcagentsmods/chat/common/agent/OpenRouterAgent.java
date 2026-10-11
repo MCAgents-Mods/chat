@@ -1,20 +1,20 @@
 package io.github.mcagentsmods.chat.common.agent;
 
 import io.github.mcagentsmods.chat.api.agent.Agent;
-import io.github.mcagentsmods.chat.api.agent.ChatCompletion;
-import io.github.mcagentsmods.chat.api.agent.ChatRequest;
 import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
-import io.github.mcagentsmods.chat.api.agent.ModelClient;
-import io.github.mcagentsmods.chat.api.agent.ModelException;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
-import io.github.mcagentsmods.chat.api.agent.PromptMessage;
 import io.github.mcagentsmods.chat.api.agent.ToolBroker;
-import io.github.mcagentsmods.chat.api.agent.ToolCall;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.ChatCompletion;
+import io.github.mcagentsmods.core.api.model.ChatRequest;
+import io.github.mcagentsmods.core.api.model.ModelClient;
+import io.github.mcagentsmods.core.api.model.ModelException;
+import io.github.mcagentsmods.core.api.model.PromptMessage;
+import io.github.mcagentsmods.core.api.model.ToolCall;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;

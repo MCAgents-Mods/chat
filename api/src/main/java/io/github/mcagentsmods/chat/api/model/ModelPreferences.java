@@ -1,5 +1,6 @@
 package io.github.mcagentsmods.chat.api.model;
 
+import io.github.mcagentsmods.core.api.model.ModelName;
 import java.util.Objects;
 
 /**

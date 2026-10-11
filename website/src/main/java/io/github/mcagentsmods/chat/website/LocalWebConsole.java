@@ -4,16 +4,13 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.github.mcagentsmods.chat.api.agent.Agent;
-import io.github.mcagentsmods.chat.api.agent.ModelClient;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.api.web.WebConsole;
 import io.github.mcagentsmods.chat.api.web.WebConsoleException;
-import io.github.mcagentsmods.chat.common.agent.JdkHttpTransport;
-import io.github.mcagentsmods.chat.common.agent.CachingModelClient;
+import io.github.mcagentsmods.chat.common.agent.ChatModelClients;
 import io.github.mcagentsmods.chat.common.agent.EmbeddingBackfill;
-import io.github.mcagentsmods.chat.common.agent.RepositoryApiKeySource;
-import io.github.mcagentsmods.chat.common.agent.openrouter.OpenRouterClient;
+import io.github.mcagentsmods.core.api.model.ModelClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -202,8 +199,7 @@ public final class LocalWebConsole implements WebConsole {
      * built by a caller that had none to give.
      */
     private static ModelClient defaultModelClient(LocalDatabase database) {
-        return new CachingModelClient(new OpenRouterClient(
-                new JdkHttpTransport(), new RepositoryApiKeySource(database.apiKeys())));
+        return ChatModelClients.create(database);
     }
 
     @Override

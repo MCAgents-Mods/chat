@@ -1,11 +1,11 @@
 package io.github.mcagentsmods.chat.common.storage;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
 
 import java.util.List;
 import java.util.Objects;

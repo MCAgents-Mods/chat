@@ -1,10 +1,10 @@
 package io.github.mcagentsmods.chat.common.storage.sqlite;
 
 import io.github.mcagentsmods.chat.api.model.ApiKey;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.storage.ApiKeyRepository;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

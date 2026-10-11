@@ -1,21 +1,18 @@
 package io.github.mcagentsmods.chat.fabric.client;
 
 import io.github.mcagentsmods.chat.api.agent.Agent;
-import io.github.mcagentsmods.chat.api.agent.ModelClient;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.agent.ToolBroker;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.common.agent.CachingModelClient;
+import io.github.mcagentsmods.chat.common.agent.ChatModelClients;
 import io.github.mcagentsmods.chat.common.agent.FilePersonaStore;
-import io.github.mcagentsmods.chat.common.agent.JdkHttpTransport;
 import io.github.mcagentsmods.chat.common.agent.OpenRouterAgent;
-import io.github.mcagentsmods.chat.common.agent.RepositoryApiKeySource;
-import io.github.mcagentsmods.chat.common.agent.StoredProviderRoutes;
-import io.github.mcagentsmods.chat.common.agent.openrouter.OpenRouterClient;
 import io.github.mcagentsmods.chat.common.mcp.CloneRepositoryTool;
 import io.github.mcagentsmods.chat.common.mcp.McpToolRouter;
+import io.github.mcagentsmods.core.api.model.ModelClient;
 
 /**
  * Builds the agent the chat screen uses, and owns the model client's lifetime.
@@ -104,14 +101,8 @@ public final class AgentFactory {
             if (modelClient == null) {
                 // Embeddings are cached locally; completions are not, and the prompt
                 // itself is reused provider-side through the breakpoints the assembler
-                // places. See CachingModelClient.
-                // Routing is read from the same store the keys are, per request, so a key
-                // added or a base URL set while the game is running takes effect without a
-                // restart — and a player who has configured neither keeps the gateway.
-                modelClient = new CachingModelClient(new OpenRouterClient(
-                        new JdkHttpTransport(),
-                        new RepositoryApiKeySource(database.apiKeys()),
-                        new StoredProviderRoutes(database.settings(), database.apiKeys())));
+                // places. See CachingModelClient and ChatModelClients.
+                modelClient = ChatModelClients.create(database);
             }
             return modelClient;
         }

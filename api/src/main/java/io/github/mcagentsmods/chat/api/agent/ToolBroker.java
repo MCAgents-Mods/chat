@@ -1,5 +1,7 @@
 package io.github.mcagentsmods.chat.api.agent;
 
+import io.github.mcagentsmods.core.api.model.ToolCall;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 

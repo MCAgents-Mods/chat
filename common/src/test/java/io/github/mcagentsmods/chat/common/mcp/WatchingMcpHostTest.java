@@ -5,7 +5,7 @@ import io.github.mcagentsmods.chat.api.mcp.McpServerStatus;
 import io.github.mcagentsmods.chat.api.mcp.McpSession;
 import io.github.mcagentsmods.chat.api.mcp.McpToolResult;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.common.agent.StubTransport;
+import io.github.mcagentsmods.core.common.testing.StubTransport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

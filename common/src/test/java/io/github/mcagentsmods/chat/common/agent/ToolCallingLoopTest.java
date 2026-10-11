@@ -1,17 +1,17 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ChatCompletion;
-import io.github.mcagentsmods.chat.api.agent.ChatRequest;
-import io.github.mcagentsmods.chat.api.agent.ModelClient;
-import io.github.mcagentsmods.chat.api.agent.PromptMessage;
-import io.github.mcagentsmods.chat.api.agent.TokenUsage;
 import io.github.mcagentsmods.chat.api.agent.ToolBroker;
-import io.github.mcagentsmods.chat.api.agent.ToolCall;
-import io.github.mcagentsmods.chat.api.agent.ToolDefinition;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.ChatCompletion;
+import io.github.mcagentsmods.core.api.model.ChatRequest;
+import io.github.mcagentsmods.core.api.model.ModelClient;
+import io.github.mcagentsmods.core.api.model.PromptMessage;
+import io.github.mcagentsmods.core.api.model.TokenUsage;
+import io.github.mcagentsmods.core.api.model.ToolCall;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

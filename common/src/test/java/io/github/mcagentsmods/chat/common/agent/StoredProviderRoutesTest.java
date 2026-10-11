@@ -1,9 +1,9 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ProviderRoute;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
+import io.github.mcagentsmods.core.api.model.ProviderRoute;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

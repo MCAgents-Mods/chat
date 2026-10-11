@@ -52,6 +52,11 @@ dependencies {
     // at runtime only.
     testRuntimeOnly libs.sqlite.jdbc
 
+    // Outside the game no core mod provides core, so the tests carry it themselves.
+    testImplementation libs.core.api
+    testImplementation libs.core.common
+    testImplementation testFixtures(libs.core.common)
+
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher
 }

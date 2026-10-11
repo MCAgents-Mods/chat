@@ -118,8 +118,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   knowing where the player is adds nothing to the prompt at all.
 * Storage: SQLite, one connection on one daemon thread, `SQLiteDataSource` rather than
   `DriverManager`. `CachingContentRepository` wraps it.
-* Model access: `OpenRouterClient` behind a swappable `HttpTransport`, wrapped by
-  `CachingModelClient` (embeddings cached, completions deliberately not).
+* Model access: core's `OpenRouterClient` behind core's `HttpTransport`, built by
+  `ChatModelClients` and wrapped by `CachingModelClient` (embeddings cached, completions
+  deliberately not). Chat compiles against MCAgents core `0.5.0` and ships none of it; the
+  mod depends on `mcagents_core`. See [`../tasks/core-adoption.md`](../tasks/core-adoption.md).
 * Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
   using the player's own embedding model, because a vector is only comparable inside the
   space of the model that made it. The console lists, shows and deletes stored packs and
@@ -131,7 +133,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   screen and the console. Off does no work at all rather than filtering afterwards, and
   a failed embedding call yields an ordinary answer rather than an error.
 * MCP: the mod is an MCP **client**. `api.mcp` holds the contracts and `api.agent` the
-  tool-calling ones (`ToolBroker`, `ToolDefinition`, `ToolCall`, `ToolOutcome`);
+  tool-calling ones (`ToolBroker`, `ToolOutcome`, over core's `ToolDefinition` and `ToolCall`);
   `common.mcp` holds `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`,
   `HttpMcpSession`, `WatchingMcpHost` (connects, watches the directory, reloads as a diff
   so an unchanged server keeps its process), `GitRepositoryCloner`, and `McpToolRouter`.
