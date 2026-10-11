@@ -71,6 +71,10 @@ do not share your `data.db`.
 
 ## Quick start
 
+Install **MCAgents core** (`mcagents_core`, from `MCAgents-Mods/core`) for Fabric beside this
+mod and Fabric API. It carries the model client every MCAgents mod shares; without it the game
+refuses to load MCAgentsClient.
+
 Press `G` in game. The chat screen opens with your conversations on the left and a prompt
 along the bottom. Add an API key with the key button before asking anything — the dropdown
 beside it is the platform the key opens, and `openrouter` is the default. The gear picks the

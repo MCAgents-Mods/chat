@@ -1,6 +1,5 @@
 package io.github.mcagentsmods.chat.common.storage.sqlite;
 
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.ContentAvailability;
 import io.github.mcagentsmods.chat.api.model.ContentQuery;
@@ -11,6 +10,7 @@ import io.github.mcagentsmods.chat.api.model.PageRequest;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.ContentRepository;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

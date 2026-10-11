@@ -4,13 +4,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.mcagentsmods.chat.api.agent.ToolBroker;
-import io.github.mcagentsmods.chat.api.agent.ToolCall;
-import io.github.mcagentsmods.chat.api.agent.ToolDefinition;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.api.mcp.McpContextRegistry;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpSession;
 import io.github.mcagentsmods.chat.api.mcp.McpToolDescriptor;
+import io.github.mcagentsmods.core.api.model.ToolCall;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

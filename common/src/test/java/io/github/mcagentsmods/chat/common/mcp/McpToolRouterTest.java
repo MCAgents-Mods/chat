@@ -1,7 +1,5 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
-import io.github.mcagentsmods.chat.api.agent.ToolCall;
-import io.github.mcagentsmods.chat.api.agent.ToolDefinition;
 import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
 import io.github.mcagentsmods.chat.api.mcp.McpContextRegistry;
 import io.github.mcagentsmods.chat.api.mcp.McpException;
@@ -12,6 +10,8 @@ import io.github.mcagentsmods.chat.api.mcp.McpServerSpec;
 import io.github.mcagentsmods.chat.api.mcp.McpSession;
 import io.github.mcagentsmods.chat.api.mcp.McpToolDescriptor;
 import io.github.mcagentsmods.chat.api.mcp.McpToolResult;
+import io.github.mcagentsmods.core.api.model.ToolCall;
+import io.github.mcagentsmods.core.api.model.ToolDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

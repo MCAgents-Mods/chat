@@ -149,7 +149,7 @@ final class WebJson {
         body.addProperty("id", message.id());
         body.addProperty("sessionId", message.sessionId());
         body.addProperty("index", message.index());
-        body.addProperty("role", message.role().wireName());
+        body.addProperty("role", message.role().code());
         body.addProperty("content", message.content());
         body.addProperty("createdAt", message.createdAt().toString());
         return body;

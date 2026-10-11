@@ -1,13 +1,13 @@
 package io.github.mcagentsmods.chat.common.storage.sqlite;
 
 import io.github.mcagentsmods.chat.api.model.ApiKey;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
 import io.github.mcagentsmods.chat.api.storage.ApiKeyRepository;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
 import io.github.mcagentsmods.chat.common.security.TokenCipher;
 import io.github.mcagentsmods.chat.common.security.TokenCipherException;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;

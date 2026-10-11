@@ -36,6 +36,18 @@ official mappings on its own, so there is no `mappings` line to add and no `rema
 in the build. Check `https://meta.fabricmc.net/v2/versions/game` before changing the
 Minecraft version.
 
+## MCAgents core
+
+Chat compiles against MCAgents core and does not carry it. Clone `MCAgents-Mods/core` beside
+this repository — `../core` — and `settings.gradle` builds the two together, so chat compiles
+and tests against core's source. Pass `-Pcore-build=/path/to/core` for another location.
+Without a checkout, Gradle resolves the published `io.github.mcagentsmods:core-api` and
+`core-common` at the version in `gradle/libs.versions.toml`.
+
+`runClient` does not put core in the development game. Copy core's Fabric jar
+(`platforms/fabric/build/libs/core-fabric-*.jar` in the core checkout) into `run/mods/`
+first, or the loader refuses to start chat for the missing `mcagents_core`.
+
 ## Commands
 
 | Goal | Command |

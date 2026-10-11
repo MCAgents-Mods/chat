@@ -1,9 +1,9 @@
 package io.github.mcagentsmods.chat.common.agent;
 
 import io.github.mcagentsmods.chat.api.agent.PlayerEnvironment;
-import io.github.mcagentsmods.chat.api.agent.PromptMessage;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.PromptMessage;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

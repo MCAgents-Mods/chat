@@ -8,9 +8,9 @@ import io.github.mcagentsmods.chat.api.mcp.McpServerSpec;
 import io.github.mcagentsmods.chat.api.mcp.McpSession;
 import io.github.mcagentsmods.chat.api.mcp.McpToolDescriptor;
 import io.github.mcagentsmods.chat.api.mcp.McpToolResult;
-import io.github.mcagentsmods.chat.common.agent.HttpCall;
-import io.github.mcagentsmods.chat.common.agent.HttpReply;
-import io.github.mcagentsmods.chat.common.agent.HttpTransport;
+import io.github.mcagentsmods.core.api.http.HttpCall;
+import io.github.mcagentsmods.core.api.http.HttpReply;
+import io.github.mcagentsmods.core.api.http.HttpTransport;
 
 import java.util.LinkedHashMap;
 import java.util.List;

@@ -1,5 +1,6 @@
 package io.github.mcagentsmods.chat.api.agent;
 
+import io.github.mcagentsmods.core.api.model.ModelClient;
 import java.util.concurrent.CompletableFuture;
 
 /**

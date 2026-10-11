@@ -6,7 +6,8 @@ description: Entry point for agents working on MCAgentsClient — resolves the s
 # MCAgentsClient — Agent Entry Point
 
 `MCAgents-Mods/chat` holds **MCAgentsClient**, a client-side-only Minecraft mod for
-the Fabric loader that puts an LLM chat agent inside the game. It talks to the OpenRouter
+the Fabric loader that puts an LLM chat agent inside the game. It runs on **MCAgents core**
+(`MCAgents-Mods/core`, mod id `mcagents_core`), whose model client it calls. It talks to the OpenRouter
 API with a key the player supplies — or to a platform's own API, when the player has stored
 a key for that platform — and keeps chat history, API keys, and Knowledge Packs in a
 local SQLite database under `{minecraft_dir}/MCAgents/data.db`, and uses embeddings to

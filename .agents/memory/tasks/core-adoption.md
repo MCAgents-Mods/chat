@@ -47,3 +47,37 @@ published core; publishing to GitHub Packages is outward-facing and waits for th
 through chat's `RepositoryApiKeySource`; core never stores them.
 
 *(each task appends below as it lands)*
+
+### Task 2 — feat/shared-llm-client
+
+**Landed.** Chat calls core's client. Deleted from chat, now imported from core:
+
+| Was chat's | Is core's |
+|---|---|
+| `api.agent`: `ApiKeySource`, `ChatCompletion`, `ChatRequest`, `ModelClient`, `ModelException`, `PromptMessage`, `ProviderRoute`, `ProviderRoutes`, `TokenUsage`, `ToolCall`, `ToolDefinition` | `core.api.model` |
+| `api.model`: `ModelName`, `ModelPlatform` | `core.api.model` |
+| `api.model.ChatRole` (`wireName`, `fromWireName`) | `core.api.chat.ChatRole` (`code`, `fromCode`) — the same four roles and strings, so stored history reads unchanged |
+| `common.agent`: `HttpCall`, `HttpReply`, `HttpTransport` | `core.api.http` |
+| `common.agent.JdkHttpTransport` | `core.common.http.JdkHttpTransport`, used by the MCP HTTP session too |
+| `common.agent.openrouter`: `OpenRouterClient`, `OpenRouterPayloads` | `core.common.model` |
+| test doubles `StubTransport`, `StubKeySource` | core's `common` test fixtures |
+
+`ChatModelClients` is new: the one place chat's stack is built, used by the game and the
+console. It sends chat's own attribution (`MCAgents-Mods/chat`, `MCAgentsClient`). The
+console's fallback client used to be built without `StoredProviderRoutes`, so it ignored a
+player's direct routes; building both from one place fixed that. The chat screen names the
+new `CLOSED` failure.
+
+**Build.** Core is `compileOnlyApi` in `api/` and `common/`, on the tests' classpath, and
+`fabric.mod.json` depends on `mcagents_core >= 0.5.0`, expanded from the version catalog. The
+built jar holds no `io/github/mcagentsmods/core` class. `settings.gradle` includes `../core`
+as a composite build, substituting `core-api` and `core-common` with core's projects; core's
+test fixtures resolve through the substitution with no extra wiring.
+
+**Tests.** Chat's client, direct-route and tool-payload tests moved to core in core's task 5
+and were deleted here, with the eleven `ModelNamingTest` cases that tested only `ModelName` or
+`ModelPlatform`. The `ModelCatalog` and `ModelPreferences` cases stay. `./gradlew build`
+passes: 381 tests in `common`, 78 in `website`.
+
+**Not proven.** `runClient` with core's Fabric jar in `run/mods/`, and the mod loading next to
+core in a real game.

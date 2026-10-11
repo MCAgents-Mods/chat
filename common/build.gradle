@@ -36,6 +36,10 @@ repositories {
 dependencies {
     api project(':mcagents-fabric-api')
 
+    // Core's model client and HTTP transport. Provided in game by the mcagents_core mod,
+    // so compiled against and never bundled, like core's API above.
+    compileOnlyApi libs.core.common
+
     // The only third-party runtime dependency. platforms/fabric bundles it into the mod
     // jar with Loom's `include`.
     implementation libs.sqlite.jdbc
@@ -45,6 +49,12 @@ dependencies {
     // Tests run outside the game, so they need it on their own runtime classpath.
     compileOnly libs.gson
     testImplementation libs.gson
+
+    // Tests run outside the game, where no core mod provides core. Its fixtures carry the
+    // network and key doubles the client is driven with.
+    testImplementation libs.core.api
+    testImplementation libs.core.common
+    testImplementation testFixtures(libs.core.common)
 
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher

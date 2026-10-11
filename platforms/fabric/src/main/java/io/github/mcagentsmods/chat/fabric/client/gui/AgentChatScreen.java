@@ -1,9 +1,7 @@
 package io.github.mcagentsmods.chat.fabric.client.gui;
 
 import io.github.mcagentsmods.chat.api.agent.Agent;
-import io.github.mcagentsmods.chat.api.agent.ModelException;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
@@ -11,6 +9,8 @@ import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.fabric.MCAgentsClientMod;
 import io.github.mcagentsmods.chat.fabric.client.AgentFactory;
 import io.github.mcagentsmods.chat.fabric.client.PlayerAccounts;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.ModelException;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -479,6 +479,7 @@ public final class AgentChatScreen extends Screen {
                 case AUTHENTICATION -> "The provider rejected every stored key: "
                         + modelFailure.getMessage();
                 case RATE_LIMIT -> "Rate limited by the provider: " + modelFailure.getMessage();
+                case CLOSED -> "The game is shutting down, so the question was not sent.";
                 default -> modelFailure.getMessage();
             };
         }

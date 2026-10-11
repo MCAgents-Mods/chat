@@ -1,8 +1,8 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ApiKeySource;
 import io.github.mcagentsmods.chat.api.model.ApiKey;
 import io.github.mcagentsmods.chat.api.storage.ApiKeyRepository;
+import io.github.mcagentsmods.core.api.model.ApiKeySource;
 
 import java.util.Objects;
 import java.util.Optional;

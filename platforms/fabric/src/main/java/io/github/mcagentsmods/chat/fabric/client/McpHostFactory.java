@@ -4,10 +4,10 @@ import io.github.mcagentsmods.chat.api.MCAgents;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
 import io.github.mcagentsmods.chat.common.ClientPaths;
-import io.github.mcagentsmods.chat.common.agent.HttpTransport;
-import io.github.mcagentsmods.chat.common.agent.JdkHttpTransport;
 import io.github.mcagentsmods.chat.common.mcp.GitRepositoryCloner;
 import io.github.mcagentsmods.chat.common.mcp.WatchingMcpHost;
+import io.github.mcagentsmods.core.api.http.HttpTransport;
+import io.github.mcagentsmods.core.common.http.JdkHttpTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

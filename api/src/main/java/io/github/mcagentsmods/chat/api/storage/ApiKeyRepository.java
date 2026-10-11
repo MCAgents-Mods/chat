@@ -1,9 +1,9 @@
 package io.github.mcagentsmods.chat.api.storage;
 
 import io.github.mcagentsmods.chat.api.model.ApiKey;
-import io.github.mcagentsmods.chat.api.model.ModelPlatform;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
 
 import java.util.List;
 import java.util.Optional;

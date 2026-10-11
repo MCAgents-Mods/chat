@@ -1,5 +1,7 @@
 package io.github.mcagentsmods.chat.api.model;
 
+import io.github.mcagentsmods.core.api.model.ModelName;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;

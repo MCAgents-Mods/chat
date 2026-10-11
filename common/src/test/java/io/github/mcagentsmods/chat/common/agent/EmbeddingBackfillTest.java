@@ -1,14 +1,13 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ChatCompletion;
-import io.github.mcagentsmods.chat.api.agent.ChatRequest;
-import io.github.mcagentsmods.chat.api.agent.ModelClient;
-import io.github.mcagentsmods.chat.api.agent.ModelException;
-import io.github.mcagentsmods.chat.api.model.ContentQuery;
 import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
+import io.github.mcagentsmods.core.api.model.ChatCompletion;
+import io.github.mcagentsmods.core.api.model.ChatRequest;
+import io.github.mcagentsmods.core.api.model.ModelClient;
+import io.github.mcagentsmods.core.api.model.ModelException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,12 +1,12 @@
 package io.github.mcagentsmods.chat.common.storage.sqlite;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -248,7 +248,7 @@ final class SqliteChatRepository implements ChatRepository {
                      connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, sessionId);
             statement.setInt(2, index);
-            statement.setString(3, role.wireName());
+            statement.setString(3, role.code());
             statement.setString(4, content);
             statement.executeUpdate();
             try (ResultSet keys = statement.getGeneratedKeys()) {
@@ -313,7 +313,7 @@ final class SqliteChatRepository implements ChatRepository {
                 rows.getLong("id"),
                 rows.getString("session_id"),
                 rows.getInt("message_index"),
-                ChatRole.fromWireName(rows.getString("role")),
+                ChatRole.fromCode(rows.getString("role")),
                 rows.getString("content"),
                 SqlValues.readInstant(rows.getString("created_at")));
     }

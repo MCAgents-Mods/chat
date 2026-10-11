@@ -30,6 +30,17 @@ a platform with no key of its own, an address that is neither https nor loopback
 `OpenRouterClient` serves both. It speaks the wire format OpenRouter defines, which is
 OpenAI's — that is precisely why one client covers a gateway and a platform's own API.
 
+**The client is core's, not chat's.** `OpenRouterClient`, `JdkHttpTransport`, and the request
+types (`ChatRequest`, `PromptMessage`, `ToolDefinition`, `ModelException`, `ModelName`,
+`ModelPlatform` and the rest) live in `MCAgents-Mods/core`, under
+`io.github.mcagentsmods.core.api.model`, `.api.http`, `.common.model` and `.common.http`, so
+every MCAgents mod calls the same code. Chat compiles against core and ships none of it; the
+`mcagents_core` mod provides it in game. A change to how a request is built, retried or
+rotated is made in core. What stays here is what is chat's: `ChatModelClients` builds the
+one stack the game and the console share — chat's keys through `RepositoryApiKeySource`,
+chat's routes through `StoredProviderRoutes`, `CachingModelClient` around it, and chat's own
+attribution.
+
 ### What a direct request must not carry
 
 * **`usage.include`** and **the `cache_control` content part**. Both are the gateway's. A

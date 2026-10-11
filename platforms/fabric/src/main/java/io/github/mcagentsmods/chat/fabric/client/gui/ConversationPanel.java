@@ -1,7 +1,7 @@
 package io.github.mcagentsmods.chat.fabric.client.gui;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
-import io.github.mcagentsmods.chat.api.model.ChatRole;
+import io.github.mcagentsmods.core.api.chat.ChatRole;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
