@@ -1,6 +1,6 @@
 ---
 name: memory-task-loader-platforms
-status: in progress
+status: done
 description: Renaming chat's jars to MCAgentsChat{Module} and its artifact ids to mcagents-chat-{module}, and splitting the mod into platforms/{shared, fabric, neoforge} so it ships a NeoForge jar.
 ---
 
@@ -34,10 +34,10 @@ and `platforms/neoforge` hold only each loader's entry point, key registration a
 
 | # | Title | Scope | Branch | PR |
 |---|---|---|---|---|
-| 1 | The record | This file and its index row | `chore/loader-platforms-plan` | |
-| 2 | Artifact names | Project names, base names, publications, core's new coordinates, docs | `refactor/artifact-names` | |
-| 3 | Shared platform | `platforms/shared` against vanilla Minecraft; Fabric keeps its three loader classes | `refactor/shared-platform` | |
-| 4 | NeoForge | `platforms/neoforge`: entry point, key registration, events, manifest, bundled SQLite | `feat/neoforge-platform` | |
+| 1 | The record | This file and its index row | `chore/loader-platforms-plan` | #19 |
+| 2 | Artifact names | Project names, base names, publications, core's new coordinates, docs | `refactor/artifact-names` | #20 |
+| 3 | Shared platform | `platforms/shared` against vanilla Minecraft; Fabric keeps its three loader classes | `refactor/shared-platform` | #21 |
+| 4 | NeoForge | `platforms/neoforge`: entry point, key registration, events, manifest, bundled SQLite | `feat/neoforge-platform` | #22 |
 
 ## Task 2 — refactor/artifact-names
 
@@ -95,3 +95,5 @@ writing. **Not proven in a real game**: in particular, whether NeoForge loads th
 `sqlite-jdbc` and its native library as a plain library has not been run.
 
 `./gradlew build publishToMavenLocal` passes with six publications.
+
+Pull requests #19 to #22 merged in order by rebase, after core's #9 and #10.
