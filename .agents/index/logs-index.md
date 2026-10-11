@@ -12,6 +12,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 
 | Version | File | Purpose |
 |---|---|---|
+| 0.1.0 | [`../../wiki/logs/0/1/0/CHANGELOG.md`](../../wiki/logs/0/1/0/CHANGELOG.md) | Runs on MCAgents core: core's model client and shared web console, and MCP servers that wait for the player's approval. |
 | 0.0.0 | [`../../wiki/logs/0/0/0/CHANGELOG.md`](../../wiki/logs/0/0/0/CHANGELOG.md) | Everything built so far — the instruction system and build, storage, the agent and retrieval, the web console and its provider selectors, wallets, and the MCP client and its tool routing. |
 
 ## Maintenance

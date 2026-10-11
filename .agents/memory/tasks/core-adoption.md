@@ -156,3 +156,13 @@ one for duplicated code. What they confirmed and this branch fixes:
 * The repeated screen boilerplate, the two near-identical list panels, the two MCP session
   classes' shared methods, the JSON readers and the paging helpers. Refactors with no
   behaviour change, left for their own branch.
+
+### Task 5 — release/0.1.0
+
+`project-version` is `0.1.0`, as approved. The changelog is `wiki/logs/0/1/0/CHANGELOG.md`,
+with an Upgrading section, since every player has to install core, approve cloned MCP servers
+and use the console's new addresses; its row is in `logs-index.md`. `fabric.mod.json` takes the
+version from `gradle.properties`, so the jar is `mcagents-chat-0.1.0.jar`.
+
+The PR column above fills in once the owner approves opening the pull requests; they open in
+task order, each based on the branch before it.
