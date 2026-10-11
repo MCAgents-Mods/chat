@@ -1,0 +1,63 @@
+---
+name: memory-task-repository-move
+status: open
+description: Moving the repository to MCAgents-Mods/chat — the new namespace, the MIT license, what was deliberately left alone, and the plan.
+---
+
+# The Repository Move
+
+## 2026-10-11
+
+**Goal.** The repository now lives at `https://github.com/MCAgents-Mods/chat`. Everything
+that names the old home — the package, the properties file, the license, the links — should
+name the new one.
+
+**Objective.** The base package is `io.github.mcagentsmods.chat`; `gradle.properties` carries
+`git-org=MCAgents-Mods` and `git-repo=chat`; `LICENSE` is the MIT license, copyright 2026
+MCAgents; the README no longer names the author; every document that stated the old
+coordinates states the new ones; and the build and tests still pass.
+
+**Detail.** Supplied by the repository owner: the repository URL, the namespace, the license
+text (verbatim), and the paragraph to delete from the README. No version bump — the owner
+bumps after this work lands.
+
+## The task list
+
+| # | Title | Scope | Repository | Branch | Files / areas | PR |
+|---|---|---|---|---|---|---|
+| 1 | The record | This file, written before the work is committed | `MCAgents-Mods/chat` | `chore/repository-move-plan` | `.agents/memory/`, `.agents/index/memory-index.md` | |
+| 2 | Namespace and coordinates | Package rename, Gradle group and names, mod entrypoint, properties | `MCAgents-Mods/chat` | `refactor/package-namespace` | every Java source set, `build.gradle`, `settings.gradle`, `platforms/fabric/`, `gradle.properties` | |
+| 3 | License and repository metadata | MIT `LICENSE`, mod metadata, README | `MCAgents-Mods/chat` | `docs/mit-license` | `LICENSE`, `fabric.mod.json`, `README.md` | |
+| 4 | Docs sync | Instructions, both wikis, and state that named the old coordinates | `MCAgents-Mods/chat` | `docs/repository-move` | `AGENTS.md`, `.agents/`, `wiki/environments/` | |
+| 5 | The release | Changelog entry, the `PR` column, and the closing entry | `MCAgents-Mods/chat` | `release/0.0.0` | `wiki/logs/`, this file | |
+
+## Decisions not to relitigate
+
+**Group `io.github.mcagentsmods`, base package `io.github.mcagentsmods.chat`.** The old pair
+was `io.github.mcagents` and `io.github.mcagents.clientfabric`: the group is the parent of the
+base package. The new pair keeps that relationship. The four sub-packages (`api`, `common`,
+`website`, `fabric`) keep their names.
+
+**What is not renamed.** The mod id `mcagents`, the `MCAgents/` game-data directory, the
+Gradle module names `mcagents-fabric-*`, and the central service URL
+`mcagents.mcrealms.space` all name things players or the service already know, not the
+repository. Renaming them would move data or break a contract for no benefit.
+
+**`MCAGENTS_CLIENTFABRIC_TOKEN_ENCRYPT_KEY` keeps its name.** It contains the old repository
+name, but it is a name players set in their environment: renaming it silently stops
+decrypting any key stored under the old one. Whether to rename it is the owner's decision, not
+a side effect of a repository move.
+
+**Historical records keep the old coordinates.** Task records under `.agents/memory/tasks/`
+and changelog entries about past work say `MCAgents/client-fabric` because that was true when
+they were written. Rewriting them would make the record disagree with the pull requests it
+cites.
+
+**Release branch `release/0.0.0`, no bump.** The owner bumps the version after this work, so
+the release task logs into the existing `0.0.0` changelog and changes no version carrier.
+
+**No session trailers in commits.** This repository's commit convention forbids a link to a
+tool session, and a model identifier does not belong in a commit either; commits here carry
+neither.
+
+*(each task appends below as it lands)*
