@@ -10,9 +10,10 @@ name: Publish
 # not exist the run tests, publishes, and only then creates the tag, so a
 # failed publish never leaves a tag behind and the next run tries again.
 #
-# Chat compiles against MCAgents core, which the build reads from core's own
-# GitHub Packages repository, so the build step carries the same token as the
-# publish step. The core version chat names must be published before chat is.
+# Chat compiles against MCAgents core and MCAgents agents, which the build reads
+# from each one's own GitHub Packages repository, so the build step carries the
+# same token as the publish step. The core and agents versions chat names must
+# be published before chat is.
 #
 # workflow_dispatch runs the same check by hand, to retry a release after a
 # failure.
