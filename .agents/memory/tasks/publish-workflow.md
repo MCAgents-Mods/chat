@@ -1,6 +1,6 @@
 ---
 name: memory-task-publish-workflow
-status: in-progress
+status: done
 description: Adding the GitHub Actions publish workflow to chat — resolving published core from GitHub Packages, publishing all six modules with a v{version} tag, and the 0.2.0 release.
 ---
 
@@ -40,9 +40,11 @@ option, so these were decided that way and posted in the project thread.
 
 * **Version `0.2.0`.** A minor bump: the unreleased work since `0.1.0` renamed every artifact
   and added a NeoForge jar. `0.1.1` would understate it, and `release/0.1.0` is already taken.
-* **`v0.1.0` marks the commit that released `0.1.0`.** That is accurate history, and it makes
-  the run started by the workflow's own merge find its tag and publish nothing. `0.1.0` itself
-  is never published.
+* **The workflow's own merge publishes nothing.** The plan was to tag `v0.1.0` on the commit
+  that released `0.1.0`, so the run that merge starts would find its tag. The environment the
+  work ran in refuses tag pushes, so that run is cancelled before it reaches the publish step
+  instead, the card's second option. `0.1.0` itself is never published, and `v0.1.0` does not
+  exist.
 * **CI gets core from GitHub Packages**, not from a checkout of core's `master`. The build is
   then checked against the exact core version chat declares, which is what a consumer of
   chat's packages will get.
@@ -51,10 +53,10 @@ option, so these were decided that way and posted in the project thread.
 
 | # | Title | Scope | Branch | Files / areas | PR |
 |---|---|---|---|---|---|
-| 1 | The record | This file and its index row | `chore/publish-workflow-plan` | `.agents/memory/` | |
-| 2 | Core from GitHub Packages | Resolve published core when no checkout is beside chat | `build/core-packages` | `build.gradle`, `settings.gradle`, repository map, setup page | |
-| 3 | Publish workflow | The owner's workflow, naming chat's modules | `ci/publish-workflow` | `.github/workflows/publish.yml`, repository map, setup page | |
-| 4 | The release | `0.2.0`, changelog, closing this record | `release/0.2.0` | `gradle.properties`, `wiki/logs/`, version mentions, this file | |
+| 1 | The record | This file and its index row | `chore/publish-workflow-plan` | `.agents/memory/` | #23 |
+| 2 | Core from GitHub Packages | Resolve published core when no checkout is beside chat | `build/core-packages` | `build.gradle`, `settings.gradle`, repository map, setup page | #24 |
+| 3 | Publish workflow | The owner's workflow, naming chat's modules | `ci/publish-workflow` | `.github/workflows/publish.yml`, repository map, setup page | #25 |
+| 4 | The release | `0.2.0`, changelog, closing this record | `release/0.2.0` | `gradle.properties`, `wiki/logs/`, version mentions, this file | #26 |
 
 *(each task appends below as it lands)*
 
@@ -111,6 +113,8 @@ logs index, the rule's version line, the repository map, the setup page and the 
 say `0.2.0`.
 
 **Merge order.** Core `0.5.0` must be on GitHub Packages first, because this release's
-build reads it from there. `v0.1.0` is tagged on the commit that released `0.1.0`
-before task 3 merges, so the workflow's first run finds its tag and publishes nothing; the
-merge of this branch is the run that publishes `0.2.0` and tags `v0.2.0`.
+build reads it from there; it was published on 2026-10-12. The run that task 3's merge starts
+finds no `v0.1.0` and would publish `0.1.0`, so it is cancelled at once; the merge of this
+branch is the run that publishes `0.2.0` and tags `v0.2.0`.
+
+Pull requests #23 to #26 are rebase-merged in that order, after core `0.5.0` is published.
