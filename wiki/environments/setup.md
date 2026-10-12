@@ -38,15 +38,17 @@ official mappings on its own, so there is no `mappings` line to add and no `rema
 in the build. Check `https://meta.fabricmc.net/v2/versions/game` before changing the
 Minecraft version.
 
-## MCAgents core
+## MCAgents core and agents
 
-Chat compiles against MCAgents core and does not carry it. Clone `MCAgents-Mods/core` beside
-this repository — `../core` — and `settings.gradle` builds the two together, so chat compiles
-and tests against core's source. Pass `-Pcore-build=/path/to/core` for another location.
-Without a checkout, Gradle resolves the published `io.github.mcagentsmods:mcagents-core-api` and
-`mcagents-core-common` at the version in `gradle/libs.versions.toml`, from core's GitHub
-Packages repository. GitHub Packages asks for a token even though core is public, so export a
-personal access token with the `read:packages` scope first:
+Chat compiles against MCAgents core and MCAgents agents and carries neither. Clone
+`MCAgents-Mods/core` and `MCAgents-Mods/agents` beside this repository — `../core` and
+`../agents` — and `settings.gradle` builds all three together, so chat compiles and tests
+against their source. Pass `-Pcore-build=/path/to/core` or `-Pagents-build=/path/to/agents`
+for another location. Without a checkout, Gradle resolves the published
+`io.github.mcagentsmods:mcagents-core-{api,common}` and `mcagents-agents-{tool,api,common}` at
+the versions in `gradle/libs.versions.toml`, from each repository's GitHub Packages registry.
+GitHub Packages asks for a token even though both are public, so export a personal access
+token with the `read:packages` scope first:
 
 ```bash
 export GITHUB_ACTOR=your-github-login
@@ -54,13 +56,13 @@ export GITHUB_TOKEN=ghp_your_token
 ./gradlew build
 ```
 
-A build with a core checkout beside it needs neither.
+A build with both checkouts beside it needs neither.
 
-`runClient` does not put core in the development game. Copy core's jar for the same loader
-(`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` or
-`platforms/neoforge/build/libs/MCAgentsCoreNeoforge-*.jar` in the core checkout) into that
-loader's `run/mods/` first, or the loader refuses to start chat for the missing
-`mcagents_core`.
+`runClient` does not put core or agents in the development game. Copy each one's jar for the
+same loader (`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` and
+`MCAgentsAgentsFabric-*.jar`, or the `Neoforge` ones, in each checkout) into that loader's
+`run/mods/` first, or the loader refuses to start chat for the missing `mcagents_core` or
+`mcagents_agents`.
 
 ## Commands
 

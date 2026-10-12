@@ -72,9 +72,10 @@ do not share your `data.db`.
 ## Quick start
 
 Install the jar for your loader — `MCAgentsChatFabric` with Fabric API, or
-`MCAgentsChatNeoforge` — and **MCAgents core** (`mcagents_core`, from `MCAgents-Mods/core`) for
-the same loader beside it. Core carries the model client every MCAgents mod shares; without it
-the game refuses to load MCAgentsClient.
+`MCAgentsChatNeoforge` — and **MCAgents core** (`mcagents_core`, from `MCAgents-Mods/core`) and
+**MCAgents agents** (`mcagents_agents`, from `MCAgents-Mods/agents`) for the same loader beside
+it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
+either the game refuses to load MCAgentsClient.
 
 Press `G` in game. The chat screen opens with your conversations on the left and a prompt
 along the bottom. Add an API key with the key button before asking anything — the dropdown

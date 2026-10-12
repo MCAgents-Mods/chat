@@ -76,10 +76,10 @@ The mod is an MCP **client**: it runs servers other people wrote and offers thei
 the agent. Player-facing documentation is [`mcp-servers.md`](mcp-servers.md).
 
 It obeys the same split as everything else. `api/` holds the contracts — `McpHost`,
-`McpSession`, the descriptors, and the tool-calling types the agent loop speaks.
-`common/` holds the implementations: discovery, the stdio and HTTP transports, the
-directory watch, the git cloner, and the router that resolves a tool name back to the
-server that owns it. `platforms/shared/` owns the host's lifetime, as it does for storage,
+`McpSession` and the descriptors. `common/` holds the implementations: discovery, the stdio
+and HTTP transports, the directory watch, the git cloner, and `McpTools`, which registers
+every server's tools with the agents mod and resolves a tool name back to the server that
+owns it. `platforms/shared/` owns the host's lifetime, as it does for storage,
 from the game directory the loader module hands it.
 
 Two consequences are worth stating because they are easy to undo:
@@ -91,6 +91,20 @@ which is how it is tested. Nothing about a server may need a Minecraft type.
 **Nothing about MCP may fail the mod.** A server that will not start becomes a status row
 and the rest carry on. This is the offline-first rule of this document applied to an
 optional thing: an MCP server is not allowed onto the path of anything local.
+
+## Where the agents mod sits
+
+Chat is the third layer of three. MCAgents core, layer 0, sends the requests; MCAgents
+agents, layer 1, owns tool calling — the registry every mod adds its tools to, the agent that
+picks categories, then tools, then answers, the worker limit, and the agents screen; chat,
+layer 2, is built on both. Neither is bundled: `common/` compiles against them and the
+`mcagents_core` and `mcagents_agents` mods provide them in game.
+
+Chat keeps what only it knows. `OpenRouterAgent` assembles the persona, where the player is,
+the earlier turns and the Knowledge Packs, and hands that conversation to the agents mod's
+agent with the newest question, which is what the tools are picked by. The MCP servers'
+tools reach that agent the way any mod's do: `McpTools` registers them, one category per
+server.
 
 ## Rules the split enforces
 

@@ -1,15 +1,20 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
-import com.google.gson.JsonObject;
-import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
+import io.github.mcagentsmods.agents.tool.AsyncTool;
+import io.github.mcagentsmods.agents.tool.ExecutionMode;
+import io.github.mcagentsmods.agents.tool.ToolArguments;
+import io.github.mcagentsmods.agents.tool.ToolResult;
+import io.github.mcagentsmods.agents.tool.ToolSchema;
+import io.github.mcagentsmods.agents.tool.ToolSpec;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
 import io.github.mcagentsmods.chat.api.mcp.McpServerStatus;
 import io.github.mcagentsmods.chat.api.mcp.RepositoryCoordinate;
-import io.github.mcagentsmods.core.api.model.ToolDefinition;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * The clone capability, offered to the model as a tool it can call.
@@ -23,13 +28,21 @@ import java.util.concurrent.CompletableFuture;
  * writes can decide where files land.
  *
  * <p>After a successful clone it asks the host to reload rather than waiting for the
- * directory watch, so the new server's tools are available on the model's very next turn
- * instead of a few seconds later.
+ * directory watch, so the new server's tools are registered by the time the result reaches
+ * the model, instead of a few seconds later.
+ *
+ * <p>It runs as {@link ExecutionMode#WAIT} work: it writes files and changes which servers are
+ * running, so nothing else asked in the same turn runs beside it.
  */
-public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
+public final class CloneRepositoryTool implements AsyncTool {
 
     /** Named for what it does, in the flat namespace the model sees. */
     public static final String NAME = "mcp_clone_repository";
+
+    /**
+     * Long enough for git's own limit and the reload after it, which starts the new server.
+     */
+    static final Duration TIMEOUT = Duration.ofMinutes(4);
 
     private final McpRepositoryCloner cloner;
     private final McpHost host;
@@ -39,39 +52,30 @@ public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
         this.host = host;
     }
 
-    @Override
-    public ToolDefinition definition() {
-        return new ToolDefinition(
-                NAME,
-                "Clone an external MCP server repository. Takes an https git URL naming "
+    /** How the agents registry offers it, in the {@value McpTools#CLONE_CATEGORY} category. */
+    public ToolSpec spec() {
+        return ToolSpec.builder(NAME)
+                .description("Clone an external MCP server repository. Takes an https git URL naming "
                         + "exactly {owner}/{repository}; the destination is chosen by the mod. "
                         + "A cloned server does not start until the player approves it, so "
                         + "tell the player what the result says it would run and how to "
                         + "approve it. Cloning a repository that is already present updates "
-                        + "it, and a changed command needs approving again.",
-                """
-                {
-                  "type": "object",
-                  "properties": {
-                    "url": {
-                      "type": "string",
-                      "description": "The https git URL of the MCP server repository, for \
-                example https://github.com/owner/repository.git"
-                    }
-                  },
-                  "required": ["url"]
-                }
-                """);
+                        + "it, and a changed command needs approving again.")
+                .category(McpTools.CLONE_CATEGORY)
+                .parameters(ToolSchema.builder()
+                        .string("url", "The https git URL of the MCP server repository, for "
+                                + "example https://github.com/owner/repository.git", true)
+                        .build())
+                .mode(ExecutionMode.WAIT)
+                .timeout(TIMEOUT)
+                .build();
     }
 
     @Override
-    public CompletableFuture<ToolOutcome> invoke(String callId, JsonObject arguments) {
-        String url = arguments.has("url") && arguments.get("url").isJsonPrimitive()
-                ? arguments.get("url").getAsString()
-                : "";
+    public CompletionStage<ToolResult> call(ToolArguments arguments) {
+        String url = arguments.string("url", "");
         if (url.isBlank()) {
-            return CompletableFuture.completedFuture(
-                    ToolOutcome.error(callId, "no 'url' argument was given"));
+            return CompletableFuture.completedFuture(ToolResult.error("no 'url' argument was given"));
         }
 
         return cloner.clone(url)
@@ -89,11 +93,11 @@ public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
                             .findFirst();
                     if (status.isPresent()
                             && status.get().state() == McpServerStatus.State.AWAITING_APPROVAL) {
-                        return ToolOutcome.ok(callId, what + ". " + status.get().detail());
+                        return ToolResult.ok(what + ". " + status.get().detail());
                     }
                     // The count is the useful part: it distinguishes a repository that
                     // arrived and connected from one that arrived and would not start.
-                    return ToolOutcome.ok(callId, tools > 0
+                    return ToolResult.ok(tools > 0
                             ? what + ". It is connected and offers " + tools
                                     + (tools == 1 ? " tool." : " tools.")
                             : what + ", but it is not offering any tools — it may not be an "
@@ -101,7 +105,7 @@ public final class CloneRepositoryTool implements McpToolRouter.BuiltInTool {
                 }))
                 .handle((outcome, failure) -> failure == null
                         ? outcome
-                        : ToolOutcome.error(callId, reasonOf(failure)));
+                        : ToolResult.error(reasonOf(failure)));
     }
 
     private static String reasonOf(Throwable failure) {

@@ -136,11 +136,16 @@ Every connected server's tools are merged into one list, each renamed to
 the other. Resources keep their own URIs, which are already unique to the server that
 published them.
 
+The tools are offered through the agents mod, grouped by server: for each question the agent
+first picks the servers it needs, then their tools, and only then is shown those tools in
+full. A player with many servers pays for the ones a question needs, not for all of them.
+
 ## Asking the agent to use them
 
 You do not call these tools; the agent does. Ask a question, and if answering it needs one
-of the tools a server offers, the agent calls it, reads the result, and carries on — as
-many times as it needs, then answers you. All you see is the answer.
+of the tools a server offers, the agent calls it, reads the result, and answers you. All you
+see is the answer. It gets one round of tool calls per question unless you allow more in the
+agents screen's **Settings**, which **G** opens.
 
 Adding a server is itself one of these tools. Ask the agent to add a repository and it
 clones it and tells you what it would run and how to approve it, as in

@@ -1,7 +1,13 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.chat.api.agent.ToolBroker;
-import io.github.mcagentsmods.chat.api.agent.ToolOutcome;
+import io.github.mcagentsmods.agents.common.agent.ToolAgent;
+import io.github.mcagentsmods.agents.tool.ExecutionMode;
+import io.github.mcagentsmods.agents.tool.ToolExecutor;
+import io.github.mcagentsmods.agents.tool.ToolRegistry;
+import io.github.mcagentsmods.agents.tool.ToolResult;
+import io.github.mcagentsmods.agents.tool.ToolSpec;
+import io.github.mcagentsmods.agents.tool.WorkerPool;
+import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
@@ -25,18 +31,20 @@ import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The decision-making loop: the model asks for tools, they run, and it answers.
+ * Chat's questions answered through the agents mod's agent: the tools are picked, run, and
+ * the model answers.
  *
- * <p>Driven through a scripted model client, so the loop is exercised without a provider,
- * an API key, or a running MCP server. What is being tested is the shape of the exchange —
- * what gets appended, in what order, and when the loop stops.
+ * <p>Driven through a scripted model client and a registry of its own, so the exchange is
+ * exercised without a provider, an API key, or a running MCP server. The agents mod tests its
+ * agent in depth; what is tested here is what chat hands it and what chat keeps — the
+ * conversation it answers from, the question it picks tools by, and a history with no tool
+ * rows in it.
  */
 @Timeout(30)
 class ToolCallingLoopTest {
@@ -46,17 +54,22 @@ class ToolCallingLoopTest {
 
     private LocalDatabase database;
     private ScriptedClient client;
-    private RecordingBroker broker;
+    private ToolRegistry registry;
+    private WorkerPool pool;
+    private final List<String> invoked = new ArrayList<>();
+    private int toolRounds = 1;
 
     @BeforeEach
     void open() {
         database = await(SqliteDatabase.open(gameDirectory.resolve("MCAgents/data.db")));
         client = new ScriptedClient();
-        broker = new RecordingBroker();
+        registry = new ToolRegistry();
+        pool = new WorkerPool(2);
     }
 
     @AfterEach
     void close() {
+        pool.close();
         if (database != null) {
             database.close();
         }
@@ -74,8 +87,27 @@ class ToolCallingLoopTest {
     }
 
     private OpenRouterAgent agent() {
-        return new OpenRouterAgent(database, client, new FixedPersona(),
-                io.github.mcagentsmods.chat.api.agent.EnvironmentSource.unknown(), broker);
+        return new OpenRouterAgent(database, client, new FixedPersona(), EnvironmentSource.unknown(),
+                new ToolAgent(client, registry, new ToolExecutor(pool), () -> toolRounds));
+    }
+
+    /** A tool in the one category these tests use, so the category step is skipped. */
+    private void offer(String name) {
+        offer(name, ToolResult.ok("ran " + name));
+    }
+
+    private void offer(String name, ToolResult result) {
+        registry.register(ToolSpec.builder(name)
+                        .description("Does " + name)
+                        .category("test")
+                        .mode(ExecutionMode.CONCURRENT)
+                        .build(),
+                arguments -> {
+                    synchronized (invoked) {
+                        invoked.add(name);
+                    }
+                    return result;
+                });
     }
 
     @Test
@@ -84,70 +116,83 @@ class ToolCallingLoopTest {
 
         assertEquals("Sunny.", ask("What is the weather?"));
         assertEquals(1, client.requests.size());
-        assertTrue(broker.invoked.isEmpty());
+        assertTrue(client.requests.getFirst().tools().isEmpty());
+        assertTrue(invoked.isEmpty());
     }
 
     @Test
-    void everyRequestOffersTheToolsTheBrokerHas() {
-        broker.offer("weather__forecast");
+    void theAnswerIsWrittenFromTheWholeConversation() {
         client.answer("Sunny.");
 
         ask("What is the weather?");
 
+        List<PromptMessage> sent = client.requests.getFirst().messages();
+        assertEquals(ChatRole.SYSTEM, sent.getFirst().role());
+        assertTrue(sent.getFirst().text().contains("Be terse."),
+                "the persona must reach the model: " + sent.getFirst().text());
+        assertEquals("What is the weather?", sent.getLast().text());
+    }
+
+    @Test
+    void theToolsArePickedByTheNewestQuestionAlone() {
+        offer("weather__forecast");
+        client.picks("weather__forecast");
+        client.answer("Sunny.");
+
+        ask("What is the weather?");
+
+        List<PromptMessage> picking = client.requests.getFirst().messages();
+        assertEquals("What is the weather?", picking.getLast().text());
+        assertFalse(picking.stream().anyMatch(message -> message.text().contains("Be terse.")),
+                "the persona is for the answer, not for picking tools");
         assertEquals(List.of("weather__forecast"),
-                client.requests.getFirst().tools().stream().map(ToolDefinition::name).toList());
+                client.requests.get(1).tools().stream().map(ToolDefinition::name).toList());
     }
 
     @Test
     void aToolCallIsRunAndTheModelIsAskedAgain() {
-        broker.offer("weather__forecast");
+        offer("weather__forecast");
+        client.picks("weather__forecast");
         client.wantsTool("c1", "weather__forecast", "{\"city\":\"Oslo\"}");
         client.answer("It is sunny in Oslo.");
 
         assertEquals("It is sunny in Oslo.", ask("Weather in Oslo?"));
 
-        assertEquals(2, client.requests.size(), "one round of tools means two requests");
-        assertEquals(List.of("weather__forecast"), broker.invoked);
+        assertEquals(3, client.requests.size(), "picking, asking, and answering with the result");
+        assertEquals(List.of("weather__forecast"), invoked);
     }
 
     @Test
-    void theSecondRequestCarriesTheCallAndItsResultInOrder() {
-        broker.offer("weather__forecast");
+    void theFollowUpCarriesTheCallAndItsResultInOrder() {
+        offer("weather__forecast");
+        client.picks("weather__forecast");
         client.wantsTool("c1", "weather__forecast", "{}");
         client.answer("Done.");
 
         ask("Weather?");
 
-        List<PromptMessage> second = client.requests.get(1).messages();
-        PromptMessage assistant = second.get(second.size() - 2);
-        PromptMessage result = second.getLast();
+        List<PromptMessage> followUp = client.requests.get(2).messages();
+        PromptMessage assistant = followUp.stream()
+                .filter(message -> !message.toolCalls().isEmpty())
+                .findFirst()
+                .orElseThrow();
+        PromptMessage result = followUp.stream()
+                .filter(message -> message.role() == ChatRole.TOOL)
+                .findFirst()
+                .orElseThrow();
 
-        assertEquals(ChatRole.ASSISTANT, assistant.role());
-        assertEquals(1, assistant.toolCalls().size());
         assertEquals("c1", assistant.toolCalls().getFirst().id(),
                 "the provider matches results to calls by id, so the call must be echoed back");
-
-        assertEquals(ChatRole.TOOL, result.role());
         assertEquals("c1", result.toolCallId());
         assertEquals("ran weather__forecast", result.text());
-    }
-
-    @Test
-    void theSameToolsAreOfferedOnTheFollowUp() {
-        broker.offer("weather__forecast");
-        client.wantsTool("c1", "weather__forecast", "{}");
-        client.answer("Done.");
-
-        ask("Weather?");
-
-        assertEquals(client.requests.getFirst().tools(), client.requests.get(1).tools(),
-                "the set the model was shown must be the set its calls are routed against");
+        assertTrue(followUp.indexOf(assistant) < followUp.indexOf(result));
     }
 
     @Test
     void severalCallsInOneTurnAllRunAndKeepTheModelsOrder() {
-        broker.offer("a__one");
-        broker.offer("b__two");
+        offer("a__one");
+        offer("b__two");
+        client.picks("a__one", "b__two");
         client.wantsTools(
                 new ToolCall("c1", "a__one", "{}"),
                 new ToolCall("c2", "b__two", "{}"));
@@ -155,63 +200,62 @@ class ToolCallingLoopTest {
 
         ask("Do both.");
 
-        assertEquals(List.of("a__one", "b__two"), broker.invoked);
-        List<PromptMessage> second = client.requests.get(1).messages();
-        assertEquals("c1", second.get(second.size() - 2).toolCallId());
-        assertEquals("c2", second.getLast().toolCallId());
+        assertEquals(2, invoked.size());
+        List<String> results = client.requests.get(2).messages().stream()
+                .filter(message -> message.role() == ChatRole.TOOL)
+                .map(PromptMessage::toolCallId)
+                .toList();
+        assertEquals(List.of("c1", "c2"), results);
     }
 
     @Test
-    void severalRoundsAreFollowedUntilTheModelAnswers() {
-        broker.offer("a__one");
+    void oneRoundOfToolsIsTheDefaultAndTheModelIsThenToldToAnswer() {
+        offer("a__one");
+        client.picks("a__one");
+        client.wantsTool("c1", "a__one", "{}");
+        client.wantsTool("c2", "a__one", "{}");
+
+        String answer = ask("Keep going.");
+
+        assertEquals(1, invoked.size(), "the player's setting starts at one round");
+        assertTrue(answer.contains("did not reach an answer"), answer);
+    }
+
+    @Test
+    void thePlayersRoundsAreFollowedUntilTheModelAnswers() {
+        toolRounds = 3;
+        offer("a__one");
+        client.picks("a__one");
         client.wantsTool("c1", "a__one", "{}");
         client.wantsTool("c2", "a__one", "{}");
         client.wantsTool("c3", "a__one", "{}");
         client.answer("Finally.");
 
         assertEquals("Finally.", ask("Keep going."));
-        assertEquals(4, client.requests.size());
-        assertEquals(3, broker.invoked.size());
-    }
-
-    @Test
-    void aModelThatNeverConvergesIsStoppedAndTheAnswerIsStillTheBestOneAvailable() {
-        broker.offer("a__one");
-        for (int i = 0; i < 20; i++) {
-            client.wantsTool("c" + i, "a__one", "{}");
-        }
-
-        String answer = ask("Loop forever.");
-
-        assertEquals(8, client.requests.size(), "the round limit must bound the exchange");
-        assertTrue(answer.contains("did not reach an answer"), answer);
+        assertEquals(3, invoked.size());
     }
 
     @Test
     void aFailingToolDoesNotFailTheQuestion() {
-        broker.offer("a__one");
-        broker.failWith("the server is not connected right now");
+        offer("a__one", ToolResult.error("the server is not connected right now"));
+        client.picks("a__one");
         client.wantsTool("c1", "a__one", "{}");
         client.answer("I could not check, sorry.");
 
         assertEquals("I could not check, sorry.", ask("Check something."));
 
-        PromptMessage result = client.requests.get(1).messages().getLast();
+        PromptMessage result = client.requests.get(2).messages().stream()
+                .filter(message -> message.role() == ChatRole.TOOL)
+                .findFirst()
+                .orElseThrow();
         assertTrue(result.text().contains("not connected"),
                 "the model must be told what went wrong: " + result.text());
     }
 
     @Test
-    void aModelWithNoToolsOfferedIsUnaffected() {
-        client.answer("Plain answer.");
-
-        assertEquals("Plain answer.", ask("Hello?"));
-        assertTrue(client.requests.getFirst().tools().isEmpty());
-    }
-
-    @Test
     void toolMessagesAreNeverWrittenToTheConversation() {
-        broker.offer("a__one");
+        offer("a__one");
+        client.picks("a__one");
         client.wantsTool("c1", "a__one", "{}");
         client.answer("Done.");
 
@@ -234,7 +278,7 @@ class ToolCallingLoopTest {
         }
     }
 
-    /** A persona that is always readable, so these tests are about the loop and nothing else. */
+    /** A persona that is always readable, so these tests are about the tools and nothing else. */
     private static final class FixedPersona
             implements io.github.mcagentsmods.chat.api.agent.PersonaStore {
 
@@ -264,6 +308,15 @@ class ToolCallingLoopTest {
             scripted.add(new ChatCompletion(text, "test-model", TokenUsage.UNKNOWN));
         }
 
+        /** The agent's tool step, answered with these names. */
+        void picks(String... names) {
+            StringBuilder json = new StringBuilder("{\"tools\":[");
+            for (int i = 0; i < names.length; i++) {
+                json.append(i == 0 ? "" : ",").append('"').append(names[i]).append('"');
+            }
+            wantsTool("pick", "select_tools", json.append("]}").toString());
+        }
+
         void wantsTool(String id, String name, String arguments) {
             wantsTools(new ToolCall(id, name, arguments));
         }
@@ -273,7 +326,7 @@ class ToolCallingLoopTest {
         }
 
         @Override
-        public CompletableFuture<ChatCompletion> complete(ChatRequest request) {
+        public synchronized CompletableFuture<ChatCompletion> complete(ChatRequest request) {
             requests.add(request);
             if (scripted.isEmpty()) {
                 return CompletableFuture.failedFuture(
@@ -284,45 +337,12 @@ class ToolCallingLoopTest {
 
         @Override
         public CompletableFuture<float[]> embed(String model, String text) {
-            // Retrieval is not what these tests are about; an empty vector disables it.
+            // Retrieval is not what these tests are about; a one-number vector matches nothing.
             return CompletableFuture.completedFuture(new float[] {1.0f});
         }
 
         @Override
         public void close() {
-        }
-    }
-
-    /** A broker that offers named tools and records which were invoked. */
-    private static final class RecordingBroker implements ToolBroker {
-
-        private final List<ToolDefinition> offered = new ArrayList<>();
-        private final List<String> invoked = new ArrayList<>();
-        private final AtomicInteger order = new AtomicInteger();
-        private String failure;
-
-        void offer(String name) {
-            offered.add(new ToolDefinition(name, "Does " + name, ""));
-        }
-
-        void failWith(String reason) {
-            failure = reason;
-        }
-
-        @Override
-        public List<ToolDefinition> definitions() {
-            return List.copyOf(offered);
-        }
-
-        @Override
-        public CompletableFuture<ToolOutcome> invoke(ToolCall call) {
-            synchronized (invoked) {
-                invoked.add(call.name());
-            }
-            order.incrementAndGet();
-            return CompletableFuture.completedFuture(failure == null
-                    ? ToolOutcome.ok(call.id(), "ran " + call.name())
-                    : ToolOutcome.error(call.id(), failure));
         }
     }
 }

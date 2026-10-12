@@ -40,8 +40,8 @@ three documents for a long time before any code called `ModelClient.embed`.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`), and the tool-calling contracts in `api.agent` (`ToolBroker`, `ToolOutcome`). The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, and `McpToolRouter`, which routes a model's tool call to the server that owns the tool. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
+| `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
 | `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
 | `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.MCAgentsKeyMappings` (builds the key; the loader registers it), `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): registers the key category and key, the end-of-tick and connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
@@ -62,14 +62,23 @@ project name rather than its artifact id, so `common/` and `website/` ask for th
 by name instead of writing `testFixtures(libs.core.common)`, which finds them only in the
 composite build.
 
+**MCAgents agents.** `common/` compiles against `io.github.mcagentsmods:mcagents-agents-common`
+(`compileOnlyApi`), which brings `mcagents-agents-api` and the pure-Java
+`mcagents-agents-tool`; no chat jar carries them, and both manifests require the
+`mcagents_agents` mod. `settings.gradle` builds a checkout at `../agents` (or
+`-Pagents-build=…`) together with chat when one is there, and the root `build.gradle` reads the
+published artifacts from `https://maven.pkg.github.com/MCAgents-Mods/agents` otherwise, with the
+same token as core. A development client needs core's and agents' jars for the same loader in
+its `run/mods/`.
+
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
 otherwise runs `./gradlew build`, then `./gradlew publish` — all six modules, as
 `io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's GitHub Packages — and
 only then pushes the tag. A merge that leaves the version alone publishes nothing, and a
 failed run leaves no tag, so running the workflow again retries the release. The build step
-carries the workflow's token because it reads core from GitHub Packages, so the core version
-`libs.versions.toml` names must be published before a chat release is.
+carries the workflow's token because it reads core and agents from GitHub Packages, so the
+versions `libs.versions.toml` names must be published before a chat release is.
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
@@ -178,12 +187,12 @@ What matters before changing any of it:
   `McpServerStatus.State.FAILED` row. This is the offline-first mandate, applied to MCP.
 * **Routing resolves a name; it never guesses.** Three places must agree on it —
   what `McpDiscovery` calls a server, what `McpContextRegistry` qualifies its tools as, and
-  what `McpToolRouter` strips before calling. They are edited separately, which is why
+  what `McpTools` strips before calling. They are edited separately, which is why
   `McpRoutingEndToEndTest` asserts the offered name is the routable one.
 * **A tool call never fails a question.** An unknown tool, unparseable arguments, or a
-  disconnected server all come back as a `ToolOutcome` the model reads and can recover
-  from. `OpenRouterAgent` then loops — bounded at `MAX_TOOL_ROUNDS`, and the stop is an
-  answer, not an error.
+  disconnected server all come back as an error result the model reads and can recover
+  from. The agents mod's agent runs the rounds — the player's setting, 1 unless they set
+  more — and the stop is an answer, not an error.
 * Tests spawn a **real child process** — `common/src/test/resources/mcp/FakeServer.java.txt`
   run through the JVM's own source launcher, so the suite needs nothing beyond the build's
   own toolchain. It misbehaves on purpose at startup, because a host that only survives
