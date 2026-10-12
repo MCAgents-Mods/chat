@@ -44,7 +44,17 @@ Chat compiles against MCAgents core and does not carry it. Clone `MCAgents-Mods/
 this repository — `../core` — and `settings.gradle` builds the two together, so chat compiles
 and tests against core's source. Pass `-Pcore-build=/path/to/core` for another location.
 Without a checkout, Gradle resolves the published `io.github.mcagentsmods:mcagents-core-api` and
-`mcagents-core-common` at the version in `gradle/libs.versions.toml`.
+`mcagents-core-common` at the version in `gradle/libs.versions.toml`, from core's GitHub
+Packages repository. GitHub Packages asks for a token even though core is public, so export a
+personal access token with the `read:packages` scope first:
+
+```bash
+export GITHUB_ACTOR=your-github-login
+export GITHUB_TOKEN=ghp_your_token
+./gradlew build
+```
+
+A build with a core checkout beside it needs neither.
 
 `runClient` does not put core in the development game. Copy core's jar for the same loader
 (`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` or

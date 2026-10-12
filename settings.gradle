@@ -23,7 +23,8 @@ rootProject.name = 'chat'
 // MCAgents core — the model client and the web console chat runs on. With a checkout of
 // MCAgents-Mods/core beside this one (or wherever -Pcore-build points), Gradle builds chat
 // against that source, so a change to core is tested here before it is published. Without
-// one, the published mcagents-core-api and mcagents-core-common are resolved instead.
+// one, the published mcagents-core-api and mcagents-core-common are resolved from core's
+// GitHub Packages repository instead, which build.gradle declares.
 def coreBuild = file(providers.gradleProperty('core-build').getOrElse('../core'))
 if (new File(coreBuild, 'settings.gradle').isFile()) {
     includeBuild(coreBuild) {
