@@ -39,6 +39,9 @@ dependencies {
     // Core's model client and HTTP transport. Provided in game by the mcagents_core mod,
     // so compiled against and never bundled, like core's API above.
     compileOnlyApi libs.core.common
+    // The agents mod's tool registry and agent, which chat's tools and answers go through.
+    // Provided in game by the mcagents_agents mod, so compiled against and never bundled.
+    compileOnlyApi libs.agents.common
 
     // The only third-party runtime dependency. platforms/fabric bundles it into the mod
     // jar with Loom's `include`.
@@ -54,6 +57,7 @@ dependencies {
     // network and key doubles the client is driven with.
     testImplementation libs.core.api
     testImplementation libs.core.common
+    testImplementation libs.agents.common
     // Core 0.5.0 publishes its test fixtures under the capability its project name gives
     // them, io.github.mcagentsmods:common-test-fixtures, rather than under its artifact id,
     // so testFixtures(libs.core.common) finds them only in the composite build. Asking for

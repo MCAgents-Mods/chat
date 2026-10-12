@@ -33,3 +33,10 @@ type = "required"
 versionRange = "[${coreVersion},)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies.mcagents]]
+modId = "mcagents_agents"
+type = "required"
+versionRange = "[${agentsVersion},)"
+ordering = "AFTER"
+side = "CLIENT"
