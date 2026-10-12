@@ -99,7 +99,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   empty unless something else puts a pack in it.
 * The content browser.
 * Anything that tells a new player the key is `G`.
-* Any CI workflow.
+* Any CI that builds a pull request. `.github/workflows/publish.yml` runs only on `master`
+  and by hand, and publishes only a version that has no tag yet.
 
 ## Architecture as built
 

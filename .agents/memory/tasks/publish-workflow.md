@@ -83,3 +83,21 @@ core does publish, `common-test-fixtures`, by name. That resolves against the pu
 and against a checkout, with or without core's fix: `./gradlew build` passed with 473 tests
 both with no checkout, against a stand-in serving core exactly as `0.5.0` was published, and
 as a composite build with core's `master`.
+
+### Task 3 — ci/publish-workflow
+
+**Landed.** `.github/workflows/publish.yml` is the owner's workflow with two changes. The header
+names what chat publishes: `api`, `common`, `website`, `shared`, `fabric` and `neoforge`, as
+`mcagents-chat-{module}`, with no Bukkit modules. The "Build and test" step also carries
+`GITHUB_ACTOR` and `GITHUB_TOKEN`, because the build reads core from GitHub Packages (task 2).
+Everything else, from the tag check to the tag push, is the owner's text. The repository map,
+the setup page and the README now say how a release gets published.
+
+**Checked.** `actionlint` passes. The version step, run by hand against this repository,
+answers `publish=true`, `tag=v0.1.0` today, which confirms that this workflow would publish
+`0.1.0` on its own merge unless `v0.1.0` exists by then. `./gradlew publishToMavenLocal`
+with no core checkout produces all six publications, and each module has a
+`publishAllPublicationsToGitHubPackagesRepository` task for `./gradlew publish` to run.
+
+**Not provable before merge.** The workflow runs only on `master` and by hand, so its first
+real run is the one that publishes the release.
