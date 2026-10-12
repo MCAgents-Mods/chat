@@ -1,6 +1,6 @@
 ---
 name: memory-task-agents-adoption
-status: in-progress
+status: done
 description: Moving chat's tool calling onto the agents mod — MCP servers as agents tool categories, the answer through ToolAgent, the Chat button on the agents screen in place of chat's G key, and the 0.3.0 release.
 ---
 
@@ -55,7 +55,35 @@ option.
 
 | # | Title | Scope | Branch | PR |
 |---|---|---|---|---|
-| 1 | The record | This file and the memory index | `chore/agents-adoption-plan` | |
-| 2 | Tools through agents | Depend on agents, and require `mcagents_agents` in the manifests. Register the MCP and clone tools in agents' registry, and answer through `ToolAgent`. Delete `ToolBroker`, `ToolOutcome` and `McpToolRouter`. Update the tests and docs. | `refactor/agent-tools` | |
-| 3 | Chat button | Drop chat's G key and register the Chat button on the agents screen | `feat/agents-button` | |
-| 4 | Release 0.3.0 | Version, changelog, logs index, state, and close this record | `release/0.3.0` | |
+| 1 | The record | This file and the memory index | `chore/agents-adoption-plan` | #27 |
+| 2 | Tools through agents | Depend on agents, and require `mcagents_agents` in the manifests. Register the MCP and clone tools in agents' registry, and answer through `ToolAgent`. Delete `ToolBroker`, `ToolOutcome` and `McpToolRouter`. Update the tests and docs. | `refactor/agent-tools` | #28 |
+| 3 | Chat button | Drop chat's G key and register the Chat button on the agents screen | `feat/agents-button` | #29 |
+| 4 | Release 0.3.0 | Version, changelog, logs index, state, and close this record | `release/0.3.0` | #30 |
+
+### Task 2 — refactor/agent-tools
+
+**Landed.** `McpTools` registers the host's tools in `Agents.tools()` and follows
+`McpHost.onRegistryChanged`; `CloneRepositoryTool` is an `AsyncTool` with a four-minute
+timeout, because git alone may take two and the reload starts the new server.
+`OpenRouterAgent` keeps its three constructors; the two without an agent use a `ToolAgent`
+over an empty registry of its own. `McpHostFactory.start` builds `McpTools` before discovery
+runs, so the clone tool is there from the start. The publish workflow's header names agents.
+
+**Checked.** `./gradlew build` with `../core` and `../agents` beside chat: 400 tests in
+`common/`, 76 in `website/`. Resolving agents from GitHub Packages could not be tried here
+(the session's token cannot read packages); core's path through the same token is proven by
+0.2.0's Publish run.
+
+### Task 3 — feat/agents-button
+
+**Landed.** `ChatButton` adds `mcagents.chat` at order 0, first thing in each loader's start-up.
+`ChatScreenLauncher.open` replaces the agents screen and rethrows, so a failure shows as the
+agents screen's red line. The Fabric dev client names `platforms/shared` in its mod, so its
+strings load in `runClient`.
+
+**Checked in a Fabric dev client** with core 0.5.1 and agents 0.1.0 in `run/mods/`: `G` opens
+the agents screen, **Chat** opens the chat screen, and a question with no key now says so.
+It did not before: the screen's own writes moved the chat revision, and the next tick's
+"changed elsewhere" reload cleared the reason. Fixed in the same branch. NeoForge has no dev
+client, so it is compile-verified only.
+
