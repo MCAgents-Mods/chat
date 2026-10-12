@@ -1,17 +1,14 @@
 package io.github.mcagentsmods.chat.shared.client;
 
+import io.github.mcagentsmods.agents.common.Agents;
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
-import io.github.mcagentsmods.chat.api.agent.ToolBroker;
-import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.common.agent.CachingModelClient;
 import io.github.mcagentsmods.chat.common.agent.ChatModelClients;
 import io.github.mcagentsmods.chat.common.agent.FilePersonaStore;
 import io.github.mcagentsmods.chat.common.agent.OpenRouterAgent;
-import io.github.mcagentsmods.chat.common.mcp.CloneRepositoryTool;
-import io.github.mcagentsmods.chat.common.mcp.McpToolRouter;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 
 /**
@@ -41,23 +38,12 @@ public final class AgentFactory {
      * @param paths    the mod's on-disk layout, for the persona file
      */
     public static Agent create(LocalDatabase database, ClientPaths paths) {
-        return new OpenRouterAgent(database, sharedClient(database), personaStore(paths),
-                GameEnvironment.source(), toolBroker(paths));
-    }
-
-    /**
-     * The tools the model may call: everything the MCP servers offer, plus the built-in
-     * one that clones a new server.
-     *
-     * <p>Built fresh per agent rather than cached. It reads the host's registry at request
-     * time, so a server connected since the screen opened is offered without the player
-     * reopening anything — and a player with no servers gets a broker with one tool, which
-     * costs a few hundred characters of prompt and nothing else.
-     */
-    private static ToolBroker toolBroker(ClientPaths paths) {
-        McpHost host = McpHostFactory.host();
-        return new McpToolRouter(host)
-                .withBuiltIn(new CloneRepositoryTool(McpHostFactory.cloner(paths), host));
+        ModelClient client = sharedClient(database);
+        // The agents mod's agent, over every tool any mod registered: the MCP servers' tools
+        // and the clone tool are put there by McpHostFactory, and kept there as servers come
+        // and go, so a server connected since the screen opened is offered at once.
+        return new OpenRouterAgent(database, client, personaStore(paths),
+                GameEnvironment.source(), Agents.agent(client));
     }
 
     /**

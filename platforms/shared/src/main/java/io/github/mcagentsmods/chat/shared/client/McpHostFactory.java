@@ -1,10 +1,12 @@
 package io.github.mcagentsmods.chat.shared.client;
 
+import io.github.mcagentsmods.agents.common.Agents;
 import io.github.mcagentsmods.chat.api.MCAgents;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.common.mcp.GitRepositoryCloner;
+import io.github.mcagentsmods.chat.common.mcp.McpTools;
 import io.github.mcagentsmods.chat.common.mcp.WatchingMcpHost;
 import io.github.mcagentsmods.core.api.http.HttpTransport;
 import io.github.mcagentsmods.core.common.http.JdkHttpTransport;
@@ -16,7 +18,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Builds and owns the MCP host, and the cloner that fills the directory it watches.
+ * Builds and owns the MCP host, the cloner that fills the directory it watches, and the
+ * {@link McpTools} that offer both to the agents mod's agent.
  *
  * <p>One host per game session, for the same reason there is one model client: it holds
  * child processes and a filesystem watch, and a second would start every server twice.
@@ -33,6 +36,7 @@ public final class McpHostFactory {
     private static volatile McpRepositoryCloner cloner;
     private static volatile ExecutorService executor;
     private static volatile HttpTransport transport;
+    private static volatile McpTools tools;
 
     private McpHostFactory() {
         throw new AssertionError("No instances.");
@@ -59,6 +63,9 @@ public final class McpHostFactory {
             transport = new JdkHttpTransport();
             WatchingMcpHost started = new WatchingMcpHost(paths, transport, executor);
             host = started;
+            // Registered before discovery runs, so the clone tool is there from the start and
+            // each server's tools arrive the moment it connects.
+            tools = new McpTools(started, Agents.tools()).start(cloner(paths));
 
             started.start().whenComplete((registry, failure) -> {
                 if (failure != null) {
@@ -122,6 +129,10 @@ public final class McpHostFactory {
     /** Stops every server and releases the watch. Called on game shutdown. */
     public static void close() {
         synchronized (McpHostFactory.class) {
+            if (tools != null) {
+                tools.close();
+                tools = null;
+            }
             if (host != null) {
                 host.close();
                 host = null;

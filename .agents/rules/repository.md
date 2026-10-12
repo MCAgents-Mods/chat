@@ -42,7 +42,7 @@ diagram and the reasoning.
 | Module | Directory | Gradle name | May depend on |
 |---|---|---|---|
 | API | `api/` | `mcagents-chat-api` | The JDK and MCAgents core's API. |
-| Common | `common/` | `mcagents-chat-common` | `api/`, MCAgents core, and plain JVM libraries. |
+| Common | `common/` | `mcagents-chat-common` | `api/`, MCAgents core, MCAgents agents, and plain JVM libraries. |
 | Website | `website/` | `mcagents-chat-website` | `api/`, `common/`, plain JVM libraries. |
 | Shared platform | `platforms/shared/` | `mcagents-chat-shared` | all of the above and vanilla Minecraft — no loader. |
 | Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric. |
@@ -56,6 +56,11 @@ diagram and the reasoning.
   carries a core class would load a second copy beside the one every other mod uses.
 * **What core already does is not written again here.** The model client, its transport, the
   request types and model naming are core's; a change to them is made in core.
+* **Agents is compiled against, never bundled, and owns tool calling.** `mcagents-agents-common`
+  is `compileOnlyApi` in `common/`, and the `mcagents_agents` mod provides it in game. The tool
+  registry, the three-step agent, the worker limit and the agents screen are agents'; chat
+  registers its tools there and answers through its agent, and a change to how tools are
+  picked or run is made in agents.
 * `common/` holds the implementations of those contracts. It must compile and be testable
   **without Minecraft on the classpath**. If a class in `common/` needs a Minecraft type,
   the design is wrong: pass the value in through an `api/` contract instead.

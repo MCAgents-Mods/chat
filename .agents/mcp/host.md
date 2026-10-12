@@ -130,45 +130,46 @@ offered.
 
 ## Routing: a name is resolved, never guessed
 
-The model is shown a flat list and calls one name. `McpToolRouter` looks that name up in
-the registry, finds the session for the server it names, and calls the tool by **its own
+Tools are offered through the agents mod's registry, not by chat. `McpTools` registers
+every tool the host's registry holds there, under its qualified `{server}__{tool}` name, and
+follows the host: tools are added when a server connects, removed when it goes, and replaced
+when they change. Its body finds the session for the server and calls the tool by **its own
 name** — the qualification is stripped, because a server has never heard of it.
 
 Three places must agree on that name and they are edited separately: what `McpDiscovery`
-calls a server, what `McpContextRegistry` qualifies its tools as, and what the router
+calls a server, what `McpContextRegistry` qualifies its tools as, and what `McpTools`
 strips. A change to any one of them is a change to all three.
 
-**Built-in tools are checked before MCP ones**, so a server cannot shadow one by choosing a
-colliding name. `mcp_clone_repository` has to be built in: it is how a player with no
+**Each server is a category**, named by `McpTools.categoryOf(serverId)`, so the agent's
+first step picks servers before any tool is described. `mcp_clone_repository` sits in its
+own category, `mcp`, and is registered before discovery runs: it is how a player with no
 servers gets their first, and a tool served by a server they do not have yet is a loop with
-no entry.
+no entry. The agents registry refuses a duplicate name, so no server can shadow it.
+
+A name or schema the agents registry refuses leaves that one tool out with a warning; a
+provider would refuse the whole request over it, silencing every other server's tools.
 
 ## A tool call never fails a question
 
-Every failure comes back as a `ToolOutcome` with `isError` set, carrying text the model
-reads:
+Every failure comes back as a result with `isError` set, carrying text the model reads:
 
-* a tool that does not exist — and the outcome **lists the real names**, so the model can
-  correct itself rather than guess again;
-* arguments that will not parse — handed back to the model that wrote them;
+* a tool that does not exist, and arguments that will not parse — answered by the agents
+  mod's executor;
 * a server that has disconnected since its tools were offered;
 * a server that threw, unwrapped to its reason.
 
 Failing the request instead turns a mistake the model could have recovered from into a dead
-question the player has to ask again. Never convert an outcome into a thrown failure on the
+question the player has to ask again. Never convert a result into a thrown failure on the
 way back.
 
-## The exchange is bounded and echoed exactly
+## The exchange belongs to the agents mod
 
-* **The assistant turn goes back verbatim, ids intact, followed by one result per call.**
-  The provider matches results to calls by id and rejects a result for a call it cannot
-  see. Neither half may be summarised, reordered, or dropped.
-* **Calls in one turn run concurrently.** A model asking for three tools has said the three
-  are independent; running them in sequence makes the player wait for the sum. Results are
-  reassembled in the order the model asked, not the order they finished.
-* **The loop stops.** At an answer, and at `MAX_TOOL_ROUNDS` regardless — and the stop is
-  an answer, keeping whatever text the model produced. A player who waited deserves the
-  partial answer over an error about a limit they did not know existed.
+The agents mod's agent runs the exchange: it echoes the assistant turn and one result per
+call back to the provider, runs a server's tools together when the model asks for several
+(`CONCURRENT`) and the clone tool alone (`WAIT`), and stops after the player's number of
+tool rounds, 1 unless they set more. Chat hands it the assembled conversation and the
+newest question, and keeps one rule of its own:
+
 * **Tool messages are never stored.** They are the working-out; a replayed conversation
   must read as the conversation the player had.
 
