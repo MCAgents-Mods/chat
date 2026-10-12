@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.2.0 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.3.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -14,7 +14,10 @@ why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
 
 Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
-* **The chat screen**, opened with `G`. Session list, search, conversation, prompt, Send.
+* **The chat screen**, opened with `G` and then **Chat** on the agents screen since 0.3.0.
+  Session list, search, conversation, prompt, Send. The 0.3.0 path — `G`, the Chat button, the
+  chat screen, and a question with no key showing its reason — was run in a Fabric dev client;
+  NeoForge has no dev client yet.
 * **The API key screen** — a key was pasted, stored, and listed masked.
 * **The model settings screen** — both dropdowns, editable and selectable.
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
@@ -47,8 +50,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
 * **The whole MCP client.** The mod can clone external MCP servers into
   `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`, discover and run them over stdio or
-  HTTP, merge their tools into one registry, and route the model's tool calls back to the
-  server that owns each one. Covered by 97 tests in `common/`, seventeen of which drive a
+  HTTP, register their tools with the agents mod, one category per server, and route the
+  model's tool calls back to the server that owns each one. Covered by tests in `common/`, seventeen of which drive a
   **real child process** — but **no game has ever started the host**, **no real
   third-party MCP server has been connected**, and **no real model has been driven through
   the tool loop**: every completion in those tests is scripted. See
@@ -104,9 +107,13 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 ## Architecture as built
 
-* `api/` contracts, `common/` implementations, `platforms/fabric/` the mod. One-way
-  dependency chain; no Minecraft in `api/` or `common/`.
-* Every I/O method returns `CompletableFuture`. 533 tests across `common/` and `website/`.
+* `api/` contracts, `common/` implementations, `website/` the console pages,
+  `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/` and
+  `platforms/neoforge/` the jars. One-way dependency chain; no Minecraft in `api/` or `common/`.
+* Layers: MCAgents core (0) sends the requests, MCAgents agents (1) owns tool calling and the
+  `G` screen, chat (2) is built on both and bundles neither. See
+  [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md).
+* Every I/O method returns `CompletableFuture`. 476 tests across `common/` and `website/`.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to the console, so a save from either
   interface is the persona the next question uses. It generates the file when it is missing
@@ -133,16 +140,19 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `model.embedding.enabled`, carried on `ModelPreferences` and shared by the in-game
   screen and the console. Off does no work at all rather than filtering afterwards, and
   a failed embedding call yields an ordinary answer rather than an error.
-* MCP: the mod is an MCP **client**. `api.mcp` holds the contracts and `api.agent` the
-  tool-calling ones (`ToolBroker`, `ToolOutcome`, over core's `ToolDefinition` and `ToolCall`);
-  `common.mcp` holds `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`,
-  `HttpMcpSession`, `WatchingMcpHost` (connects, watches the directory, reloads as a diff
-  so an unchanged server keeps its process), `GitRepositoryCloner`, and `McpToolRouter`.
+* MCP: the mod is an MCP **client**. `api.mcp` holds the contracts; `common.mcp` holds
+  `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`, `HttpMcpSession`,
+  `WatchingMcpHost` (connects, watches the directory, reloads as a diff so an unchanged
+  server keeps its process), `GitRepositoryCloner`, and `McpTools`, which registers each
+  server's tools in the agents registry under a category named after the server and follows
+  the host. `OpenRouterAgent` answers through the agents mod's agent; rounds of tool calls
+  are the player's agents setting, 1 by default.
   `McpHostFactory` owns one host per game session on daemon threads. Tools are exposed as
   `{server}__{tool}` capped at 64 characters, because a provider rejects the whole request
   over one bad function name. **Nothing about MCP may fail the mod** — a server that will
   not start is a status row. `mcp_clone_repository` is built in rather than served, because
-  a player with no servers cannot be handed a tool by one.
+  a player with no servers cannot be handed a tool by one; it is an agents tool in the `mcp`
+  category, run alone.
 * Reading: long lists come back a window at a time through `Page` and `PageRequest`, with
   the total counted rather than inferred. Any ordering a window is taken from is total, or
   the reader sees rows twice and never sees others.
@@ -213,7 +223,8 @@ Two things are outstanding, and the second is the more interesting.
    a server, and a realm. A third is now worth as much: ask the agent to clone a real MCP
    server and then ask it something that needs one of that server's tools — it is the only
    way to learn what a real model does with these tool descriptions, and what a real
-   third-party server does that the fake one does not.
+   third-party server does that the fake one does not. Since 0.3.0 it also shows whether a
+   real model picks the right server and tool in the agents mod's first two steps.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
    would settle it — and would be the first end-to-end proof that a stored pack can be
