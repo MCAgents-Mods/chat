@@ -35,6 +35,21 @@ if (new File(coreBuild, 'settings.gradle').isFile()) {
     }
 }
 
+// MCAgents agents — the tool registry and the tool-calling agent chat answers through. The
+// same arrangement as core: a checkout of MCAgents-Mods/agents beside this one (or wherever
+// -Pagents-build points) is built with chat, and without one the published
+// mcagents-agents-{tool,api,common} are read from agents' GitHub Packages repository.
+def agentsBuild = file(providers.gradleProperty('agents-build').getOrElse('../agents'))
+if (new File(agentsBuild, 'settings.gradle').isFile()) {
+    includeBuild(agentsBuild) {
+        dependencySubstitution {
+            ['tool', 'api', 'common'].each { name ->
+                substitute module("io.github.mcagentsmods:mcagents-agents-${name}") using project(":mcagents-agents-${name}")
+            }
+        }
+    }
+}
+
 include 'mcagents-chat-api'
 project(':mcagents-chat-api').projectDir = file('api')
 

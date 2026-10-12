@@ -24,6 +24,8 @@ gson = "2.14.0"
 junit = "6.1.3"
 # MCAgents core. Compiled against, never bundled: the mcagents_core mod provides it in game.
 mcagents-core = "0.5.0"
+# MCAgents agents. Compiled against, never bundled: the mcagents_agents mod provides it in game.
+mcagents-agents = "0.1.0"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
@@ -33,6 +35,7 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 core-api = { module = "io.github.mcagentsmods:mcagents-core-api", version.ref = "mcagents-core" }
 core-common = { module = "io.github.mcagentsmods:mcagents-core-common", version.ref = "mcagents-core" }
+agents-common = { module = "io.github.mcagentsmods:mcagents-agents-common", version.ref = "mcagents-agents" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 

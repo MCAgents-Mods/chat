@@ -11,21 +11,24 @@ allprojects {
 }
 
 subprojects {
-    // MCAgents core is published to GitHub Packages, not Maven Central. A checkout of core
-    // beside this one replaces these coordinates with core's source (see settings.gradle) and
-    // this repository is never asked; without one, as on a CI runner, core's published jars
-    // are read from here. GitHub Packages wants a token even for a public package: the
-    // workflow's GITHUB_TOKEN, or locally a personal access token with read:packages.
+    // MCAgents core and agents are published to GitHub Packages, not Maven Central. A
+    // checkout of either beside this one replaces its coordinates with its source (see
+    // settings.gradle) and its repository is never asked; without one, as on a CI runner, the
+    // published jars are read from here. GitHub Packages wants a token even for a public
+    // package: the workflow's GITHUB_TOKEN, or locally a personal access token with
+    // read:packages. Each repository is asked only for its own modules.
     repositories {
-        maven {
-            name = 'MCAgentsCore'
-            url = "https://maven.pkg.github.com/${providers.gradleProperty('git-org').get()}/core"
-            credentials {
-                username = System.getenv('GITHUB_ACTOR')
-                password = System.getenv('GITHUB_TOKEN')
-            }
-            content {
-                includeGroup 'io.github.mcagentsmods'
+        ['core', 'agents'].each { mod ->
+            maven {
+                name = "MCAgents${mod.capitalize()}"
+                url = "https://maven.pkg.github.com/${providers.gradleProperty('git-org').get()}/${mod}"
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+                content {
+                    includeModuleByRegex 'io\\.github\\.mcagentsmods', "mcagents-${mod}-.*"
+                }
             }
         }
     }

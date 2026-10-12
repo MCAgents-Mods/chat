@@ -76,13 +76,15 @@ tasks.named('jar', Jar) {
 
 processResources {
     def modVersion = project.version
-    // The core this build compiled against is the oldest the jar may run with.
+    // The core and agents this build compiled against are the oldest the jar may run with.
     def coreVersion = libs.versions.mcagents.core.get()
+    def agentsVersion = libs.versions.mcagents.agents.get()
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
+    inputs.property 'agentsVersion', agentsVersion
 
     filesMatching('META-INF/neoforge.mods.toml') {
-        expand version: modVersion, coreVersion: coreVersion
+        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion
     }
 }
 
@@ -90,7 +92,8 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             // The mod jar alone, with no dependency list: it already carries api, common,
-            // website and shared, nests SQLite, and the loader and mcagents_core supply the rest.
+            // website and shared, nests SQLite, and the loader, mcagents_core and
+            // mcagents_agents supply the rest.
             artifact tasks.named('jar')
 
             pom {
