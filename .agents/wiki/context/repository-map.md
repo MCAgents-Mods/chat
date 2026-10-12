@@ -43,9 +43,9 @@ three documents for a long time before any code called `ModelClient.embed`.
 | `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
 | `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
 | `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
-| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.MCAgentsKeyMappings` (builds the key; the loader registers it), `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): registers the key category and key, the end-of-tick and connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
-| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): registers the key category and key on `RegisterKeyMappingsEvent`, `ClientTickEvent.Post`, `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
+| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButton` (the Chat button on the agents mod's screen; the loader adds it), `client.ChatScreenLauncher`, `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds the Chat button, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds the Chat button, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
 `mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
@@ -302,20 +302,18 @@ The decompiled jar to inspect is
 
 ## Reaching the mod in game
 
-The `G` key, and nothing else. That is enough, and it is provably enough:
-
-> `KeyMappingRegistryImpl.registerKeyMapping` throws `IllegalStateException` if
-> `Minecraft.options` already exists. An exception out of `onInitializeClient` crashes
-> startup with a Fabric error screen. **So a game that reaches the main menu has already
-> proven its key mappings registered** — a key that appears to do nothing is never a
-> registration problem.
->
-> NeoForge gets the same guarantee another way: it offers key registration only on
-> `RegisterKeyMappingsEvent`, which fires during start-up, before `Options` is built.
+The **Chat** button on the agents mod's screen, and nothing else. `G` is the agents mod's
+key: it opens that screen, where every MCAgents mod adds a button instead of taking a key of
+its own. Each loader adds chat's button first thing in its client start-up, before anything
+that can fail, and the agents mod guarantees its key the same way chat's own key used to be
+guaranteed — a game that reaches the main menu has registered it. A button whose action
+throws leaves the player on the agents screen with the reason in red, never a button that
+seems to do nothing.
 
 **The screen therefore opens unconditionally.** It does not require the database, because
 requiring it is what made this ship broken: `open()` returned silently when storage was not
-ready, and a dead key is indistinguishable from a mod that never loaded. Storage state is
+ready, and a dead key is indistinguishable from a mod that never loaded. It replaces the
+agents screen it was opened from. Storage state is
 reported *inside* the screen, with a Retry button, where the player is already looking.
 
 Everything the player configures lives in the interface — sessions, models (gear), API keys

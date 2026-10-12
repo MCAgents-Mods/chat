@@ -1,6 +1,5 @@
 {
-  "key.categories.mcagents.main": "MCAgents",
-  "key.mcagents.open_chat": "Open agent chat",
+  "gui.mcagents.agents.chat": "Chat",
   "gui.mcagents.title": "MCAgents",
   "gui.mcagents.search": "Search chats",
   "gui.mcagents.prompt": "Ask the agent",

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * The client start-up every loader calls, and the state it leaves behind.
  *
- * <p>Each loader's entry point registers the key mapping and its events, then calls
+ * <p>Each loader's entry point adds the Chat button and registers its events, then calls
  * {@link #start(Path)} with the game directory it knows. From that directory this resolves
  * the mod's layout once, opens the local database, and everything below works from the
  * results.
@@ -61,7 +61,7 @@ public final class ChatRuntime {
 
     /**
      * Starts the mod on the client. Called once, by the loader's entry point, after it has
-     * registered the key mapping and its connection events.
+     * added the Chat button and registered its connection events.
      *
      * @param gameDirectory the directory Minecraft runs in, as the loader reports it
      */

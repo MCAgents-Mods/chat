@@ -131,7 +131,7 @@ copyable with no internet at all.
 
 ## Using it
 
-In the game, press `G` for the chat screen, then **Wallets** in the bottom-left corner. In a
+In the game, press `G` and choose **Chat**, then **Wallets** in the bottom-left corner. In a
 browser, open the console and go to **Wallets**. Both show the same thing the same way.
 
 **Every account is a column.** Each shows five wallets and scrolls past that, so an account
