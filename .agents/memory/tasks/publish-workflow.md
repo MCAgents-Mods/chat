@@ -101,3 +101,16 @@ with no core checkout produces all six publications, and each module has a
 
 **Not provable before merge.** The workflow runs only on `master` and by hand, so its first
 real run is the one that publishes the release.
+
+### Task 4 — release/0.2.0
+
+**Landed.** `project-version` is `0.2.0`, decided by taking the recommended option while the
+owner was away. `wiki/logs/0/2/0/CHANGELOG.md` covers everything since `0.1.0`: the loader
+platforms work, which merged without a release of its own, and this task's publishing. The
+logs index, the rule's version line, the repository map, the setup page and the state file
+say `0.2.0`.
+
+**Merge order.** Core `0.5.0` must be on GitHub Packages first, because this release's
+build reads it from there. `v0.1.0` is tagged on the commit that released `0.1.0`
+before task 3 merges, so the workflow's first run finds its tag and publishes nothing; the
+merge of this branch is the run that publishes `0.2.0` and tags `v0.2.0`.
