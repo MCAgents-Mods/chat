@@ -57,3 +57,25 @@ option, so these were decided that way and posted in the project thread.
 | 4 | The release | `0.2.0`, changelog, closing this record | `release/0.2.0` | `gradle.properties`, `wiki/logs/`, version mentions, this file | |
 
 *(each task appends below as it lands)*
+
+### Task 2 — build/core-packages
+
+**Landed.** The root `build.gradle` gives every module a `MCAgentsCore` repository,
+`https://maven.pkg.github.com/MCAgents-Mods/core`, limited to the `io.github.mcagentsmods`
+group and authenticated from `GITHUB_ACTOR` and `GITHUB_TOKEN`. A `../core` checkout still
+substitutes core's source first, and then the repository is never asked: the composite build
+passes with neither variable set. Without a checkout and without a token Gradle stops with
+"Username must not be null", which `wiki/environments/setup.md` now explains. The agents
+repository resolves core the same way.
+
+**Proven.** Core master's `api` and `common` were published to a local Maven repository served
+over HTTP in place of GitHub Packages, and chat built with no checkout:
+`./gradlew build` passed with 473 tests.
+
+**Found on the way, fixed in core rather than here.** Core's published test-fixtures variants
+carry the capability `io.github.mcagentsmods:common-test-fixtures`, derived from the project
+name, while `testFixtures(libs.core.common)` asks for `mcagents-core-common-test-fixtures`.
+Outside a composite build `:mcagents-chat-common:compileTestJava` failed on it. Declaring the
+artifact-named capability on core's two test-fixtures configurations fixes it, which was
+proven against a scratch copy of core and handed to the thread releasing core `0.5.0`. Chat's
+build file needs no change once core publishes with it.

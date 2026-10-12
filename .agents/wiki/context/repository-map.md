@@ -50,9 +50,13 @@ three documents for a long time before any code called `ModelClient.embed`.
 `mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
 provides them in game, and `fabric.mod.json` depends on it. `settings.gradle` builds a
 checkout of `MCAgents-Mods/core` at `../core` (or `-Pcore-build=…`) together with chat when
-one is there; without one, the published artifacts are resolved, and the build needs a
-published core. Tests put core and its `StubTransport` and `StubKeySource` fixtures on their
-own classpath.
+one is there; without one, the published artifacts are resolved from core's GitHub Packages
+repository, `https://maven.pkg.github.com/MCAgents-Mods/core`, which the root `build.gradle`
+declares for the `io.github.mcagentsmods` group only. GitHub Packages wants a token even for a
+public package, read from `GITHUB_ACTOR` and `GITHUB_TOKEN`: the workflow's own token on a
+runner, a personal access token with `read:packages` on a machine. Tests put core and its
+`StubTransport` and `StubKeySource` fixtures on their own classpath, so core's publication
+must carry its test fixtures.
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
