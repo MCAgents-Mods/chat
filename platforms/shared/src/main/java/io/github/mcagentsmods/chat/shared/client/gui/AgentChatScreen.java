@@ -253,8 +253,21 @@ public final class AgentChatScreen extends Screen {
     }
 
     private void loadMessages(String sessionId) {
+        loadMessages(sessionId, null);
+    }
+
+    /**
+     * Reads a conversation into the panel, then shows {@code error} under it, if there is one.
+     *
+     * <p>Reads finish in the order they were asked for, so an error shown this way is never
+     * cleared by an earlier read finishing late.
+     */
+    private void loadMessages(String sessionId, String error) {
         if (!hasStorage()) {
             conversation.clear();
+            if (error != null) {
+                conversation.showError(error);
+            }
             return;
         }
         conversation.setLoading();
@@ -263,6 +276,9 @@ public final class AgentChatScreen extends Screen {
             // since clicked on.
             if (sessionId.equals(activeSessionId)) {
                 conversation.setMessages(messages);
+                if (error != null) {
+                    conversation.showError(error);
+                }
             }
         }, "Could not read the conversation");
     }
@@ -447,12 +463,26 @@ public final class AgentChatScreen extends Screen {
                 if (minecraft == null || minecraft.gui.screen() != this) {
                     return;
                 }
+                if (hasStorage()) {
+                    // This exchange's own writes are not changes made elsewhere, and the
+                    // reloads below show them. Left unseen, the next tick reloads the
+                    // conversation again and wipes a failure off the screen.
+                    seenRevision = database.changes().chatRevision();
+                }
                 if (failure != null) {
                     // The provider's own wording, shown where the answer would have been.
                     // Logging alone left the player watching a conversation that simply
                     // stopped, with no way to tell a bad key from a bad model id.
                     LOGGER.error("The exchange failed", failure);
-                    conversation.showError(describe(failure));
+                    String reason = describe(failure);
+                    if (activeSessionId == null) {
+                        conversation.showError(reason);
+                    } else {
+                        // Shown once the conversation has reloaded: the reload started when
+                        // the question was stored can land after a quick failure, such as no
+                        // key, and would otherwise clear the reason off the screen.
+                        loadMessages(activeSessionId, reason);
+                    }
                     loadSessions(pendingSearch);
                     return;
                 }
