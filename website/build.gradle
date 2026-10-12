@@ -55,7 +55,15 @@ dependencies {
     // Outside the game no core mod provides core, so the tests carry it themselves.
     testImplementation libs.core.api
     testImplementation libs.core.common
-    testImplementation testFixtures(libs.core.common)
+    // Core 0.5.0 publishes its test fixtures under the capability its project name gives
+    // them, io.github.mcagentsmods:common-test-fixtures, rather than under its artifact id,
+    // so testFixtures(libs.core.common) finds them only in the composite build. Asking for
+    // that capability by name works both against a core checkout and the published core.
+    testImplementation(libs.core.common) {
+        capabilities {
+            requireCapability 'io.github.mcagentsmods:common-test-fixtures'
+        }
+    }
 
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher

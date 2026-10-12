@@ -55,8 +55,11 @@ repository, `https://maven.pkg.github.com/MCAgents-Mods/core`, which the root `b
 declares for the `io.github.mcagentsmods` group only. GitHub Packages wants a token even for a
 public package, read from `GITHUB_ACTOR` and `GITHUB_TOKEN`: the workflow's own token on a
 runner, a personal access token with `read:packages` on a machine. Tests put core and its
-`StubTransport` and `StubKeySource` fixtures on their own classpath, so core's publication
-must carry its test fixtures.
+`StubTransport` and `StubKeySource` fixtures on their own classpath. Core publishes those
+fixtures under the capability `io.github.mcagentsmods:common-test-fixtures`, taken from its
+project name rather than its artifact id, so `common/` and `website/` ask for that capability
+by name instead of writing `testFixtures(libs.core.common)`, which finds them only in the
+composite build.
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.

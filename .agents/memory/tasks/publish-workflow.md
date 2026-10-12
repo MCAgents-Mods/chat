@@ -68,14 +68,18 @@ passes with neither variable set. Without a checkout and without a token Gradle 
 "Username must not be null", which `wiki/environments/setup.md` now explains. The agents
 repository resolves core the same way.
 
-**Proven.** Core master's `api` and `common` were published to a local Maven repository served
-over HTTP in place of GitHub Packages, and chat built with no checkout:
-`./gradlew build` passed with 473 tests.
+**How it was checked.** Core master's `api` and `common` were published to a local Maven
+repository served over HTTP in place of GitHub Packages, and chat was built against it with no
+checkout. That build found the problem below.
 
-**Found on the way, fixed in core rather than here.** Core's published test-fixtures variants
+**Found on the way.** Core's published test-fixtures variants
 carry the capability `io.github.mcagentsmods:common-test-fixtures`, derived from the project
 name, while `testFixtures(libs.core.common)` asks for `mcagents-core-common-test-fixtures`.
 Outside a composite build `:mcagents-chat-common:compileTestJava` failed on it. Declaring the
 artifact-named capability on core's two test-fixtures configurations fixes it, which was
-proven against a scratch copy of core and handed to the thread releasing core `0.5.0`. Chat's
-build file needs no change once core publishes with it.
+proven against a scratch copy of core and handed to the thread releasing core `0.5.0`, but
+`0.5.0` was published before it could land. So `common/` and `website/` ask for the capability
+core does publish, `common-test-fixtures`, by name. That resolves against the published core
+and against a checkout, with or without core's fix: `./gradlew build` passed with 473 tests
+both with no checkout, against a stand-in serving core exactly as `0.5.0` was published, and
+as a composite build with core's `master`.
