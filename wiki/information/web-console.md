@@ -1,7 +1,7 @@
 # The Web Console
 
-MCAgentsClient can serve your own data to your own browser. Press `G` in game, then the
-globe button beside the key button, and the mod opens the MCAgents web console on
+MCAgentsClient can serve your own data to your own browser. Press `G` in game, choose **Chat**,
+then the globe button beside the key button, and the mod opens the MCAgents web console on
 `127.0.0.1` with your Knowledge Packs, your chats, your models, your wallets, and your API
 keys.
 

@@ -14,10 +14,10 @@ common/  |  |               implementations, no Minecraft
 website/ |  |               everything a browser sees
    ^     |  |
    |     |  |
-platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the key
+platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the Chat button
    ^               ^
    |               |
-platforms/fabric/  platforms/neoforge/    each loader's entry point, key registration,
+platforms/fabric/  platforms/neoforge/    each loader's entry point, the button,
                                           events, paths — one jar per loader
 ```
 
@@ -26,8 +26,8 @@ platforms/fabric/  platforms/neoforge/    each loader's entry point, key registr
 | `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
 | `website/` | `mcagents-chat-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
-| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the key, the factories that wire `common/` and `website/` together. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: registers the key, the tick and connection events, and passes the game directory to `ChatRuntime`. |
+| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the Chat button on the agents screen, the factories that wire `common/` and `website/` together. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds the Chat button, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps

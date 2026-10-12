@@ -118,7 +118,7 @@ accessible.
 
 ## Using it
 
-Press `G` in game to open the chat screen: conversations on the left with a search box and
+Press `G` in game and choose **Chat** to open the chat screen: conversations on the left with a search box and
 a "new chat" button, the selected conversation on the right, and a prompt box along the
 bottom. Every conversation is kept, titled, and searchable — including by what was said in
 it, not only by its title.

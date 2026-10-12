@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
  * Opens the chat screen. Always.
  *
@@ -17,8 +19,8 @@ import org.slf4j.LoggerFactory;
  * because the player is not reading the log.
  *
  * <p>So the screen no longer depends on storage to open. It opens, and it reports the state
- * of storage inside itself, where the player is already looking. The only reason left not
- * to open is that another screen is already up.
+ * of storage inside itself, where the player is already looking. It takes the place of the
+ * screen that is up, which is the agents screen whose Chat button asked for it.
  */
 public final class ChatScreenLauncher {
 
@@ -29,22 +31,19 @@ public final class ChatScreenLauncher {
     }
 
     /**
-     * Opens the chat screen.
+     * Opens the chat screen in place of the current one.
      *
-     * @return whether the screen was opened
+     * @throws RuntimeException if the screen could not be built; the agents screen shows the
+     *                          player that its button failed, so the failure never looks like
+     *                          a button that does nothing
      */
-    public static boolean open(Minecraft client) {
-        if (client == null || client.gui.screen() != null) {
-            return false;
-        }
+    public static void open(Minecraft client) {
+        Objects.requireNonNull(client, "client");
         try {
             client.setScreenAndShow(new AgentChatScreen());
-            return true;
         } catch (RuntimeException e) {
-            // Building a screen should not throw, but if it ever does, the failure must not
-            // vanish into the tick handler and look like a dead key again.
             LOGGER.error("Could not open the chat screen", e);
-            return false;
+            throw e;
         }
     }
 }
