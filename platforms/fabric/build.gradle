@@ -33,6 +33,10 @@ loom {
     mods {
         'mcagents' {
             sourceSet sourceSets.main
+            // The dev client loads platforms/shared as part of this mod, as the jar merges it,
+            // so it finds the screens' strings there. Only a Loom module can be named here;
+            // api/, common/ and website/ carry no game assets.
+            sourceSet 'main', ':mcagents-chat-shared'
         }
     }
 }
