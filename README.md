@@ -86,7 +86,8 @@ corner.
 
 The source is on GitHub, at [github.com/MCAgents-Mods/chat](https://github.com/MCAgents-Mods/chat),
 under the [MCAgents-Mods](https://github.com/MCAgents-Mods) organization. Issues and pull
-requests go there.
+requests go there. Every release's jars are published to that repository's GitHub Packages as
+`io.github.mcagentsmods:mcagents-chat-{module}`.
 
 ## License
 
