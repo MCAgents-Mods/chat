@@ -63,6 +63,12 @@ option. The plan for all four repositories is kept outside this repository.
 * **`.agents/design/web-design-system.md` is deleted,** with its trigger row and index row, as
   the plan said. It is mostly about the console's shared page shell. The wallet page keeps its
   own inline styles, and the offline-first rule still forbids anything it would fetch.
+* **The platform address editor moves to the key screen.** The plan counted every console
+  page except the knowledge pages as already in game, but the key page also set the address a
+  platform is called at, which a local model server needs, and said whether keys are
+  encrypted. Both come to the key screen before the console goes. The console's rule that an
+  address may not move to another host while a key is stored is not carried over: it guarded
+  against anyone holding the console's link, and in game only the player can type.
 * **Version 0.4.0.** Minor, because the website and the chat screen are removed.
 
 ## The task list
@@ -73,3 +79,16 @@ option. The plan for all four repositories is kept outside this repository.
 | 2 | Website removal | Delete `website/`, its tests, the console screen, its holder and button. Settings, the loader jar lists and the `publish.yml` header. Core 0.6.0 and agents 0.2.0, required in the manifests. Delete `wiki/information/web-console.md` and the design rule with its rows. README and docs. | `refactor/website-removal` | |
 | 3 | Chat hologram | `ChatController` and its tests; the chat hologram; the CHAT button opens it; KEYS, MODEL, PERSONA and WALLETS on the menu; `AgentChatScreen`, `SessionListPanel` and `ConversationPanel` deleted; lang; docs | `feat/chat-hologram` | |
 | 4 | Release 0.4.0 | Version, changelog, logs index, state, and close this record | `release/0.4.0` | |
+
+### Task 2 — refactor/website-removal
+
+**Landed.** `website/`, `WebConsoleScreen`, `WebConsoleHolder`, the globe button and the
+console strings are gone, and so is `AgentFactory.modelClient`, which only the console used.
+Chat builds against core 0.6.0 and agents 0.2.0, which the manifests require, and a core
+checkout beside chat also stands in for `mcagents-core-client`, which agents 0.2.0 compiles
+against. The key screen gained the address row and the encryption line. The AGENTS.md written
+for a new player no longer points at the console.
+
+**Checked.** `./gradlew build` with `../core` and `../agents` beside chat: 400 tests in
+`common/`, and no `mcagents/web/` file in either loader jar. The key screen is compile-verified
+here and opened in the Fabric dev client with task 3.
