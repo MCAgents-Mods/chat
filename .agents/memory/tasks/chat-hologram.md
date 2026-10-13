@@ -1,6 +1,6 @@
 ---
 name: memory-task-chat-hologram
-status: in-progress
+status: done
 description: Removing chat's website and web console button, moving the chat screen onto core's hologram as three panels (Sessions, Conversation, User Prompt), chat's buttons on the agents menu, and the 0.4.0 release.
 ---
 
@@ -76,10 +76,10 @@ option. The plan for all four repositories is kept outside this repository.
 
 | # | Title | Scope | Branch | PR |
 |---|---|---|---|---|
-| 1 | The record | This file and the memory index | `chore/chat-hologram-plan` | |
-| 2 | Website removal | Delete `website/`, its tests, the console screen, its holder and button. Settings, the loader jar lists and the `publish.yml` header. Core 0.6.0 and agents 0.2.0, required in the manifests. Delete `wiki/information/web-console.md` and the design rule with its rows. README and docs. | `refactor/website-removal` | |
-| 3 | Chat hologram | `ChatController` and its tests; the chat hologram; the CHAT button opens it; KEYS, MODEL, PERSONA and WALLETS on the menu; `AgentChatScreen`, `SessionListPanel` and `ConversationPanel` deleted; lang; docs | `feat/chat-hologram` | |
-| 4 | Release 0.4.0 | Version, changelog, logs index, state, and close this record | `release/0.4.0` | |
+| 1 | The record | This file and the memory index | `chore/chat-hologram-plan` | #31 |
+| 2 | Website removal | Delete `website/`, its tests, the console screen, its holder and button. Settings, the loader jar lists and the `publish.yml` header. Core 0.6.0 and agents 0.2.0, required in the manifests. Delete `wiki/information/web-console.md` and the design rule with its rows. README and docs. | `refactor/website-removal` | #32 |
+| 3 | Chat hologram | `ChatController` and its tests; the chat hologram; the CHAT button opens it; KEYS, MODEL, PERSONA and WALLETS on the menu; `AgentChatScreen`, `SessionListPanel` and `ConversationPanel` deleted; lang; docs | `feat/chat-hologram` | #33 |
+| 4 | Release 0.4.0 | Version, changelog, logs index, state, and close this record | `release/0.4.0` | #34 |
 
 ### Task 2 — refactor/website-removal
 
@@ -123,3 +123,11 @@ The clicks and the typing were real input. The camera was turned by a scratch ha
 committed, because the virtual display's mouse does not turn it. NeoForge is compile-verified
 only. Seen and not changed: the model screen's Done button is cut off at the bottom of a
 1280x720 window, as it was before this task.
+
+### Task 4 — release/0.4.0
+
+**Landed.** `project-version` is 0.4.0, the version the plan took while the owner was away.
+`wiki/logs/0/4/0/CHANGELOG.md` and its logs index row record the release; the state file,
+the rule, the map and the setup page say 0.4.0. Merging #31 to #33 leaves the version at
+0.3.0, whose tag exists, so those runs publish nothing; #34 is the merge that publishes the
+five modules and tags `v0.4.0`. `mcagents-chat-website` stays at its last version, 0.3.0.
