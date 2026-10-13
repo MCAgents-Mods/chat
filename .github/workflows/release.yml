@@ -1,0 +1,214 @@
+name: Release
+
+# Builds chat's two mod jars, MCAgentsChatFabric and MCAgentsChatNeoforge, and
+# attaches them to a GitHub release for the v{version} tag that Publish created.
+# Chat has no Forge module, so there is no Forge jar. api, common and shared
+# are bundled inside each jar, so they are not attached on their own.
+#
+# A tag pushed with the workflow's own token starts no other workflow, so this
+# one runs when a Publish run on master finishes instead. It releases the
+# version in gradle.properties when that version's tag exists and has no
+# release yet, so an ordinary merge, whose tag already has its release, does
+# nothing, and a release that failed is tried again by the next merge.
+#
+# The jars are built from the tagged commit, not from the commit that started
+# the run, so a release holds the version its tag names. They travel from the
+# build job to the release job as a workflow artifact, which is deleted once the
+# release holds them.
+#
+# Chat compiles against MCAgents core and MCAgents agents, which the build reads
+# from each one's GitHub Packages repository with the run's token, as Publish
+# does.
+#
+# workflow_dispatch runs the same steps by hand. Its tag input releases an
+# earlier tag that has no release.
+on:
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release, such as v0.4.0. Leave it empty for the version in gradle.properties.
+        required: false
+        type: string
+
+concurrency:
+  group: github-release
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      release: ${{ steps.release.outputs.release }}
+      tag: ${{ steps.release.outputs.tag }}
+      latest: ${{ steps.release.outputs.latest }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    env:
+      LOADERS: fabric neoforge
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Find the tag and look for its release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          version=$(sed -n 's/^project-version=//p' gradle.properties | tr -d '[:space:]')
+          tag="${INPUT_TAG:-v$version}"
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$tag' is not a v{Major}.{Minor}.{Patch} tag"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          # Only the version on master is marked as the latest release.
+          if [ "$tag" = "v$version" ]; then
+            echo "latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "latest=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "$(git ls-remote --tags origin "refs/tags/$tag")" ]; then
+            echo "::notice::$tag does not exist, nothing to release"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --silent 2>/dev/null; then
+            echo "::notice::$tag already has a release, nothing to do"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the tag
+        if: steps.release.outputs.release == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ steps.release.outputs.tag }}
+
+      - name: Set up JDK 25
+        if: steps.release.outputs.release == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      # Publish already ran the tests on this commit, so the jars are only assembled.
+      - name: Build the mod jars
+        if: steps.release.outputs.release == 'true'
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew assemble
+
+      - name: Collect one jar per loader
+        if: steps.release.outputs.release == 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          version=$(sed -n 's/^project-version=//p' gradle.properties | tr -d '[:space:]')
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::$TAG holds project-version $version"
+            exit 1
+          fi
+          mkdir -p release
+          for loader in $LOADERS; do
+            # The mod jar alone: the sources jar ends in -sources.jar.
+            jars=(platforms/"$loader"/build/libs/*-"$version".jar)
+            if [ ${#jars[@]} -ne 1 ] || [ ! -f "${jars[0]}" ]; then
+              echo "::error::expected one $loader jar for $version, found: ${jars[*]}"
+              exit 1
+            fi
+            cp "${jars[0]}" release/
+          done
+          ls -l release
+
+      - name: Upload the jars to the run
+        id: upload
+        if: steps.release.outputs.release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mod-jars
+          path: release/*.jar
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: build
+    if: needs.build.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - name: Check out the changelog
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.build.outputs.tag }}
+          sparse-checkout: wiki/logs
+
+      - name: Download the jars
+        uses: actions/download-artifact@v4
+        with:
+          name: mod-jars
+          path: release
+
+      # The notes are the version's changelog. Its links are relative to
+      # wiki/logs/{Major}/{Minor}/{Patch}/, so they are pointed at the tagged files.
+      - name: Write the release notes
+        run: |
+          IFS=. read -r major minor patch <<< "${TAG#v}"
+          changelog="wiki/logs/$major/$minor/$patch/CHANGELOG.md"
+          if [ -f "$changelog" ]; then
+            python3 - "$changelog" "https://github.com/$GITHUB_REPOSITORY/blob/$TAG/" > notes.md <<'EOF'
+          import posixpath, re, sys
+          path, base = sys.argv[1], sys.argv[2]
+          folder = posixpath.dirname(path)
+          def absolute(match):
+              target = match.group(2)
+              if re.match(r'[a-z]+:|#|/', target):
+                  return match.group(0)
+              return match.group(1) + base + posixpath.normpath(posixpath.join(folder, target)) + ')'
+          with open(path, encoding='utf-8') as file:
+              sys.stdout.write(re.sub(r'(\]\()([^)\s]+)\)', absolute, file.read()))
+          EOF
+          else
+            echo "::warning::$changelog does not exist, the notes list the merged pull requests instead"
+            : > notes.md
+          fi
+
+      - name: Create the release
+        env:
+          LATEST: ${{ needs.build.outputs.latest }}
+        run: |
+          if [ -s notes.md ]; then
+            notes=(--notes-file notes.md)
+          else
+            notes=(--generate-notes)
+          fi
+          gh release create "$TAG" release/*.jar \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "$TAG" \
+            --latest="$LATEST" \
+            "${notes[@]}"
+
+      - name: Delete the jars from the run
+        env:
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact-id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"

@@ -92,7 +92,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * Session search: it went with the chat screen in 0.4.0.
 * Anything that tells a new player the key is `G`.
 * Any CI that builds a pull request. `.github/workflows/publish.yml` runs only on `master`
-  and by hand, and publishes only a version that has no tag yet.
+  and by hand, and publishes only a version that has no tag yet; `.github/workflows/release.yml`
+  runs after it and only attaches the Fabric and NeoForge jars to that tag's GitHub release.
 
 ## Architecture as built
 
