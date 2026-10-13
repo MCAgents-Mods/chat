@@ -136,7 +136,7 @@ public final class PersonaScreen extends Screen {
         status = Component.translatable("gui.mcagents.persona.saving")
                 .withStyle(ChatFormatting.GRAY);
         // The store reloads its own cache as part of saving, so there is nothing to
-        // invalidate here and nothing for the chat screen to be told.
+        // invalidate here and nothing for the chat hologram to be told.
         onClientThread(waiting.track(store.save(draft)), stored -> {
             draft = stored;
             status = Component.translatable("gui.mcagents.persona.saved")

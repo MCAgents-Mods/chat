@@ -12,7 +12,7 @@ import io.github.mcagentsmods.chat.common.agent.OpenRouterAgent;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 
 /**
- * Builds the agent the chat screen uses, and owns the model client's lifetime.
+ * Builds the agent the chat hologram uses, and owns the model client's lifetime.
  *
  * <p>The client is created once and reused: it holds an HTTP connection pool and a
  * scheduler for retry backoff, and building one per question would throw both away every

@@ -40,6 +40,10 @@ dependencies {
 
     api project(':mcagents-chat-api')
     api project(':mcagents-chat-common')
+
+    // Core's holograms, for the chat hologram CHAT opens. The mcagents_core mod supplies them
+    // in game.
+    compileOnly libs.core.client
 }
 
 publishing {

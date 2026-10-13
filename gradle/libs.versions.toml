@@ -35,6 +35,7 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 core-api = { module = "io.github.mcagentsmods:mcagents-core-api", version.ref = "mcagents-core" }
 core-common = { module = "io.github.mcagentsmods:mcagents-core-common", version.ref = "mcagents-core" }
+core-client = { module = "io.github.mcagentsmods:mcagents-core-client", version.ref = "mcagents-core" }
 agents-common = { module = "io.github.mcagentsmods:mcagents-agents-common", version.ref = "mcagents-agents" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
