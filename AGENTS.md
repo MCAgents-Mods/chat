@@ -208,7 +208,6 @@ and putting one back would turn a standing order into a conditional one.
 | Store, display, log, encrypt, or send an API key | [`.agents/security/api-keys.md`](.agents/security/api-keys.md) |
 | Call a model provider, or choose a chat or embedding model | [`.agents/api/openrouter.md`](.agents/api/openrouter.md) |
 | Clone, discover, run, or route to **any MCP server** the mod hosts | [`.agents/mcp/host.md`](.agents/mcp/host.md) |
-| Build or change **anything the mod serves in a browser** — a page, a stylesheet, a partial | [`.agents/design/web-design-system.md`](.agents/design/web-design-system.md) |
 
 ## Reading Order
 

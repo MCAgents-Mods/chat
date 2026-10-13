@@ -28,25 +28,19 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## What is built but unproven in a real client
 
 * Renaming a conversation, and deleting one behind its confirmation.
-* **The whole web console.** A loopback server the player starts from the chat screen,
-  serving the knowledge library, the chat, and the API keys as Silver Glass pages. Driven in
-  Chromium against a seeded store — paging, live search, filters, sending a message, adding
-  and removing keys — but no screen of it has been opened in a real client. See
-  `.agents/memory/tasks/web-console.md`.
 * **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by tests
   in `common/`, but no screen has been opened in a real client and **no signature from the
   real MetaMask extension has ever been checked** — the tests sign with their own secp256k1
   signer. The multi-address handshake makes that gap sharper: nothing has confirmed how many
   accounts a real extension shares by default, only that the mod binds however many it is
-  given. The `/wallets/` page has been driven in Chromium. See
+  given. See
   `.agents/memory/tasks/wallet-binding.md` and
   `.agents/memory/tasks/wallet-accounts.md`.
 * **The persona file and the server context.** `AGENTS.md` is written on first run, edited
-  from `PersonaScreen` in game and from a modal on the console's `/chat/` page, and reloaded
+  from `PersonaScreen` in game, and reloaded
   into the one shared `FilePersonaStore` as it is saved. The agent is told where the player
   is playing — a server address, or exactly `Player is playing in single player.` — through
-  `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. The
-  browser half was driven in Chromium; **no screen has been opened in a real client and no
+  `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. **No
   join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
 * **The whole MCP client.** The mod can clone external MCP servers into
   `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`, discover and run them over stdio or
@@ -73,19 +67,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * **Provider selection in the game GUI.** The key screen picks a platform from an
   `EditableDropdown`; the model screen has a provider row that rewrites the chat model through
   `ModelCatalog.chatModelOn` and a line saying whether that provider is called directly, from
-  `StoredProviderRoutes`. Both offer `ModelCatalog.offeredPlatforms`, the same list the console
-  offers. **Compile-verified only** — `./gradlew build` produces the jar and the layout
+  `StoredProviderRoutes`. Both offer `ModelCatalog.offeredPlatforms`. **Compile-verified only** — `./gradlew build` produces the jar and the layout
   arithmetic is tested in `common.ui.ModelSettingsRows`, but no screen has been opened in a
   real client, which this repository has been caught by before —
   `.agents/memory/tasks/gui-play-testing.md`.
-* **Provider selectors in the console.** `/keys/` picks the platform a key opens from a
-  selector with an "Other…" box behind it; `/chat/` picks the provider that answers, above the
-  composer, with a badge saying whether it is reached directly or through the gateway.
-  `ModelCatalog.chatModelOn` is the single rule for what the stored model id becomes, and
-  `PUT /api/models` takes `chatPlatform` as the smaller way of saying it. Driven in Chromium
-  against a live console — 28 checks, including the choice being read back on `/model/`. **No
-  question has been answered through a provider chosen this way**, and the in-game key screen
-  still has its own text box, untouched and compile-verified only.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
@@ -100,23 +85,22 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   Knowledge Packs are stored but never consulted.
 * Any source of Knowledge Packs. The central service client was removed, so the library is
   empty unless something else puts a pack in it.
-* The content browser.
+* Any page that lists stored Knowledge Packs: the web console's went in 0.4.0.
 * Anything that tells a new player the key is `G`.
 * Any CI that builds a pull request. `.github/workflows/publish.yml` runs only on `master`
   and by hand, and publishes only a version that has no tag yet.
 
 ## Architecture as built
 
-* `api/` contracts, `common/` implementations, `website/` the console pages,
-  `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/` and
+* `api/` contracts, `common/` implementations, `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/` and
   `platforms/neoforge/` the jars. One-way dependency chain; no Minecraft in `api/` or `common/`.
 * Layers: MCAgents core (0) sends the requests, MCAgents agents (1) owns tool calling and the
-  `G` screen, chat (2) is built on both and bundles neither. See
+  `G` menu, chat (2) is built on both and bundles neither. See
   [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md).
-* Every I/O method returns `CompletableFuture`. 476 tests across `common/` and `website/`.
+* Every I/O method returns `CompletableFuture`. 400 tests in `common/`.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
-  game session**, held by `AgentFactory` and handed to the console, so a save from either
-  interface is the persona the next question uses. It generates the file when it is missing
+  game session**, held by `AgentFactory` and handed to every screen, so a save is the persona
+  the next question uses. It generates the file when it is missing
   and never rewrites it after that, and its cache re-reads whenever the file's timestamp or
   size has moved — which is what keeps a text editor working without a disk read per turn.
 * The environment: `PlayerEnvironment` and `EnvironmentSource` in `api/`, recorded by
@@ -128,17 +112,17 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: core's `OpenRouterClient` behind core's `HttpTransport`, built by
   `ChatModelClients` and wrapped by `CachingModelClient` (embeddings cached, completions
-  deliberately not). Chat compiles against MCAgents core `0.5.0` and ships none of it; the
+  deliberately not). Chat compiles against MCAgents core `0.6.0` and ships none of it; the
   mod depends on `mcagents_core`. See [`../tasks/core-adoption.md`](../tasks/core-adoption.md).
 * Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
   using the player's own embedding model, because a vector is only comparable inside the
-  space of the model that made it. The console lists, shows and deletes stored packs and
-  nothing else: there is no catalog, download or update path.
+  space of the model that made it. Nothing lists, shows or deletes stored packs since the
+  console went in 0.4.0, and there is no catalog, download or update path.
 * Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
   cosine similarity, and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
-  `model.embedding.enabled`, carried on `ModelPreferences` and shared by the in-game
-  screen and the console. Off does no work at all rather than filtering afterwards, and
+  `model.embedding.enabled`, carried on `ModelPreferences` and set on the in-game
+  model screen. Off does no work at all rather than filtering afterwards, and
   a failed embedding call yields an ordinary answer rather than an error.
 * MCP: the mod is an MCP **client**. `api.mcp` holds the contracts; `common.mcp` holds
   `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`, `HttpMcpSession`,
@@ -156,19 +140,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * Reading: long lists come back a window at a time through `Page` and `PageRequest`, with
   the total counted rather than inferred. Any ordering a window is taken from is total, or
   the reader sees rows twice and never sees others.
-* The web console: MCAgents core's, on loopback, guarded by core's per-run token, loopback
-  `Host` check and content security policy. Chat registers `ChatWebModule`, which serves
-  `mcagents/web/` inside the jar under `/chat/`; the page shell is core's. **It is its own module,
-  `website/`**, holding everything a browser sees and nothing else; it sits above `common/`
-  and nothing in `common/` may depend back on it. **Long-lived on purpose,
-  unlike the wallet bridge** — do not change either to match the other. A chat write from
-  either side moves one counter in `RevisionedChatRepository`, which is what keeps the game
-  and the browser in step.
 * Wallets: `player_wallets` and `wallet_platform_addresses` in the same store. One handshake
   proves **every** address the browser shares, each over its own message and single-use
   nonce, and each becomes a wallet of its own. `LocalWalletBridge` serves one page on
-  `127.0.0.1` for the in-game path and stops when the page says it has finished; the
-  console's `/wallets/` page needs no bridge, because it is already a page in the browser.
+  `127.0.0.1` and stops when the page says it has finished.
   `AccountWallets` is the only way into the store, and it checks that a wallet belongs to
   the account acting on it — the boundary is in the mod, never in the interface. Keccak-256
   and secp256k1 recovery are written out in `common.wallet` — the JDK's SHA3-256 is a
@@ -210,13 +185,12 @@ see [`../tasks/central-service-removal.md`](../tasks/central-service-removal.md)
 Two things are outstanding, and the second is the more interesting.
 
 1. Wallets — now a screen of account columns rather than one account behind a dropdown —
-   the web console, the console button, the embedding toggle on `ModelSettingsScreen`, the
+   the embedding toggle on `ModelSettingsScreen`, the
    persona editor, the join-event detection behind the server context, and now **the whole
    MCP host and tool loop** are compile-verified and unopened. `platforms/fabric` has no test source set, so nothing here
    can prove any of them. One session in a real client would settle them all, plus a binding
-   through the real MetaMask extension and a message typed in game appearing in a browser
-   tab. **A screenshot found two collisions on `WebConsoleScreen` that had survived several
-   rounds** — the arithmetic behind that screen is under test now, in
+   through the real MetaMask extension. **A screenshot once found two collisions on a screen
+   that had survived several rounds** — screen arithmetic is under test now, in
    `common/ui/StackedRows`, but what a screen *looks* like still is not. The two cheapest
    checks in that session: open the AGENTS.md screen and type a long persona into it, and
    watch `logs/latest.log` for the `Player environment is now …` line when joining a world,

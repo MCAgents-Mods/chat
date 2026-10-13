@@ -38,12 +38,6 @@ description: Index of MCAgentsClient's local instruction folders — the rules t
 |---|---|
 | [`../mcp/host.md`](../mcp/host.md) | The mod as an MCP client: the mcps layout, the doubled path validation, the qualified-name cap, the reload-as-a-diff rule, and why a failing server is never fatal. |
 
-## design
-
-| File | Purpose |
-|---|---|
-| [`../design/web-design-system.md`](../design/web-design-system.md) | Silver Glass — the tokens, components, and layout every page the mod serves in a browser is built from, and why those pages must stay self-contained. |
-
 ## Maintenance
 
 Any instruction file added to or removed from `.agents/` is reflected here **in the same

@@ -36,14 +36,13 @@ retrieval, and the interface are all implemented. Do not assume a source file ex
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
 
-## The six modules
+## The five modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds the doubles `website/` tests against too. | Streaming and further context injection. No Minecraft on the classpath. |
-| `website/` | `mcagents-chat-website` | `ChatWebModule` — chat's pages, registered with MCAgents core's `CoreWebRegistry`, which owns the server, the token and the page shell — `WebApi`, `WebJson`, `ApiKeyHandles`, and every page, script and style under `resources/mcagents/web/`. Everything chat shows a browser, and nothing else. | More pages. No Minecraft on the classpath, and nothing in `common/` may depend back on it. |
-| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButton` (the Chat button on the agents mod's screen; the loader adds it), `client.ChatScreenLauncher`, `client.PlayerAccounts`, `client.WebConsoleHolder` (registers chat's pages with core's console), `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the model settings screen, the wallet screens, and the console screen. | Further context injection, the content browser. No loader type. |
+| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
+| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButton` (the Chat button on the agents mod's screen; the loader adds it), `client.ChatScreenLauncher`, `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds the Chat button, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds the Chat button, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
 
@@ -58,7 +57,7 @@ public package, read from `GITHUB_ACTOR` and `GITHUB_TOKEN`: the workflow's own 
 runner, a personal access token with `read:packages` on a machine. Tests put core and its
 `StubTransport` and `StubKeySource` fixtures on their own classpath. Core publishes those
 fixtures under the capability `io.github.mcagentsmods:common-test-fixtures`, taken from its
-project name rather than its artifact id, so `common/` and `website/` ask for that capability
+project name rather than its artifact id, so `common/` asks for that capability
 by name instead of writing `testFixtures(libs.core.common)`, which finds them only in the
 composite build.
 
@@ -73,7 +72,7 @@ its `run/mods/`.
 
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
-otherwise runs `./gradlew build`, then `./gradlew publish` — all six modules, as
+otherwise runs `./gradlew build`, then `./gradlew publish` — all five modules, as
 `io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's GitHub Packages — and
 only then pushes the tag. A merge that leaves the version alone publishes nothing, and a
 failed run leaves no tag, so running the workflow again retries the release. The build step
@@ -83,12 +82,12 @@ versions `libs.versions.toml` names must be published before a chat release is.
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
 
-The dependency chain is one-way: `api/` ← `common/` ← `website/` ← `platforms/shared/` ←
-`platforms/fabric/` and `platforms/neoforge/`. The
-`WebConsole` contract stays in `api/` even though only `website/` implements it — `api/` is
-where contracts go.
+The dependency chain is one-way: `api/` ← `common/` ← `platforms/shared/` ←
+`platforms/fabric/` and `platforms/neoforge/`. Before 0.4.0 a `website/` module sat between
+`common/` and `platforms/shared/` and served chat's pages through core's web console; both are
+gone.
 
-`api/`, `common/` and `website/` are plain `java-library` modules, and `platforms/shared/` is
+`api/` and `common/` are plain `java-library` modules, and `platforms/shared/` is
 built with Loom against vanilla Minecraft alone. Their classes are **merged into the mod jar**
 by the `jar` task in each loader module's `build.gradle` rather than nested as Jar-in-Jar mods —
 they are not mods and have no manifest of their own. Third-party
@@ -317,7 +316,7 @@ agents screen it was opened from. Storage state is
 reported *inside* the screen, with a Retry button, where the player is already looking.
 
 Everything the player configures lives in the interface — sessions, models (gear), API keys
-(key icon), the web console (globe), and wallets (bottom-left). There is no command, and
+(key icon), and wallets (bottom-left). There is no command, and
 adding one would be treating a symptom.
 
 ## Gotchas
@@ -333,7 +332,7 @@ adding one would be treating a symptom.
   do not confuse them. The runtime one is written by `FilePersonaStore` when it is missing
   and **never rewritten afterwards**; there is one store per game session and every screen
   that edits it is handed that instance, because a second store would mean a save in the
-  browser and a question in the game disagreeing about what the persona is.
+  editor and the next question disagreeing about what the persona is.
 * The shared instruction set resolves through the `lxagents-agents-base` connector. The
   wiring is **not** in the repository: `.gitignore` carries both `.mcp.json` (local
   environment configuration, `env` block and all) and `mcps/` (the server checkouts). A
@@ -347,14 +346,6 @@ adding one would be treating a symptom.
 * **The wallet bridge is a listener, not a server.** It binds to `127.0.0.1` on an ephemeral
   port for one handshake and stops the moment a signature verifies. Any change that lets it
   outlive that — a fixed port, a retry loop, a cached instance — is a defect.
-* **The web console is the opposite, deliberately.** It runs until the player stops it,
-  because a browser tab whose server vanished is a page that stops working while it is being
-  read. The two share their defences and nothing else; **do not change either to match the
-  other.**
-* **A green Java suite says nothing about whether a page works.** Driving the console in a
-  browser found three defects the API tests could not see — a dead observer, two panels that
-  could not scroll, and a composer that scrolled itself off-screen. Chromium is available;
-  use it. See `.agents/memory/tasks/web-console.md`.
 * **Anything a window is paged over needs a total ordering.** `LIMIT`/`OFFSET` over an
   ambiguous sort shows some rows twice and never shows others, which reads as data loss
   rather than as a sort bug.

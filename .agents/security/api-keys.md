@@ -42,7 +42,7 @@ and decrypt instead — see [`../database/schema.md`](../database/schema.md).
 bundle, an attachment on a bug report. It is not a defence against a machine an attacker is
 already running code on: the mod has to send the key to a provider, so anything that can read
 the environment can read the keys. Say which of the two a player has; never imply the
-stronger one. The console's key page does exactly that, and so should anything else that
+stronger one. The in-game key screen does exactly that, and so should anything else that
 mentions it.
 
 The history of this rule — it previously forbade encryption outright — is in

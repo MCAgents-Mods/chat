@@ -49,8 +49,7 @@ history would keep it anchored to what it used to be about.
 
 ## The switch
 
-There is one control, in two places: the **Embedding** button on the in-game model screen,
-and the same button on `/model/` and in the chat header of the web console. Green means on,
+There is one control: the **Embedding** button on the in-game model screen. Green means on,
 red means off, and the label says which in words.
 
 **Off means off.** No embedding call is made, the pack table is not read, and nothing is
@@ -60,9 +59,6 @@ you are not billed for it.
 **Chat is unaffected.** Questions, history, personas, model choice, every screen: all
 identical. The only difference is that answers are drawn from the model's own knowledge and
 your conversation rather than from your packs.
-
-It is one stored setting, so the game and the browser can never disagree. Flip it in either
-and the other shows it.
 
 ### Why you might turn it off
 
@@ -123,5 +119,4 @@ flipping the switch never costs you an uncached turn.
 
 ## Related
 
-* [`web-console.md`](web-console.md) — the browser view, including `/model/`.
 * [`overview.md`](overview.md) — what the mod is, in full.

@@ -80,7 +80,7 @@ keeping the logic out of the platform module. Run them before you launch the gam
 
 The mod jars land in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar` and
 in `platforms/neoforge/build/libs/` as `MCAgentsChatNeoforge-{version}.jar`. Each carries the
-classes of `api/`, `common/`, `website/` and `platforms/shared/`, merged into it rather than
+classes of `api/`, `common/` and `platforms/shared/`, merged into it rather than
 nested as separate mods, and nests `sqlite-jdbc` its loader's way.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection.
@@ -135,7 +135,7 @@ Anything works as a value — a passphrase, a random string — because it is ha
   not delete them — put the same value back and they return — but nothing else can recover
   them.
 * **Leaving it unset is supported.** Keys are then stored as you pasted them, which is what
-  the mod did before this existed. The console's key page says which of the two you are in.
+  the mod did before this existed. The key screen says which of the two you are in.
 
 It protects a database file that leaves the machine — a backup, a synced folder, a bug
 report. It is not a defence against something already running on your machine, which can read
