@@ -14,11 +14,14 @@ why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
 
 Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
-* **The chat screen**, opened with `G` and then **Chat** on the agents screen since 0.3.0.
-  Session list, search, conversation, prompt, Send. The 0.3.0 path — `G`, the Chat button, the
-  chat screen, and a question with no key showing its reason — was run in a Fabric dev client;
-  NeoForge has no dev client yet.
-* **The API key screen** — a key was pasted, stored, and listed masked.
+* **The chat hologram**, opened with `G` and then **CHAT** on the MCAgents menu, which agents
+  0.2.0 draws with core 0.6.0's holograms. Run in a Fabric dev client: CHAT replaced the menu
+  with Sessions, Conversation and User Prompt; a question typed into the prompt box started a
+  conversation and, with no key, showed its reason as the agent's line; NEW, RENAME and DELETE
+  worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens. NeoForge is
+  compile-verified only. See [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md).
+* **The API key screen** — a key was pasted, stored, and listed masked. Its address row
+  refused a plain `http://` address and stored a loopback one in a dev client.
 * **The model settings screen** — both dropdowns, editable and selectable.
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
@@ -97,7 +100,11 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * Layers: MCAgents core (0) sends the requests, MCAgents agents (1) owns tool calling and the
   `G` menu, chat (2) is built on both and bundles neither. See
   [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md).
-* Every I/O method returns `CompletableFuture`. 400 tests in `common/`.
+* Every I/O method returns `CompletableFuture`. 415 tests in `common/`.
+* The chat hologram: `ChatController` in `common.ui` holds the conversations, the chosen one,
+  the question waiting and why the last was not answered, and hands results to the client
+  thread through an executor. `ChatHologram` in `platforms/shared/` builds core's three
+  panels from the one controller the game has.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to every screen, so a save is the persona
   the next question uses. It generates the file when it is missing
