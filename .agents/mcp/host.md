@@ -23,7 +23,7 @@ other rule here.
 * **No MCP failure may fail the mod.** A server that will not start, breaks the protocol,
   or hangs becomes an `McpServerStatus.State.FAILED` row carrying a readable reason. The
   other servers stay connected and the game is unaffected.
-* **Nothing waits on MCP.** Not startup, not the chat screen, not a question. The host
+* **Nothing waits on MCP.** Not startup, not the chat hologram, not a question. The host
   starts asynchronously and the registry is read as it currently stands.
 * A failure's reason must be a **sentence a player can act on**. Never a wrapper class name
   — unwrap `ExecutionException` and `CompletionException` before reporting, because

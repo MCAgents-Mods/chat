@@ -49,8 +49,8 @@ history would keep it anchored to what it used to be about.
 
 ## The switch
 
-There is one control: the **Embedding** button on the in-game model screen. Green means on,
-red means off, and the label says which in words.
+There is one control: the **Embedding** button on the model screen, which **MODEL** on the
+MCAgents menu opens. Green means on, red means off, and the label says which in words.
 
 **Off means off.** No embedding call is made, the pack table is not read, and nothing is
 attached. It is not a filter applied after the fact — the work simply does not happen, and

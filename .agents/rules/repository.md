@@ -51,13 +51,14 @@ diagram and the reasoning.
   classes. No implementation logic, no I/O, no third-party dependency. MCAgents core is not
   third-party: its types are the shared vocabulary every MCAgents mod speaks.
 * **Core is compiled against, never bundled.** `mcagents-core-api` and `mcagents-core-common` are
-  `compileOnlyApi`, and the `mcagents_core` mod provides them in game. A chat jar that
+  `compileOnlyApi`, `mcagents-core-client` is `compileOnly` in `platforms/shared/`, and the
+  `mcagents_core` mod provides them in game. A chat jar that
   carries a core class would load a second copy beside the one every other mod uses.
 * **What core already does is not written again here.** The model client, its transport, the
   request types and model naming are core's; a change to them is made in core.
 * **Agents is compiled against, never bundled, and owns tool calling.** `mcagents-agents-common`
   is `compileOnlyApi` in `common/`, and the `mcagents_agents` mod provides it in game. The tool
-  registry, the three-step agent, the worker limit and the agents screen are agents'; chat
+  registry, the three-step agent, the worker limit and the menu `G` shows are agents'; chat
   registers its tools there and answers through its agent, and a change to how tools are
   picked or run is made in agents.
 * `common/` holds the implementations of those contracts. It must compile and be testable

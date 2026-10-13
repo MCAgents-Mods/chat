@@ -41,14 +41,15 @@ three documents for a long time before any code called `ModelClient.embed`.
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic that can be tested without Minecraft, and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
-| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButton` (the Chat button on the agents mod's screen; the loader adds it), `client.ChatScreenLauncher`, `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the chat screen, its panels, the persona editor, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds the Chat button, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
-| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds the Chat button, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
+| `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic and `ChatController`, what the chat hologram shows and does, both tested without Minecraft — and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
+| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents mod's menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
-`mcagents-core-common` (`compileOnlyApi`), and no chat jar carries them: the `mcagents_core` mod
-provides them in game, and `fabric.mod.json` depends on it. `settings.gradle` builds a
+`mcagents-core-common` (`compileOnlyApi`), and `platforms/shared/` against `mcagents-core-client`
+(`compileOnly`) for the holograms. No chat jar carries them: the `mcagents_core` mod provides
+them in game, and `fabric.mod.json` depends on it. `settings.gradle` builds a
 checkout of `MCAgents-Mods/core` at `../core` (or `-Pcore-build=…`) together with chat when
 one is there; without one, the published artifacts are resolved from core's GitHub Packages
 repository, `https://maven.pkg.github.com/MCAgents-Mods/core`, which the root `build.gradle`
@@ -301,23 +302,22 @@ The decompiled jar to inspect is
 
 ## Reaching the mod in game
 
-The **Chat** button on the agents mod's screen, and nothing else. `G` is the agents mod's
-key: it opens that screen, where every MCAgents mod adds a button instead of taking a key of
-its own. Each loader adds chat's button first thing in its client start-up, before anything
-that can fail, and the agents mod guarantees its key the same way chat's own key used to be
-guaranteed — a game that reaches the main menu has registered it. A button whose action
-throws leaves the player on the agents screen with the reason in red, never a button that
-seems to do nothing.
+Chat's five buttons on the agents mod's menu, and nothing else. `G` is the agents mod's key:
+it shows that menu, a core hologram, where every MCAgents mod adds buttons instead of taking a
+key of its own. Each loader adds chat's buttons first thing in its client start-up, before
+anything that can fail, and the agents mod guarantees its key the same way chat's own key used
+to be guaranteed — a game that reaches the main menu has registered it.
 
-**The screen therefore opens unconditionally.** It does not require the database, because
-requiring it is what made this ship broken: `open()` returned silently when storage was not
-ready, and a dead key is indistinguishable from a mod that never loaded. It replaces the
-agents screen it was opened from. Storage state is
-reported *inside* the screen, with a Retry button, where the player is already looking.
+**CHAT opens the chat hologram unconditionally**, in place of the menu. It does not require
+the database, because requiring it is what once made this ship broken: `open()` returned
+silently when storage was not ready, and a dead key is indistinguishable from a mod that never
+loaded. Storage state is reported in the Conversation panel, where the player is already
+looking, and NEW reopens a database that failed. KEYS, MODEL and WALLETS need the database and
+say on the action bar why they did not open; PERSONA needs only the file.
 
-Everything the player configures lives in the interface — sessions, models (gear), API keys
-(key icon), and wallets (bottom-left). There is no command, and
-adding one would be treating a symptom.
+Everything the player configures lives in the game — sessions on the chat hologram, and API
+keys with each platform's address, models, the persona and wallets behind their menu buttons.
+There is no command and no browser page, and adding either would be treating a symptom.
 
 ## Gotchas
 

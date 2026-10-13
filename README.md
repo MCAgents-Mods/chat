@@ -1,7 +1,7 @@
 # MCAgentsClient
 
 A **client-side-only** Minecraft mod for the Fabric and NeoForge loaders that puts an AI assistant inside
-the game. You ask a question in an in-game chat screen; a language model answers using your
+the game. You ask a question on a hologram in front of you; a language model answers using your
 own API key, the conversation so far, and whichever stored knowledge is relevant to what
 you asked.
 
@@ -38,8 +38,8 @@ do not share your `data.db`.
 
 ## Features
 
-* **Conversations that continue** — every chat kept, titled, and searchable, by title and by
-  what was said inside it.
+* **Conversations that continue** — every chat kept and titled, and picked, renamed or
+  deleted from the chat hologram's Sessions panel.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
@@ -74,11 +74,13 @@ Install the jar for your loader — `MCAgentsChatFabric` with Fabric API, or
 it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
 either the game refuses to load MCAgentsClient.
 
-Press `G` in game and choose **Chat** on the agents screen. The chat screen opens with your
-conversations on the left and a prompt along the bottom. Add an API key with the key button
-before asking anything — the dropdown beside it is the platform the key opens, and
-`openrouter` is the default. The gear picks the provider and the models, and **Wallets** is in
-the bottom-left corner.
+Press `G` in game for the MCAgents menu, a hologram in front of you. Chat adds five buttons
+to it. **CHAT** opens the chat hologram: your conversations under **Sessions**, with **NEW**,
+**RENAME** and **DELETE**; the one you picked under **Conversation**; and a box under **User
+Prompt** where you type and press **SEND**. Add an API key with **KEYS** before asking
+anything — the dropdown there is the platform the key opens, and `openrouter` is the default.
+**MODEL** picks the provider and the models, **PERSONA** edits `AGENTS.md`, and **WALLETS**
+holds your bound wallets. Hold `Z` while looking at a hologram to move it.
 
 ## Where the project lives
 

@@ -45,7 +45,7 @@ Chat compiles against MCAgents core and MCAgents agents and carries neither. Clo
 `../agents` — and `settings.gradle` builds all three together, so chat compiles and tests
 against their source. Pass `-Pcore-build=/path/to/core` or `-Pagents-build=/path/to/agents`
 for another location. Without a checkout, Gradle resolves the published
-`io.github.mcagentsmods:mcagents-core-{api,common}` and `mcagents-agents-{tool,api,common}` at
+`io.github.mcagentsmods:mcagents-core-{api,common,client}` and `mcagents-agents-{tool,api,common}` at
 the versions in `gradle/libs.versions.toml`, from each repository's GitHub Packages registry.
 GitHub Packages asks for a token even though both are public, so export a personal access
 token with the `read:packages` scope first:
@@ -144,7 +144,7 @@ the variable as easily as the mod does.
 ## Working offline
 
 The mod is required to work without network access, so test it that way. With no internet:
-the game starts, the chat screen opens, stored sessions and Knowledge Packs are
+the game starts, the chat hologram opens, stored sessions and Knowledge Packs are
 readable. If any of that fails, it is a bug.
 
 Note that the *first* Gradle build does need network to fetch Minecraft and the
