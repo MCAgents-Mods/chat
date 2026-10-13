@@ -56,6 +56,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/agents-adoption.md`](../memory/tasks/agents-adoption.md) | Moving tool calling onto the agents mod: MCP servers as tool categories, answers through `ToolAgent`, the Chat button on the agents screen, and the `0.3.0` release. |
 | [`../memory/tasks/chat-hologram.md`](../memory/tasks/chat-hologram.md) | Removing the website and moving chat onto core's hologram: three panels, the controller under them, chat's buttons on the agents menu, and the `0.4.0` release. |
 | [`../memory/tasks/release-workflow.md`](../memory/tasks/release-workflow.md) | The Release workflow that attaches the Fabric and NeoForge jars to each tag's GitHub release, and the `0.4.1` release. |
+| [`../memory/tasks/minecraft-26-3.md`](../memory/tasks/minecraft-26-3.md) | Building the Fabric and NeoForge jars for Minecraft 26.2 and 26.3, one Gradle subproject per version, on core 0.7.0 and agents 0.3.0, and the `0.5.0` release. |
 
 ## Maintenance
 
