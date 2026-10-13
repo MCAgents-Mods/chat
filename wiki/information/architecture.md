@@ -22,23 +22,27 @@ platforms/fabric/  platforms/neoforge/    each loader's entry point, the buttons
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
-| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
-| `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
+| `platforms/shared/` | `mcagents-chat-shared-{minecraft}` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric-{minecraft}` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge-{minecraft}` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-`mcagents-chat-shared` to `platforms/shared/`,
-`mcagents-chat-fabric` to `platforms/fabric/`, and `mcagents-chat-neoforge` to
-`platforms/neoforge/`. A loader module is a few lines on top of
-`platforms/shared/`, so another loader is one more folder under `platforms/`.
+and `mcagents-chat-{module}-{minecraft}` to `platforms/{module}/{minecraft}/`, one subproject
+per Minecraft version of `shared`, `fabric` and `neoforge`. Each of those three is a folder of
+shared sources, `platforms/{module}/src/`, which every version subproject compiles together
+with its own `src/`, holding only what differs for that version; see
+[`../environments/setup.md`](../environments/setup.md#one-build-per-minecraft-version). A
+loader module is a few lines on top of `platforms/shared/`, so another loader is one more
+folder under `platforms/`.
 
 `platforms/shared/` is built with Loom for the vanilla game alone. Minecraft 26.x ships
 unobfuscated, so the classes it compiles link against any loader's game.
 
 The Gradle module name is also the Maven artifact id, so every module publishes as
-`io.github.mcagentsmods:mcagents-chat-{module}`, and the jar it builds is named
-`MCAgentsChat{Module}-{version}.jar` by its own `archivesName`. The `mcagents-chat-` prefix
+`io.github.mcagentsmods:mcagents-chat-{module}` (with `-{minecraft}` for the version
+subprojects), and the jar it builds is named `MCAgentsChat{Module}-{version}.jar` by its own
+`archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version subproject. The `mcagents-chat-` prefix
 keeps chat's modules apart from core's, which share the group.
 
 Before 0.4.0 a sixth module, `website/`, served chat's pages in a browser through core's web

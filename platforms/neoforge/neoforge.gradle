@@ -5,9 +5,10 @@
 // This is the only module that may reference NeoForge types. The screens and start-up live
 // in platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-plugins {
-    alias(libs.plugins.moddevgradle)
-}
+// Built once per Minecraft version: platforms/neoforge/{version}/build.gradle applies
+// ModDevGradle, then this.
+
+apply from: '../../minecraft.gradle'
 
 base {
     archivesName = 'MCAgentsChatNeoforge'
@@ -29,12 +30,34 @@ repositories {
     mavenCentral()
 }
 
+// api/, common/ and platforms/shared are chat's own code, so their classes and
+// resources are merged into the mod jar rather than nested. Third-party runtime libraries
+// are nested with jarJar instead.
+def bundledModules = [
+        ':mcagents-chat-api',
+        ':mcagents-chat-common',
+        sharedModule
+]
+
+// The dev client loads the modules above as one mod, as the jar does; loaded apart, NeoForge
+// gives them a different class loader from the game and they cannot share its types.
+bundledModules.each { path -> evaluationDependsOn(path) }
+
 neoForge {
-    version = libs.versions.neoforge.get()
+    version = versionFor('neoforge')
+
+    // A development client: ./gradlew :mcagents-chat-neoforge-{minecraft}:runClient, in run/.
+    runs {
+        client {
+            client()
+            gameDirectory = project.file('run')
+        }
+    }
 
     mods {
         'mcagents' {
             sourceSet sourceSets.main
+            bundledModules.each { path -> sourceSet project(path).sourceSets.main }
         }
     }
 }
@@ -42,22 +65,13 @@ neoForge {
 dependencies {
     implementation project(':mcagents-chat-api')
     implementation project(':mcagents-chat-common')
-    implementation project(':mcagents-chat-shared')
+    implementation project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads
     // it as a library, which is what lets the mod store data on a machine that has never
     // been online.
     jarJar libs.sqlite.jdbc
 }
-
-// api/, common/ and platforms/shared are chat's own code, so their classes and
-// resources are merged into the mod jar rather than nested. Third-party runtime libraries
-// are nested with jarJar instead.
-def bundledModules = [
-        ':mcagents-chat-api',
-        ':mcagents-chat-common',
-        ':mcagents-chat-shared'
-]
 
 tasks.named('jar', Jar) {
     bundledModules.each { path ->
@@ -77,12 +91,17 @@ processResources {
     // The core and agents this build compiled against are the oldest the jar may run with.
     def coreVersion = libs.versions.mcagents.core.get()
     def agentsVersion = libs.versions.mcagents.agents.get()
+    def minecraft = minecraftVersion
+    def next = minecraftNext
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
     inputs.property 'agentsVersion', agentsVersion
+    inputs.property 'minecraft', minecraft
+    inputs.property 'minecraftNext', next
 
     filesMatching('META-INF/neoforge.mods.toml') {
-        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion
+        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion,
+                minecraft: minecraft, minecraftNext: next
     }
 }
 
@@ -96,6 +115,7 @@ publishing {
 
             pom {
                 name = 'MCAgentsChatNeoforge'
+                description = "MCAgents chat for NeoForge, Minecraft ${minecraftVersion}"
                 url = 'https://github.com/MCAgents-Mods/chat'
             }
         }

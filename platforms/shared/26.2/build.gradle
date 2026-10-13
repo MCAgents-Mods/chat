@@ -1,0 +1,7 @@
+// MCAgents chat's shared game code for Minecraft 26.2. Everything but the version is in ../shared.gradle.
+
+plugins {
+    id 'net.fabricmc.fabric-loom'
+}
+
+apply from: '../shared.gradle'

@@ -23,20 +23,43 @@ Every dependency coordinate lives in the Gradle version catalog at
 
 | Entry | Value |
 |---|---|
-| Minecraft | 26.2 |
 | Fabric Loader | 0.19.3 |
-| Fabric API | 0.157.0+26.2 |
 | Fabric Loom | 1.17.19 |
-| NeoForge | 26.2.0.90 |
 | ModDevGradle | 2.0.148 |
 | Java | 25 |
+| MCAgents core | 0.7.0 |
+| MCAgents agents | 0.3.0 |
 
-Change a platform version there, not in `gradle.properties`.
+The entries that move with Minecraft come in one block per Minecraft version, each suffixed
+with it (`fabric-api-26-2` for 26.2):
+
+| Entry | 26.2 |
+|---|---|
+| Minecraft | 26.2 |
+| Fabric API | 0.157.0+26.2 |
+| NeoForge | 26.2.0.90 |
+
+Change a platform version there, not in `gradle.properties`. Keep the Minecraft and loader
+versions the same as core's own catalog: a mod built for a different Minecraft than core's
+cannot load beside it.
 
 Minecraft 26.x has no Yarn mappings and no intermediary — Fabric Loom resolves Mojang's
 official mappings on its own, so there is no `mappings` line to add and no `remapJar` task
 in the build. Check `https://meta.fabricmc.net/v2/versions/game` before changing the
 Minecraft version.
+
+## One build per Minecraft version
+
+`platforms/shared` and the two loader modules compile against Minecraft, so each is built
+once for every Minecraft version, listed once in `settings.gradle`. Each is a folder of shared
+sources with one Gradle subproject per version, `platforms/{module}/{minecraft}`, named
+`mcagents-chat-{module}-{minecraft}`; that name is also its artifact id. The subproject
+compiles the module's shared `src/` together with its own `src/`, which holds only what
+differs for that version. `platforms/minecraft.gradle`, which every version subproject
+applies, takes the version from the folder's name, finds its coordinates in the catalog, and
+names the jar `MCAgentsChat{Module}-{version}+{minecraft}.jar`. The loader metadata is
+expanded per version, so each jar declares its own Minecraft version and no other. `api` and
+`common` name no Minecraft type and are built once.
 
 ## MCAgents core and agents
 
@@ -45,7 +68,7 @@ Chat compiles against MCAgents core and MCAgents agents and carries neither. Clo
 `../agents` — and `settings.gradle` builds all three together, so chat compiles and tests
 against their source. Pass `-Pcore-build=/path/to/core` or `-Pagents-build=/path/to/agents`
 for another location. Without a checkout, Gradle resolves the published
-`io.github.mcagentsmods:mcagents-core-{api,common,client}` and `mcagents-agents-{tool,api,common}` at
+`io.github.mcagentsmods:mcagents-core-{api,common}`, `mcagents-core-client-{minecraft}` and `mcagents-agents-{tool,api,common}` at
 the versions in `gradle/libs.versions.toml`, from each repository's GitHub Packages registry.
 GitHub Packages asks for a token even though both are public, so export a personal access
 token with the `read:packages` scope first:
@@ -59,10 +82,11 @@ export GITHUB_TOKEN=ghp_your_token
 A build with both checkouts beside it needs neither.
 
 `runClient` does not put core or agents in the development game. Copy each one's jar for the
-same loader (`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` and
-`MCAgentsAgentsFabric-*.jar`, or the `Neoforge` ones, in each checkout) into that loader's
-`run/mods/` first, or the loader refuses to start chat for the missing `mcagents_core` or
-`mcagents_agents`.
+same loader and Minecraft version (`MCAgentsCoreFabric-{version}+{minecraft}.jar` and
+`MCAgentsAgentsFabric-{version}+{minecraft}.jar`, or the `Neoforge` ones, from each
+checkout's `platforms/{loader}/{minecraft}/build/libs/` or each repository's Releases page)
+into that version subproject's `run/mods/` first, or the loader refuses to start chat for the
+missing `mcagents_core` or `mcagents_agents`.
 
 ## Commands
 
@@ -71,15 +95,16 @@ same loader (`platforms/fabric/build/libs/MCAgentsCoreFabric-*.jar` and
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` |
 | Build one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client on Fabric | `./gradlew :mcagents-chat-fabric:runClient` |
-| Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge:runClient` |
-| Produce the mod jars | `./gradlew :mcagents-chat-fabric:build :mcagents-chat-neoforge:build` |
+| Run the client on Fabric | `./gradlew :mcagents-chat-fabric-26.2:runClient` |
+| Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge-26.2:runClient` |
+| Produce the mod jars | `./gradlew assemble` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
 keeping the logic out of the platform module. Run them before you launch the game.
 
-The mod jars land in `platforms/fabric/build/libs/` as `MCAgentsChatFabric-{version}.jar` and
-in `platforms/neoforge/build/libs/` as `MCAgentsChatNeoforge-{version}.jar`. Each carries the
+The mod jars land in `platforms/{fabric,neoforge}/{minecraft}/build/libs/`, one per loader and
+Minecraft version, such as `platforms/fabric/26.2/build/libs/MCAgentsChatFabric-{version}+26.2.jar`
+and `MCAgentsChatNeoforge-{version}+26.2.jar` beside it under `neoforge`. Each carries the
 classes of `api/`, `common/` and `platforms/shared/`, merged into it rather than
 nested as separate mods, and nests `sqlite-jdbc` its loader's way.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
@@ -96,7 +121,8 @@ identity.
 Releases publish themselves. `.github/workflows/publish.yml` runs whenever `master` moves:
 when `project-version` in `gradle.properties` has no `v{version}` tag yet, it builds and tests
 chat, publishes every module to this repository's GitHub Packages as
-`io.github.mcagentsmods:mcagents-chat-{module}`, and then tags the commit. When the tag already
+`io.github.mcagentsmods:mcagents-chat-{module}` (`mcagents-chat-{module}-{minecraft}` for
+shared and the loaders), and then tags the commit. When the tag already
 exists it does nothing, so only a merge that raises the version publishes. If a run fails, no
 tag is made; fix the cause and start the workflow again from the Actions tab
 (**Run workflow**).
@@ -107,8 +133,9 @@ named in `gradle/libs.versions.toml` has to be published before chat's release i
 The jars a player installs are attached to the repository's **Releases** page, one GitHub
 release per version. `.github/workflows/release.yml` runs each time a Publish run on `master`
 finishes: when the `v{version}` tag exists and has no GitHub release yet, it checks out the
-tag, runs `./gradlew assemble` with the same token, and creates the release with
-`MCAgentsChatFabric-{version}.jar` and `MCAgentsChatNeoforge-{version}.jar` attached and that
+tag, runs `./gradlew assemble` with the same token, and creates the release with the mod jars
+attached, one per loader and Minecraft version — `MCAgentsChatFabric-{version}+{minecraft}.jar`
+and `MCAgentsChatNeoforge-{version}+{minecraft}.jar` — and that
 version's `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md` as its notes. It then deletes the
 copy of the jars the run kept in Actions. Chat has no Forge module, so there is no Forge jar.
 A release that failed is made by the next merge to `master`; **Run workflow** on the Release
@@ -116,8 +143,9 @@ workflow's page does the same by hand, and its `tag` input releases an earlier t
 
 ## Runtime files
 
-Running the client creates a game directory under `platforms/fabric/run/`. The mod's own
-data goes to `platforms/fabric/run/MCAgents/`:
+Running the client creates a game directory under that version subproject, such as
+`platforms/fabric/26.2/run/`. The mod's own data goes to its `MCAgents/` folder,
+`platforms/fabric/26.2/run/MCAgents/`:
 
 | File | Contents |
 |---|---|
@@ -134,7 +162,7 @@ mod encrypts every stored key with it:
 
 ```bash
 export MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
-./gradlew :mcagents-chat-fabric:runClient
+./gradlew :mcagents-chat-fabric-26.2:runClient
 ```
 
 Anything works as a value — a passphrase, a random string — because it is hashed to a

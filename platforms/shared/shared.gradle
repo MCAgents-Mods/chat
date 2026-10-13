@@ -6,10 +6,10 @@
 // loader's game. platforms/fabric and platforms/neoforge each bundle this module into their
 // jar and add only their entry point, key registration and events.
 
-plugins {
-    // Loom is used for the vanilla game alone: no loader, no mod metadata, no run configs.
-    alias(libs.plugins.fabric.loom)
-}
+// Built once per Minecraft version: platforms/shared/{version}/build.gradle applies Loom,
+// used for the vanilla game alone (no loader, no mod metadata, no run configs), then this.
+
+apply from: '../../minecraft.gradle'
 
 base {
     archivesName = 'MCAgentsChatShared'
@@ -36,14 +36,14 @@ repositories {
 }
 
 dependencies {
-    minecraft libs.minecraft
+    minecraft libraryFor('minecraft')
 
     api project(':mcagents-chat-api')
     api project(':mcagents-chat-common')
 
     // Core's holograms, for the chat hologram CHAT opens. The mcagents_core mod supplies them
     // in game.
-    compileOnly libs.core.client
+    compileOnly coreClient
 }
 
 publishing {
@@ -53,6 +53,7 @@ publishing {
 
             pom {
                 name = 'MCAgentsChatShared'
+                description = "MCAgents chat's shared game code, Minecraft ${minecraftVersion}"
                 url = 'https://github.com/MCAgents-Mods/chat'
             }
         }
