@@ -25,7 +25,7 @@ rootProject.name = 'chat'
 // subproject per version in platforms/{module}/{version}, holding only what differs for that
 // version. The subproject is named mcagents-chat-{module}-{version}, which is also its
 // published artifact id. The catalog carries one block of coordinates per version.
-def minecraftVersions = ['26.2']
+def minecraftVersions = ['26.2', '26.3']
 
 // MCAgents core — the model client and the holograms chat runs on. With a checkout of
 // MCAgents-Mods/core beside this one (or wherever -Pcore-build points), Gradle builds chat

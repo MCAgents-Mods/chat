@@ -11,8 +11,8 @@
 
 [versions]
 java = "25"
-fabric-loader = "0.19.3"
-fabric-loom = "1.17.19"
+fabric-loader = "0.19.5"
+fabric-loom = "1.18.4"
 moddevgradle = "2.0.148"
 sqlite-jdbc = "3.53.2.1"
 # Provided by Minecraft at runtime — declared so common/ can compile, never bundled.
@@ -30,11 +30,16 @@ mcagents-agents = "0.3.0"
 minecraft-26-2 = "26.2"
 fabric-api-26-2 = "0.157.0+26.2"
 neoforge-26-2 = "26.2.0.90"
+minecraft-26-3 = "26.3"
+fabric-api-26-3 = "0.162.0+26.3"
+neoforge-26-3 = "26.3.0.76"
 
 [libraries]
 minecraft-26-2 = { module = "com.mojang:minecraft", version.ref = "minecraft-26-2" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
 fabric-api-26-2 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-26-2" }
+minecraft-26-3 = { module = "com.mojang:minecraft", version.ref = "minecraft-26-3" }
+fabric-api-26-3 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-26-3" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 core-api = { module = "io.github.mcagentsmods:mcagents-core-api", version.ref = "mcagents-core" }

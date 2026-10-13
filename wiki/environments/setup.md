@@ -4,8 +4,8 @@
 
 | Tool | Version | Note |
 |---|---|---|
-| JDK | 21 or newer to launch Gradle; 25 to compile | The `foojay-resolver-convention` plugin downloads JDK 25 if you do not have it. |
-| Gradle | 9.7.0 | Comes from the committed wrapper. Use `./gradlew`, never a system `gradle`. |
+| JDK | 25 | Gradle runs on it: Fabric Loom 1.18, which builds for Minecraft 26.3, refuses an older one. |
+| Gradle | 9.7.1 | Comes from the committed wrapper. Use `./gradlew`, never a system `gradle`. |
 | Git | any recent | |
 
 ## Where versions live
@@ -23,8 +23,8 @@ Every dependency coordinate lives in the Gradle version catalog at
 
 | Entry | Value |
 |---|---|
-| Fabric Loader | 0.19.3 |
-| Fabric Loom | 1.17.19 |
+| Fabric Loader | 0.19.5 |
+| Fabric Loom | 1.18.4 |
 | ModDevGradle | 2.0.148 |
 | Java | 25 |
 | MCAgents core | 0.7.0 |
@@ -33,11 +33,11 @@ Every dependency coordinate lives in the Gradle version catalog at
 The entries that move with Minecraft come in one block per Minecraft version, each suffixed
 with it (`fabric-api-26-2` for 26.2):
 
-| Entry | 26.2 |
-|---|---|
-| Minecraft | 26.2 |
-| Fabric API | 0.157.0+26.2 |
-| NeoForge | 26.2.0.90 |
+| Entry | 26.2 | 26.3 |
+|---|---|---|
+| Minecraft | 26.2 | 26.3 |
+| Fabric API | 0.157.0+26.2 | 0.162.0+26.3 |
+| NeoForge | 26.2.0.90 | 26.3.0.76 |
 
 Change a platform version there, not in `gradle.properties`. Keep the Minecraft and loader
 versions the same as core's own catalog: a mod built for a different Minecraft than core's
@@ -51,7 +51,7 @@ Minecraft version.
 ## One build per Minecraft version
 
 `platforms/shared` and the two loader modules compile against Minecraft, so each is built
-once for every Minecraft version, listed once in `settings.gradle`. Each is a folder of shared
+once for every Minecraft version, 26.2 and 26.3, listed once in `settings.gradle`. Each is a folder of shared
 sources with one Gradle subproject per version, `platforms/{module}/{minecraft}`, named
 `mcagents-chat-{module}-{minecraft}`; that name is also its artifact id. The subproject
 compiles the module's shared `src/` together with its own `src/`, which holds only what
@@ -97,6 +97,7 @@ missing `mcagents_core` or `mcagents_agents`.
 | Build one module | `./gradlew :mcagents-chat-common:build` |
 | Run the client on Fabric | `./gradlew :mcagents-chat-fabric-26.2:runClient` |
 | Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge-26.2:runClient` |
+| Run a 26.3 client | The same with `-26.3`, such as `./gradlew :mcagents-chat-fabric-26.3:runClient` |
 | Produce the mod jars | `./gradlew assemble` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
@@ -108,7 +109,10 @@ and `MCAgentsChatNeoforge-{version}+26.2.jar` beside it under `neoforge`. Each c
 classes of `api/`, `common/` and `platforms/shared/`, merged into it rather than
 nested as separate mods, and nests `sqlite-jdbc` its loader's way.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
-headless connection.
+headless connection. Minecraft 26.3 draws through Vulkan or OpenGL with an sRGB surface. On a
+virtual display (Xvfb), which offers no sRGB OpenGL surface, a 26.3 client needs a Vulkan
+driver such as Mesa's software one (lavapipe), and NeoForge's OpenGL-only early loading
+window must be off: `earlyWindowControl = false` in the run's `config/fml.toml`.
 
 The first build downloads and processes Minecraft. Expect it to take several minutes and a
 few gigabytes of disk. Subsequent builds reuse the Loom cache. If it runs out of memory,
