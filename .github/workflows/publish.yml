@@ -1,6 +1,6 @@
 name: Publish
 
-# Publishes chat's api, common, website, shared, fabric and neoforge jars
+# Publishes chat's api, common, shared, fabric and neoforge jars
 # (mcagents-chat-{module}) to GitHub Packages and tags the commit when a
 # release lands on master.
 #

@@ -72,9 +72,8 @@ public final class SqliteDatabase implements LocalDatabase {
         // player asks, so reads of them go through a cache. The database stays the record;
         // the cache is dropped whenever a write touches what it holds.
         this.contents = new CachingContentRepository(new SqliteContentRepository(worker));
-        // Wrapped so that a write from the game and a write from the web console move the
-        // same counter. A counter owned by the console would only ever see the console's
-        // own writes, and the sync would work in one direction while looking finished.
+        // Wrapped so that every chat write moves the same counter, whoever makes it. A
+        // counter owned by one writer would only ever see that writer's own writes.
         this.chat = new RevisionedChatRepository(new SqliteChatRepository(worker), chatRevision);
         this.settings = new SqliteSettingsRepository(worker);
         // Not cached. A player has a handful of wallets, they are read when a screen opens

@@ -35,7 +35,7 @@ loom {
             sourceSet sourceSets.main
             // The dev client loads platforms/shared as part of this mod, as the jar merges it,
             // so it finds the screens' strings there. Only a Loom module can be named here;
-            // api/, common/ and website/ carry no game assets.
+            // api/ and common/ carry no game assets.
             sourceSet 'main', ':mcagents-chat-shared'
         }
     }
@@ -48,7 +48,6 @@ dependencies {
 
     implementation project(':mcagents-chat-api')
     implementation project(':mcagents-chat-common')
-    implementation project(':mcagents-chat-website')
     implementation project(':mcagents-chat-shared')
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
@@ -56,13 +55,12 @@ dependencies {
     include libs.sqlite.jdbc
 }
 
-// api/, common/, website/ and platforms/shared are chat's own code, so their classes and
+// api/, common/ and platforms/shared are chat's own code, so their classes and
 // resources are merged into the mod jar rather than nested as separate Fabric mods.
 // Third-party runtime libraries are bundled with Loom's `include` instead.
 def bundledModules = [
         ':mcagents-chat-api',
         ':mcagents-chat-common',
-        ':mcagents-chat-website',
         ':mcagents-chat-shared'
 ]
 
@@ -99,8 +97,8 @@ tasks.named('jar', Jar) {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // The mod jar alone, with no dependency list: it already carries api, common,
-            // website and shared, nests SQLite, and the loader, mcagents_core and
+            // The mod jar alone, with no dependency list: it already carries api, common
+            // and shared, nests SQLite, and the loader, mcagents_core and
             // mcagents_agents supply the rest.
             artifact tasks.named('jar')
 

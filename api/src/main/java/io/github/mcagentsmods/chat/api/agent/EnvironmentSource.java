@@ -27,8 +27,7 @@ public interface EnvironmentSource {
     PlayerEnvironment current();
 
     /**
-     * The source used when nothing is watching the game — a test, or the console started
-     * outside the mod. It reports {@link PlayerEnvironment.Kind#UNKNOWN} forever, and the
+     * The source used when nothing is watching the game, such as a test. It reports {@link PlayerEnvironment.Kind#UNKNOWN} forever, and the
      * prompt simply carries no environment note.
      */
     static EnvironmentSource unknown() {

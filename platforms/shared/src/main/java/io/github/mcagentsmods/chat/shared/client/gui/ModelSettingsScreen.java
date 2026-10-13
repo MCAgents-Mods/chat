@@ -35,8 +35,8 @@ import java.util.function.Consumer;
  *
  * <p>Above the chat model, because it is the shorter way of asking the same question: a stored
  * id names both who serves the model and which model it is, so picking a provider rewrites the
- * id through {@link ModelCatalog#chatModelOn}, the one rule the console uses for the same
- * choice. The field below shows the result immediately — nothing is guessed at save time.
+ * id through {@link ModelCatalog#chatModelOn}, the one rule for that choice. The field below
+ * shows the result immediately — nothing is guessed at save time.
  *
  * <p>The two stay in step in both directions: typing a model id moves the provider field to
  * that id's platform, so the provider box is never stale, and a provider that differs from the
@@ -200,7 +200,7 @@ public final class ModelSettingsScreen extends Screen {
     }
 
     /**
-     * Puts the chat model on {@code platform}, by the same rule the console applies.
+     * Puts the chat model on {@code platform}, by the one rule {@link ModelCatalog#chatModelOn}.
      *
      * <p>Applied when a provider is picked rather than at save time, so the model id that
      * results is visible before anything is stored — and so a player who types an id directly

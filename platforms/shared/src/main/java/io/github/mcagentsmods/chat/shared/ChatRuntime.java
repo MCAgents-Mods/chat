@@ -6,7 +6,6 @@ import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagentsmods.chat.shared.client.AgentFactory;
 import io.github.mcagentsmods.chat.shared.client.McpHostFactory;
-import io.github.mcagentsmods.chat.shared.client.WebConsoleHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,10 +170,7 @@ public final class ChatRuntime {
      */
     private static void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Chat's pages out of the console first: core closes the console itself, but a
-            // request reaching chat's pages until then would read a store that is closing.
-            WebConsoleHolder.stop();
-            // Then the model client: it may still be waiting on a backoff, and there is
+            // The model client first: it may still be waiting on a backoff, and there is
             // no point letting that outlive the store it would write the answer to.
             AgentFactory.close();
             // Then the MCP servers: each is a child process, and one left running would

@@ -50,9 +50,9 @@ public final class AgentFactory {
      * The one persona store this game session uses.
      *
      * <p>Shared for the same reason the model client is, and more sharply: the editor
-     * screen, the web console, and the agent all read and write {@code AGENTS.md}, and a
-     * second store would hold a second copy of its contents. The player would save in the
-     * browser, ask in the game, and be answered by the persona they had just replaced.
+     * screen and the agent both read and write {@code AGENTS.md}, and a second store would
+     * hold a second copy of its contents. The player would save in the editor, ask a
+     * question, and be answered by the persona they had just replaced.
      */
     public static PersonaStore personaStore(ClientPaths paths) {
         PersonaStore existing = personaStore;
@@ -65,17 +65,6 @@ public final class AgentFactory {
             }
             return personaStore;
         }
-    }
-
-    /**
-     * The one model client this game session uses.
-     *
-     * <p>Exposed so the web console embeds packs through the same client the agent asks
-     * questions with: same connection pool, same retry scheduler, same embedding cache. A
-     * second stack beside it would double all three and share none of them.
-     */
-    public static ModelClient modelClient(LocalDatabase database) {
-        return sharedClient(database);
     }
 
     private static ModelClient sharedClient(LocalDatabase database) {

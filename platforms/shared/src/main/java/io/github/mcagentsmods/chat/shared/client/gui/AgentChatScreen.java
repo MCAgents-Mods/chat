@@ -136,23 +136,15 @@ public final class AgentChatScreen extends Screen {
                         Component.translatable("gui.mcagents.session.new")))
                 .build());
 
-        // Beside the other three rather than down with the wallets: this one changes how
+        // Beside the other two rather than down with the wallets: this one changes how
         // every answer in the conversation beside it reads, so it belongs on the row the
         // player looks at before asking something.
         addRenderableWidget(Button.builder(
                         Component.literal("📝"),
                         button -> openPersona())
-                .bounds(width - MARGIN - LINE * 4 - 12, MARGIN, LINE, LINE)
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(
-                        Component.translatable("gui.mcagents.persona.tip")))
-                .build());
-
-        addRenderableWidget(Button.builder(
-                        Component.literal("🌐"),
-                        button -> openWebConsole())
                 .bounds(width - MARGIN - LINE * 3 - 8, MARGIN, LINE, LINE)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
-                        Component.translatable("gui.mcagents.console.title")))
+                        Component.translatable("gui.mcagents.persona.tip")))
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -365,12 +357,6 @@ public final class AgentChatScreen extends Screen {
     private void openKeySettings() {
         if (minecraft != null && hasStorage()) {
             minecraft.setScreenAndShow(new ApiKeyScreen(database, this));
-        }
-    }
-
-    private void openWebConsole() {
-        if (minecraft != null && hasStorage()) {
-            minecraft.setScreenAndShow(new WebConsoleScreen(database, this));
         }
     }
 

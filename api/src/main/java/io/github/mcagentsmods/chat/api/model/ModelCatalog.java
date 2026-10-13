@@ -177,14 +177,13 @@ public final class ModelCatalog {
      * models name, the platforms it ships an address for, and the ones the player is already
      * using. Duplicates collapse and the first appearance wins the position.
      *
-     * <p><strong>This is the one list both interfaces offer.</strong> The console built it
-     * inline and the game screen would have had to build it again; two lists computed in two
+     * <p><strong>This is the one list every screen offers.</strong> Two lists computed in two
      * places from the same three sources stay equal exactly until one of them is edited. The
      * same reasoning already keeps the suggested model ids in this class rather than in the
      * screens that show them.
      *
      * <p>Like every list here it is a suggestion. A platform absent from it is not rejected —
-     * both interfaces let one be typed, and it is stored exactly as typed.
+     * the screens let one be typed, and it is stored exactly as typed.
      *
      * @param alreadyInUse platforms the player holds keys for, or is otherwise already on;
      *                     normalised here, and blanks ignored

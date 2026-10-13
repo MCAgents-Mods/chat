@@ -12,8 +12,8 @@ import java.util.Objects;
  * Builds the model client chat talks to providers through.
  *
  * <p>The client itself is core's {@link OpenRouterClient}, shared by every MCAgents mod.
- * What is chat's is put around it here, once, so the game and the console cannot build two
- * different stacks: keys read from chat's encrypted store per request, routes read from the
+ * What is chat's is put around it here, once, so no two callers can build two different
+ * stacks: keys read from chat's encrypted store per request, routes read from the
  * player's settings, embeddings cached locally, and chat's own name sent to OpenRouter.
  */
 public final class ChatModelClients {

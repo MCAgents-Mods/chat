@@ -5,12 +5,8 @@ package io.github.mcagentsmods.chat.api.storage;
  *
  * <h2>What this is for</h2>
  *
- * <p>The player can hold two conversations with the same store at once: the in-game screen
- * and, when the web console is running, a browser tab. Whichever one they type in, the
- * other has to notice — a chat screen still showing three messages after a fourth was sent
- * from the browser is not a stale view, it is a wrong one.
- *
- * <p>So every write goes through a decorator that moves this counter, and a reader that
+ * <p>A reader that shows stored conversations can tell whether anything changed since it
+ * last looked, without reading them again. Every write goes through a decorator that moves this counter, and a reader that
  * cares compares the number it last saw against the number now. Nothing is pushed and
  * nothing is subscribed to: a comparison of two longs is cheap enough to do on every client
  * tick, and it cannot leak a listener or fire on a thread the reader did not expect.
