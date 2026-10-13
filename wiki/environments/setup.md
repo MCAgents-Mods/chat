@@ -15,7 +15,7 @@
 ```properties
 git-org=MCAgents-Mods
 git-repo=chat
-project-version=0.4.1
+project-version=0.5.0
 ```
 
 Every dependency coordinate lives in the Gradle version catalog at
