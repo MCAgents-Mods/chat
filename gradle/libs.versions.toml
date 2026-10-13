@@ -6,36 +6,39 @@
 # Check https://meta.fabricmc.net/v2/versions/ before changing a Minecraft, loader, or
 # Fabric API version. Minecraft 26.x publishes no Yarn mappings and no intermediary —
 # Fabric Loom resolves Mojang's official mappings on its own, so there is no mappings
-# coordinate to declare.
+# coordinate to declare. Keep these in step with MCAgents core's own catalog: a mod built for
+# a different Minecraft than core's cannot load beside it.
 
 [versions]
 java = "25"
-minecraft = "26.2"
 fabric-loader = "0.19.3"
-fabric-api = "0.157.0+26.2"
 fabric-loom = "1.17.19"
-# Check https://maven.neoforged.net/releases/net/neoforged/neoforge/ for a build of the same
-# Minecraft version before changing either.
-neoforge = "26.2.0.90"
 moddevgradle = "2.0.148"
 sqlite-jdbc = "3.53.2.1"
 # Provided by Minecraft at runtime — declared so common/ can compile, never bundled.
 gson = "2.14.0"
 junit = "6.1.3"
 # MCAgents core. Compiled against, never bundled: the mcagents_core mod provides it in game.
-mcagents-core = "0.6.0"
+mcagents-core = "0.7.0"
 # MCAgents agents. Compiled against, never bundled: the mcagents_agents mod provides it in game.
-mcagents-agents = "0.2.0"
+mcagents-agents = "0.3.0"
+# One block per Minecraft version, each entry suffixed with the version (26.2 -> -26-2).
+# Every Minecraft-facing module has one subproject per version, platforms/{module}/{version},
+# which finds its entries by that suffix; the version list itself is in settings.gradle. Check
+# https://maven.neoforged.net/releases/net/neoforged/neoforge/ for a NeoForge build of the
+# same Minecraft version before changing either.
+minecraft-26-2 = "26.2"
+fabric-api-26-2 = "0.157.0+26.2"
+neoforge-26-2 = "26.2.0.90"
 
 [libraries]
-minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+minecraft-26-2 = { module = "com.mojang:minecraft", version.ref = "minecraft-26-2" }
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
-fabric-api = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api" }
+fabric-api-26-2 = { module = "net.fabricmc.fabric-api:fabric-api", version.ref = "fabric-api-26-2" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 core-api = { module = "io.github.mcagentsmods:mcagents-core-api", version.ref = "mcagents-core" }
 core-common = { module = "io.github.mcagentsmods:mcagents-core-common", version.ref = "mcagents-core" }
-core-client = { module = "io.github.mcagentsmods:mcagents-core-client", version.ref = "mcagents-core" }
 agents-common = { module = "io.github.mcagentsmods:mcagents-agents-common", version.ref = "mcagents-agents" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

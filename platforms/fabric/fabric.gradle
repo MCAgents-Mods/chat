@@ -5,9 +5,10 @@
 // This is the only module that may reference Fabric types. The screens and start-up live in
 // platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-plugins {
-    alias(libs.plugins.fabric.loom)
-}
+// Built once per Minecraft version: platforms/fabric/{version}/build.gradle applies
+// Loom, then this.
+
+apply from: '../../minecraft.gradle'
 
 base {
     archivesName = 'MCAgentsChatFabric'
@@ -36,19 +37,19 @@ loom {
             // The dev client loads platforms/shared as part of this mod, as the jar merges it,
             // so it finds the screens' strings there. Only a Loom module can be named here;
             // api/ and common/ carry no game assets.
-            sourceSet 'main', ':mcagents-chat-shared'
+            sourceSet 'main', sharedModule
         }
     }
 }
 
 dependencies {
-    minecraft libs.minecraft
+    minecraft libraryFor('minecraft')
     implementation libs.fabric.loader
-    implementation libs.fabric.api
+    implementation libraryFor('fabric-api')
 
     implementation project(':mcagents-chat-api')
     implementation project(':mcagents-chat-common')
-    implementation project(':mcagents-chat-shared')
+    implementation project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
@@ -61,7 +62,7 @@ dependencies {
 def bundledModules = [
         ':mcagents-chat-api',
         ':mcagents-chat-common',
-        ':mcagents-chat-shared'
+        sharedModule
 ]
 
 tasks.named('jar', Jar) {
@@ -75,12 +76,17 @@ processResources {
     // The core and agents this build compiled against are the oldest the jar may run with.
     def coreVersion = libs.versions.mcagents.core.get()
     def agentsVersion = libs.versions.mcagents.agents.get()
+    def minecraft = minecraftVersion
+    def fabricLoader = libs.versions.fabric.loader.get()
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
     inputs.property 'agentsVersion', agentsVersion
+    inputs.property 'minecraft', minecraft
+    inputs.property 'fabricLoader', fabricLoader
 
     filesMatching('fabric.mod.json') {
-        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion
+        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion,
+                minecraft: minecraft, fabricLoader: fabricLoader
     }
 }
 
@@ -104,6 +110,7 @@ publishing {
 
             pom {
                 name = 'MCAgentsChatFabric'
+                description = "MCAgents chat for Fabric, Minecraft ${minecraftVersion}"
                 url = 'https://github.com/MCAgents-Mods/chat'
             }
         }

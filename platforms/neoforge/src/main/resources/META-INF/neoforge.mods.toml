@@ -16,14 +16,14 @@ A client-side AI assistant for Minecraft. Chat with an LLM agent using your own 
 [[dependencies.mcagents]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.2,)"
+versionRange = "[${minecraft},)"
 ordering = "NONE"
 side = "CLIENT"
 
 [[dependencies.mcagents]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.2,26.3)"
+versionRange = "[${minecraft},${minecraftNext})"
 ordering = "NONE"
 side = "CLIENT"
 

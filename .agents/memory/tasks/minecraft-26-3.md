@@ -58,3 +58,30 @@ option.
 ### Task 1 — chore/minecraft-26-3-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — build/minecraft-versions
+
+`platforms/shared`, `fabric` and `neoforge` each became a folder of shared sources with one
+subproject per Minecraft version, `platforms/{module}/{minecraft}`, named
+`mcagents-chat-{module}-{minecraft}`, the same layout as core's and agents'. The versions are
+listed once in `settings.gradle`, 26.2 only for now; `platforms/minecraft.gradle` takes the
+version from the folder name, looks up the catalog entries suffixed with it, compiles the
+folder's own `src/` with the shared one, and names the jar `{Name}-{version}+{minecraft}.jar`.
+The loader metadata is expanded per version. Core moved to 0.7.0, whose
+`mcagents-core-client-{minecraft}` each version compiles against, and agents to 0.3.0; with
+`../core` beside it, `settings.gradle` substitutes core's `:platforms:client-{minecraft}`.
+`release.yml` attaches one jar per loader and Minecraft version.
+
+The NeoForge module gained the development client agents' has (`runs { client }`, with the
+bundled modules loaded as one mod): the setup page listed `:mcagents-chat-neoforge:runClient`,
+but the module declared no run, so the task did not exist.
+
+With `../core` and `../agents` both beside it, `settings.gradle` substitutes core's client for
+every version core builds, read from core's `platforms/client/*/build.gradle`, not only
+chat's: agents, built in the same composite, compiles against core's client for each of its
+own versions, and Gradle does not carry agents' own substitution into chat's build.
+
+Checked: `./gradlew build` passes against core 0.7.0's and agents 0.3.0's source; the jars are
+`MCAgentsChat{Shared,Fabric,Neoforge}-0.4.1+26.2.jar`, each loader declaring Minecraft 26.2
+only, `mcagents_core` 0.7.0 and `mcagents_agents` 0.3.0 or newer. `actionlint` passes on both
+workflows.
