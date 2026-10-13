@@ -225,16 +225,16 @@ names cannot be dereferenced as `project.gitOrg`.
 
 | Thing | Value |
 |---|---|
-| Minecraft | 26.2 |
-| Fabric Loader | 0.19.3 |
-| Fabric API | 0.157.0+26.2 |
-| Fabric Loom | 1.17.19 |
-| NeoForge | 26.2.0.90 |
+| Minecraft | 26.2 and 26.3, one subproject per version |
+| Fabric Loader | 0.19.5 |
+| Fabric API | 0.157.0+26.2 and 0.162.0+26.3 |
+| Fabric Loom | 1.18.4 |
+| NeoForge | 26.2.0.90 and 26.3.0.76 |
 | ModDevGradle | 2.0.148 |
 | MCAgents core | 0.7.0 |
 | MCAgents agents | 0.3.0 |
-| Java | 25 (Minecraft 26.2 requires it) |
-| Gradle | 9.7.0, via the committed wrapper |
+| Java | 25 (Minecraft 26.x requires it) |
+| Gradle | 9.7.1, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
 | Base package | `io.github.mcagentsmods.chat` |
 | Version | `0.4.1` |
@@ -258,18 +258,21 @@ these.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric-26.2:runClient` or `:mcagents-chat-neoforge-26.2:runClient` |
+| Run the client | `./gradlew :mcagents-chat-fabric-26.2:runClient` or `:mcagents-chat-neoforge-26.2:runClient`, and the same with `-26.3` |
 | Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge}/{minecraft}/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
 its classpath. Put a test there whenever you can; a behaviour that can only be checked by
 launching the game will not get checked.
 
-Always use `./gradlew`, never a system `gradle` — the wrapper pins 9.7.0 and a Gradle 8
-launcher cannot evaluate `settings.gradle`. Gradle itself runs on JDK 21 and compiles
-through a Java 25 toolchain; the `foojay-resolver-convention` plugin in `settings.gradle`
-downloads JDK 25 when it is not installed. `runClient` needs a display and will not work
-headless.
+Always use `./gradlew`, never a system `gradle` — the wrapper pins 9.7.1 and a Gradle 8
+launcher cannot evaluate `settings.gradle`. Gradle itself runs on JDK 25: Fabric Loom 1.18,
+the first for 26.3, refuses an older JVM. The `foojay-resolver-convention` plugin in
+`settings.gradle` downloads the Java 25 toolchain the build compiles with when it is not
+installed. `runClient` needs a display and will not work headless. A 26.3 client draws
+through Vulkan or OpenGL with an sRGB surface, which a virtual display (Xvfb) offers only
+through a Vulkan driver such as Mesa's lavapipe; NeoForge's early loading window is OpenGL
+only, so turn it off with `earlyWindowControl = false` in the run's `config/fml.toml`.
 
 The first build downloads and processes Minecraft — several minutes and a few gigabytes.
 If it fails with an out-of-memory error, raise the Gradle daemon heap in your **user**

@@ -85,3 +85,20 @@ Checked: `./gradlew build` passes against core 0.7.0's and agents 0.3.0's source
 `MCAgentsChat{Shared,Fabric,Neoforge}-0.4.1+26.2.jar`, each loader declaring Minecraft 26.2
 only, `mcagents_core` 0.7.0 and `mcagents_agents` 0.3.0 or newer. `actionlint` passes on both
 workflows.
+
+### Task 3 — feat/minecraft-26-3
+
+`settings.gradle` lists 26.3 beside 26.2, and the catalog gained the 26.3 block: Minecraft
+26.3, Fabric API 0.162.0+26.3 and NeoForge 26.3.0.76. Fabric Loader moved to 0.19.5 and Fabric
+Loom to 1.18.4 for both versions, and the wrapper to Gradle 9.7.1, as in core and agents. Each
+module gained its `26.3/` subproject. No source changed: chat names none of the types 26.3
+renamed. The setup page, the repository map and the README name 26.3 and what a 26.3 dev
+client needs.
+
+Checked: `./gradlew build` passes against core 0.7.0's and agents 0.3.0's source and writes
+six jars, `MCAgentsChat{Shared,Fabric,Neoforge}-{version}+{26.2,26.3}.jar`. In a dev client of
+each loader and version, with core 0.7.0's and agents 0.3.0's jars for it in `run/mods/`, a
+new world was created, G showed the menu with CHAT, KEYS, MODEL, PERSONA and WALLETS, and
+CHAT's hologram opened with its three panels: four of four. On NeoForge, quitting logs a
+`NoClassDefFoundError` from chat's shutdown hook, because NeoForge has already closed the
+mod's module; the game has stopped by then.
