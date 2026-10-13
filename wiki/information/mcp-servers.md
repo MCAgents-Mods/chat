@@ -6,7 +6,7 @@ over a standard protocol. The mod runs those servers, asks what they offer, and 
 result in front of the agent alongside everything it can already do.
 
 It is entirely optional. A copy of the mod with no MCP servers is the normal case, and
-nothing about the game, the chat screen, or the console changes when there are none.
+nothing about the game or the chat screen changes when there are none.
 
 ## Where they live
 

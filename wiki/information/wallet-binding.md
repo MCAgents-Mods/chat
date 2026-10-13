@@ -58,14 +58,10 @@ what a player's wallet actually contains.
 
 MetaMask is a browser extension: `window.ethereum` exists on a web page and nowhere else.
 There is no Java API, no local socket, nothing a desktop program can talk to. So proving an
-address means a web page, and the mod has two ways to reach one.
-
-**From the game**, for the length of one handshake the mod becomes a web server. **From the
-web console**, `/wallets/` is already a page in the player's browser, so it talks to MetaMask
-itself and there is no second server at all. The checking is the same code in both.
+address means a web page, and for the length of one handshake the mod becomes a web server.
 
 1. The player clicks **Connect MetaMask**.
-2. From the game, the mod opens a listener on `127.0.0.1`, on a port the operating system
+2. The mod opens a listener on `127.0.0.1`, on a port the operating system
    picks, and opens the player's browser at it. The address is shown on screen too, because
    the default browser is often not the one MetaMask is installed in.
 3. The page asks MetaMask which accounts it may see, and then asks the mod for **one message
@@ -131,13 +127,11 @@ copyable with no internet at all.
 
 ## Using it
 
-In the game, press `G` and choose **Chat**, then **Wallets** in the bottom-left corner. In a
-browser, open the console and go to **Wallets**. Both show the same thing the same way.
+In the game, press `G` and choose **Chat**, then **Wallets** in the bottom-left corner.
 
 **Every account is a column.** Each shows five wallets and scrolls past that, so an account
-with forty wallets cannot push the others off the screen. The in-game screen pages between
-columns with `◀ ▶` when there are more accounts than fit; the browser wraps them onto a
-second row. It used to be one account at a time behind a dropdown, which meant a player with
+with forty wallets cannot push the others off the screen. The screen pages between
+columns with `◀ ▶` when there are more accounts than fit. It used to be one account at a time behind a dropdown, which meant a player with
 two identities could never see both.
 
 * **Add account** asks for a name. There is nothing else to create — an account exists as
@@ -153,8 +147,7 @@ two identities could never see both.
 * **Connect MetaMask** proves every EVM address the browser shares, into that column's
   account. No wallet has to exist first: what comes back decides how many there are.
 
-Every question either interface asks — rename, delete, remove an address — is drawn by the
-mod or by the page itself, never a browser popup.
+Every question the screen asks — rename, delete, remove an address — is drawn by the mod.
 
 Deleting a wallet from the mod removes the mod's record of it. It does nothing to the wallet
 itself, which lives in MetaMask and knows nothing about any of this.
@@ -164,12 +157,11 @@ itself, which lives in MetaMask and knows nothing about any of this.
 | Layer | What it holds |
 |---|---|
 | `api/` | `ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`, `WalletRepository` |
-| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser`; `AccountColumns` for the screen's layout; the `/wallets/` page and its routes |
+| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser`; `AccountColumns` for the screen's layout |
 | `platforms/shared/` | `WalletScreen`, `WalletListPanel`, `ChainAddressPanel`, `AddAddressScreen`, `WalletConnectScreen`, `PlayerAccounts` |
 
-`WalletChallenges` and `AccountWallets` sit in `common/` because both interfaces use them.
-Two implementations of one handshake would be two chances to get it wrong, and a rule about
-which account a wallet may go in is not a rule worth having twice.
+`WalletChallenges` and `AccountWallets` sit in `common/`, apart from the screens, so the
+handshake and the rule about which account a wallet may go in are tested without a game.
 
 `AccountColumns` holds the screen's arithmetic — how many columns fit, how the width divides,
 which accounts are on screen — because `platforms/shared/` has no test source set. A sum can
@@ -184,5 +176,4 @@ every player for one hash and one curve operation.
 ## Related
 
 * [`architecture.md`](architecture.md) — the module split these layers follow.
-* [`web-console.md`](web-console.md) — the browser view, including `/wallets/`.
 * [`overview.md`](overview.md) — what the mod is.

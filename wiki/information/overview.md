@@ -55,7 +55,7 @@ and sends only that to the model. The model never receives the whole library.
 The mod has no way to fetch packs: it has no catalog and no download path, and contacts no
 server of its own.
 
-Retrieval can be switched off, in the game or in the browser. Off means the question is sent
+Retrieval can be switched off on the model settings screen. Off means the question is sent
 on its own: no embedding call, no packs attached, nothing charged for it — and chatting is
 otherwise unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
 
@@ -72,16 +72,6 @@ them.
 **Public addresses only.** The mod has no field for a private key or a recovery phrase, and
 refuses anything that looks like one. See [`wallet-binding.md`](wallet-binding.md).
 
-### The web console
-
-The mod can serve your own data to your own browser: your Knowledge Packs, your chats, and
-your API keys, on `127.0.0.1` and nowhere else. It is for the jobs a Minecraft screen is bad
-at — reading a long pack, scanning a year of conversations, pasting a key. Chat works both
-ways, so a message typed in the browser appears in the game and the other way round.
-
-Keys are shown shortened and never sent to the browser in full. See
-[`web-console.md`](web-console.md).
-
 ### Local storage
 
 Everything the mod remembers lives on the player's own machine:
@@ -97,9 +87,8 @@ Everything the mod remembers lives on the player's own machine:
 `data.db` is SQLite. `AGENTS.md` is a plain markdown file the player edits to define how
 the agent should behave. **The mod writes it the first time it runs** — with a starting
 persona and instructions for editing it — and never rewrites it after that. Edit it from
-the AGENTS.md button on the chat screen, from the same button on the console's chat page,
-or in any text editor: a save takes effect on the next question, whichever of the three
-made it.
+the AGENTS.md button on the chat screen or in any text editor: a save takes effect on the
+next question, whichever of the two made it.
 
 The agent is also told **where you are playing** — the address of the server you are on, or
 that you are in single player — so an answer can take the server into account. Nothing else
@@ -134,8 +123,9 @@ The key button opens API key management — add your key there, and pick the pla
 from the dropdown beside it (`openrouter` unless you say otherwise). The list holds the
 platforms the mod knows and the ones you already hold keys for, and the field still takes
 anything you type, so a platform this release has never heard of needs no update to use.
-Stored keys are only ever shown masked. Where each platform is called is configured in the web
-console. The gear button opens the model settings: a **Provider** row, then a chat model and an
+Stored keys are only ever shown masked. The row under it sets the address the platform is
+called at: empty uses the address the mod knows, and only `https://` or a loopback address is
+taken. The line at the bottom says whether stored keys are encrypted. The gear button opens the model settings: a **Provider** row, then a chat model and an
 embedding model, each from the suggested lists or typed as any id you like. The lists are a
 convenience, not a limit, because OpenRouter adds models faster than this mod ships.
 
@@ -147,9 +137,6 @@ under the row says whether that provider is **called directly** or **through Ope
 it is answered by the same code the real request goes through. Typing a model id directly moves
 the provider row to match it and keeps the id you typed. The **Embedding** button on that screen turns retrieval on and off — green for on,
 red for off.
-
-The globe button beside the key button starts the web console and opens your browser at it.
-It keeps running when you close the screen, so you can read in a browser while you play.
 
 The Wallets button in the bottom-left corner opens wallet management: accounts across the
 top, wallets down the left, and the selected wallet's chain addresses on the right. Click any
@@ -172,5 +159,4 @@ each will live.
 * [`knowledge-retrieval.md`](knowledge-retrieval.md) — how packs reach a prompt, and the
   switch that stops them.
 * [`wallet-binding.md`](wallet-binding.md) — how wallets are held and proved.
-* [`web-console.md`](web-console.md) — the browser view of your own data.
 * [`../environments/setup.md`](../environments/setup.md) — building and running it.

@@ -37,7 +37,7 @@ types (`ChatRequest`, `PromptMessage`, `ToolDefinition`, `ModelException`, `Mode
 every MCAgents mod calls the same code. Chat compiles against core and ships none of it; the
 `mcagents_core` mod provides it in game. A change to how a request is built, retried or
 rotated is made in core. What stays here is what is chat's: `ChatModelClients` builds the
-one stack the game and the console share — chat's keys through `RepositoryApiKeySource`,
+one stack every caller in the game shares — chat's keys through `RepositoryApiKeySource`,
 chat's routes through `StoredProviderRoutes`, `CachingModelClient` around it, and chat's own
 attribution.
 

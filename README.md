@@ -30,7 +30,7 @@ shortened form.
 Set `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
 in the database as well, with the same key encrypting differently every time it is written.
 Leave it unset and they are stored as you pasted them, which is what the mod did before.
-Either way the console's key page tells you which.
+Either way the key screen tells you which.
 
 The consequence is worth stating plainly: **because the key never leaves your machine, the
 risk of leaking it is yours alone to manage.** Do not paste it where others can see it, and
@@ -43,20 +43,17 @@ do not share your `data.db`.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
-* **Knowledge Packs**, stored on your machine and listed in the console, where you can read
-  and search them and delete the ones you no longer want.
+* **Knowledge Packs**, stored on your machine and matched against each question. This
+  release has no page that lists them: the browser pages that did were removed in 0.4.0.
 * **Embedding on your own machine.** Packs are stored as text and embedded by your
   client with your embedding model, so your library lives in the same vector space as your
   questions rather than in whichever one produced a pack.
-* **A local web console** — the mod can serve your own data to your own browser on
-  `127.0.0.1`: your packs, your chats, your API keys, and your model choice. It is for the
-  jobs a Minecraft screen is bad at. Chat works both ways, so a message typed in the browser
-  appears in the game and the other way round.
 * **Several API keys, with rotation** — a key the provider rejects is deactivated and the
   next takes over without interrupting the conversation. Each key records the platform it
   opens, and is only ever sent there.
 * **OpenRouter, or a platform directly** — store a key for `openai`, `deepseek`, `groq` or a
-  gateway you run yourself, and questions for that platform's models go straight to it.
+  gateway you run yourself, with its address set on the key screen, and questions for that
+  platform's models go straight to it.
   Anything you have not set up goes through OpenRouter, as it always did.
 * **Model choice** — pick a chat model and an embedding model, or type any id your provider
   serves. The lists are suggestions, not limits.
@@ -80,8 +77,8 @@ either the game refuses to load MCAgentsClient.
 Press `G` in game and choose **Chat** on the agents screen. The chat screen opens with your
 conversations on the left and a prompt along the bottom. Add an API key with the key button
 before asking anything — the dropdown beside it is the platform the key opens, and
-`openrouter` is the default. The gear picks the provider and the models, the globe opens the
-web console, and **Wallets** is in the bottom-left corner.
+`openrouter` is the default. The gear picks the provider and the models, and **Wallets** is in
+the bottom-left corner.
 
 ## Where the project lives
 
@@ -104,7 +101,6 @@ the license text travel with it. The software is provided as is, without warrant
   are split and why.
 * [`wiki/information/knowledge-retrieval.md`](wiki/information/knowledge-retrieval.md) —
   retrieval, and the Embedding switch.
-* [`wiki/information/web-console.md`](wiki/information/web-console.md) — the browser view.
 * [`wiki/information/mcp-servers.md`](wiki/information/mcp-servers.md) — external MCP
   servers.
 * [`wiki/information/wallet-binding.md`](wiki/information/wallet-binding.md) — wallets.

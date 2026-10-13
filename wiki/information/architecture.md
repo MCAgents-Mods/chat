@@ -1,6 +1,6 @@
 # Architecture
 
-MCAgentsClient is split into six Gradle modules with a one-way dependency chain. The
+MCAgentsClient is split into five Gradle modules with a one-way dependency chain. The
 split exists so that the logic that matters — storage, retrieval, the model client — can be
 compiled, tested, and reasoned about without Minecraft anywhere near it.
 
@@ -9,9 +9,6 @@ compiled, tested, and reasoned about without Minecraft anywhere near it.
    ^   ^   ^
    |   |   |
 common/  |  |               implementations, no Minecraft
-   ^     |  |
-   |     |  |
-website/ |  |               everything a browser sees
    ^     |  |
    |     |  |
 platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the Chat button
@@ -25,14 +22,13 @@ platforms/fabric/  platforms/neoforge/    each loader's entry point, the button,
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
-| `website/` | `mcagents-chat-website` | `api/`, `common/` | The loopback console: its server, its routes, the JSON it writes, and the pages under `resources/mcagents/web/`. |
-| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the Chat button on the agents screen, the factories that wire `common/` and `website/` together. No loader type. |
+| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the Chat button on the agents screen, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds the Chat button, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-`mcagents-chat-website` to `website/`, `mcagents-chat-shared` to `platforms/shared/`,
+`mcagents-chat-shared` to `platforms/shared/`,
 `mcagents-chat-fabric` to `platforms/fabric/`, and `mcagents-chat-neoforge` to
 `platforms/neoforge/`. A loader module is a few lines on top of
 `platforms/shared/`, so another loader is one more folder under `platforms/`.
@@ -45,28 +41,10 @@ The Gradle module name is also the Maven artifact id, so every module publishes 
 `MCAgentsChat{Module}-{version}.jar` by its own `archivesName`. The `mcagents-chat-` prefix
 keeps chat's modules apart from core's, which share the group.
 
-### Why the console is a module and not a package
+Before 0.4.0 a sixth module, `website/`, served chat's pages in a browser through core's web
+console. Both are gone: everything the player does with chat happens in the game.
 
-It was a package in `common/`, sitting beside storage, the model client and the wallet
-cryptography — four unrelated purposes sharing a module because they happened to share one
-constraint, that none of them needs Minecraft. "Does not need Minecraft" is not a purpose.
-
-It is a module because it has a boundary worth naming: **everything a browser ever sees,
-and nothing else.** Moving it cost nothing to untangle, because nothing in `common/`
-outside it had ever referenced it — which is the sign that it was always a separate thing.
-
-It sits *above* `common/`, not beside it. Serving a page means reading storage, driving the
-agent, syncing knowledge, and filing wallets, so the console depends on those
-implementations. Nothing in `common/` may depend back on it, and the day something wants to
-is the day that logic belongs in `common/` instead.
-
-**The server is MCAgents core's.** `website/` holds `ChatWebModule`, which core's
-`CoreWebRegistry` serves under `/chat/`, `/assets/chat/` and `/api/chat/` beside every other
-mod's pages. The port, the token, the `Host` check, the content security policy and the page
-shell — header, footer, `main.css`, `layout.css`, `components.css`, `site.js` — are core's,
-and chat's pages load the shell from `/assets/core/`.
-
-Each loader module merges `api/`, `common/`, `website/` and `platforms/shared/` into its mod
+Each loader module merges `api/`, `common/` and `platforms/shared/` into its mod
 jar rather than nesting them as separate mods, so the split is a build-time and reading-time boundary; the shipped
 jar is unchanged by it.
 
@@ -114,9 +92,6 @@ server.
   `common/` needs a value that only the game knows — the game directory, the player's
   inventory, the block being looked at — that value arrives through an `api/` contract that
   `platforms/shared/` implements.
-* **`website/` never sees Minecraft either**, and `common/` never sees `website/`. The
-  arrow points one way: a page may read anything below it, and nothing below it knows a
-  browser exists.
 * **`platforms/` never re-implements.** It wires, renders, and translates. Logic lives in
   `common/`, and a loader module holds only what `platforms/shared/` cannot: that loader's
   entry point, registration and events.
@@ -184,9 +159,9 @@ implements or supplies.
 **The persona.** `PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the
 only thing that reads or writes it. The mod writes a starting file the first time it runs,
 so a player who has never heard of the file still has one to edit; after that it is theirs,
-and nothing in the mod rewrites it. It can be edited from the in-game screen, from the
-console's chat page, or in a text editor, and all three agree because **there is one store
-per game session** and every screen is handed the same instance. It caches the text and
+and nothing in the mod rewrites it. It can be edited from the in-game screen or in a text
+editor, and both agree because **there is one store per game session** and every screen is
+handed the same instance. It caches the text and
 re-reads whenever the file's timestamp or size has moved, which is what keeps the text
 editor working without a disk read per question.
 

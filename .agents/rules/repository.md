@@ -35,7 +35,7 @@ else it improves.
 
 ## Module boundaries
 
-Six Gradle modules, and the dependency direction is one-way. See
+Five Gradle modules, and the dependency direction is one-way. See
 [`../../wiki/information/architecture.md`](../../wiki/information/architecture.md) for the
 diagram and the reasoning.
 
@@ -43,7 +43,6 @@ diagram and the reasoning.
 |---|---|---|---|
 | API | `api/` | `mcagents-chat-api` | The JDK and MCAgents core's API. |
 | Common | `common/` | `mcagents-chat-common` | `api/`, MCAgents core, MCAgents agents, and plain JVM libraries. |
-| Website | `website/` | `mcagents-chat-website` | `api/`, `common/`, plain JVM libraries. |
 | Shared platform | `platforms/shared/` | `mcagents-chat-shared` | all of the above and vanilla Minecraft — no loader. |
 | Fabric platform | `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric. |
 | NeoForge platform | `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge. |
@@ -64,12 +63,6 @@ diagram and the reasoning.
 * `common/` holds the implementations of those contracts. It must compile and be testable
   **without Minecraft on the classpath**. If a class in `common/` needs a Minecraft type,
   the design is wrong: pass the value in through an `api/` contract instead.
-* `website/` holds **everything a browser ever sees** — the loopback server, its routes,
-  the JSON it writes, and the pages under `resources/mcagents/web/`. It has the same
-  no-Minecraft rule as `common/`, and it sits *above* `common/` rather than beside it:
-  serving a page means reading storage, driving the agent, syncing knowledge and filing
-  wallets, so it depends on those implementations and **nothing in `common/` may depend
-  back on it**.
 * `platforms/shared/` holds everything Minecraft-specific that every loader shares — the
   client start-up, screens, the key and the factories — compiled against vanilla Minecraft.
   No loader type may appear in it.
@@ -77,16 +70,11 @@ diagram and the reasoning.
   needs: the entry
   point, the key and category registration, the tick and connection events, and the game
   directory it hands to `ChatRuntime.start`.
-* Nothing in `api/`, `common/`, or `website/` imports `net.minecraft.*` or a loader's
-  packages. Nothing in `platforms/` re-implements logic that belongs below it.
+* Nothing in `api/` or `common/` imports `net.minecraft.*` or a loader's packages. Nothing in `platforms/` re-implements logic that belongs below it.
 
 **A contract stays in `api/` even when only one module implements it.** `api/` is where
 contracts go, and a contract that follows its implementation out is a rule that has stopped
 applying.
-
-**The web console's server is core's.** `website/` holds chat's `WebModule` and its pages
-and never opens a port, checks a token, or ships the page shell; those are
-`CoreWebRegistry`'s, shared by every MCAgents mod.
 
 **A test double used by two modules lives in `common/src/testFixtures/`.** A test source set
 is private to its own Gradle project, so the alternative is a copy in each — and a
