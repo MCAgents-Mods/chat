@@ -48,8 +48,9 @@ option. The plan for all four repositories is kept outside this repository.
   chosen conversation, and an answer still on its way lands in it.
 * **Speakers are the player's name and "Agent".** "Player" stands in when there is no name.
 * **While a question waits,** the transcript ends with `<Agent> Thinking…`. **A failed
-  question** ends it with the reason, as the agent's line, until the next question or another
-  conversation is chosen.
+  question** ends it with the reason, as the agent's line, until the next question. The reason
+  belongs to the conversation it was asked in: choosing another hides it, and choosing that
+  one again brings it back.
 * **Without storage,** the Sessions list is empty, the transcript says whether the database
   is opening or failed and why, SEND is greyed, and NEW tries to open it again.
 * **RENAME and DELETE act on the chosen conversation.** RENAME opens the rename screen and
@@ -90,5 +91,35 @@ against. The key screen gained the address row and the encryption line. The AGEN
 for a new player no longer points at the console.
 
 **Checked.** `./gradlew build` with `../core` and `../agents` beside chat: 400 tests in
-`common/`, and no `mcagents/web/` file in either loader jar. The key screen is compile-verified
-here and opened in the Fabric dev client with task 3.
+`common/`, and no `mcagents/web/` file in either loader jar. The key screen was opened in the
+Fabric dev client with task 3: the address row refused `http://example.com` and stored
+`http://127.0.0.1:8080/v1` as `api.base-url.mygateway`, and the encryption line showed. The
+saved note ran past the screen's width and was cut off mid-word, so a fix on this branch
+shortens the three notes.
+
+### Task 3 — feat/chat-hologram
+
+**Landed.** `ChatController` in `common.ui`, with 15 tests on the real store. `ChatHologram`
+builds the three panels from it; `ChatButtons` adds CHAT, KEYS, MODEL, PERSONA and WALLETS to
+the agents menu in place of `ChatButton` and `ChatScreenLauncher`. `AgentChatScreen`,
+`SessionListPanel` and `ConversationPanel` are gone, with the strings only they used.
+`platforms/shared/` compiles against `mcagents-core-client`. The AGENTS.md written for a new
+player now points at PERSONA. Every document that named the chat screen names the hologram.
+
+**Checked.** `./gradlew build`: 415 tests in `common/`. In a Fabric dev client on Minecraft
+26.2, with core 0.6.0 and agents 0.2.0 jars in `run/mods/`:
+* `G` showed CHAT, KEYS, MODEL, PERSONA, WALLETS, then agents' SETTINGS.
+* Clicking CHAT replaced the menu with the three panels. Clicking the prompt box, typing and
+  Enter asked the question: "New Chat" appeared chosen, the transcript showed the player's
+  name over the question, and, with no key, `Agent` over "Not answered: No usable API key.
+  Add one with KEYS on the MCAgents menu."
+* NEW started an empty conversation and chose it. RENAME opened the rename screen and the
+  new title showed in the list. DELETE asked first, then removed it and chose none; choosing
+  the failed conversation again brought its reason back. Each screen went back to the game.
+* Closing the hologram and opening it again kept the chosen conversation.
+* KEYS, MODEL, PERSONA (with the new AGENTS.md text) and WALLETS opened their screens.
+
+The clicks and the typing were real input. The camera was turned by a scratch harness, never
+committed, because the virtual display's mouse does not turn it. NeoForge is compile-verified
+only. Seen and not changed: the model screen's Done button is cut off at the bottom of a
+1280x720 window, as it was before this task.
