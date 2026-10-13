@@ -25,9 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <h2>Why there is a cache at all</h2>
  *
  * <p>The persona is read on <em>every</em> question. Reading the file each time is a disk
- * round trip per turn for a file that changes perhaps twice in a player's life, and it is
- * how a save made in the browser and a question asked in the game end up disagreeing about
- * what the instructions are.
+ * round trip per turn for a file that changes perhaps twice in a player's life.
  *
  * <h2>Why the cache still notices an edit made outside the mod</h2>
  *

@@ -91,19 +91,5 @@
   "gui.mcagents.wallets.connect.no_browser": "Could not open a browser. Copy the link below instead.",
   "gui.mcagents.wallets.connect.failed": "Could not start the connection: %s",
   "gui.mcagents.wallets.connect.never_asks": "MCAgents never asks for your recovery phrase or private key.",
-  "gui.mcagents.wallets.connect.signing_is_free": "You will be asked to sign one message per address. Each proves you control that address — it costs nothing, moves nothing, and never reaches a chain.",
-  "gui.mcagents.console.title": "Web console",
-  "gui.mcagents.console.subtitle": "Read your packs and chats in a browser",
-  "gui.mcagents.console.start": "Start console",
-  "gui.mcagents.console.open": "Open in browser",
-  "gui.mcagents.console.copy": "Copy link",
-  "gui.mcagents.console.stop": "Stop console",
-  "gui.mcagents.console.running": "Running",
-  "gui.mcagents.console.not_running": "Not running",
-  "gui.mcagents.console.started": "Console started.",
-  "gui.mcagents.console.stopped": "Console stopped.",
-  "gui.mcagents.console.copied": "Address copied. Paste it into the browser you want to read in.",
-  "gui.mcagents.console.no_browser": "Could not open a browser. Copy the address instead.",
-  "gui.mcagents.console.failed": "Could not start the console: %s",
-  "gui.mcagents.console.local_only": "Served from this machine only. It keeps running when you close this screen, so you can read while you play."
+  "gui.mcagents.wallets.connect.signing_is_free": "You will be asked to sign one message per address. Each proves you control that address — it costs nothing, moves nothing, and never reaches a chain."
 }

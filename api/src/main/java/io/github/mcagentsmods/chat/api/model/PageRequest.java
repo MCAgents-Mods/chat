@@ -4,15 +4,14 @@ package io.github.mcagentsmods.chat.api.model;
  * How much of a list to read, and from where.
  *
  * <p>Lists in this mod are read a window at a time rather than whole. A player who has
- * downloaded a few hundred Knowledge Packs should not wait for all of them, and a browser
- * that asks for everything at once is a browser that stutters — so the interface asks for
- * the first window and then for the next as the reader scrolls.
+ * downloaded a few hundred Knowledge Packs should not wait for all of them, and a list that
+ * reads everything at once is a list that stutters — so a reader asks for the first window
+ * and then for the next as it scrolls.
  *
  * <h2>Out-of-range values are clamped, not rejected</h2>
  *
- * <p>These values come from query strings, which anyone with the console's address can
- * type. A negative offset or a limit of a million is not an attack worth an error page; it
- * is a value to bring back into range. Clamping here means no caller can build a query that
+ * <p>A negative offset or a limit of a million is not worth an error; it is a value to bring
+ * back into range. Clamping here means no caller can build a query that
  * reads the whole table, however the numbers arrived.
  *
  * @param offset how many rows to skip, never negative

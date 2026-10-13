@@ -16,16 +16,14 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A chat store that says when it has changed.
  *
- * <p>The player may be typing into the game and into a browser tab at the same time. Both
- * go through this object, so whichever one writes, the other can tell — and it can tell by
- * comparing two numbers rather than by re-reading a conversation twenty times a second.
+ * <p>Every chat write goes through this object, so a reader can tell that something changed
+ * by comparing two numbers rather than by re-reading a conversation twenty times a second.
  *
- * <h2>Why a decorator rather than a counter in the console</h2>
+ * <h2>Why a decorator rather than a counter in a screen</h2>
  *
- * <p>Because the console is not the only writer. A counter it owned would move when the
- * browser sent a message and sit still when the game did, so the browser would never learn
- * about anything typed in game — the sync would work in exactly one direction and look
- * finished. Wrapping the repository is what makes both directions the same mechanism.
+ * <p>Because no screen is the only writer it could know about. A counter a writer owned would
+ * move for its own writes and sit still for everyone else's. Wrapping the repository counts
+ * every write the same way, whoever makes it.
  *
  * <h2>The counter moves after the write, not before</h2>
  *

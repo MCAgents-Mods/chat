@@ -6,10 +6,10 @@ import java.util.concurrent.CompletableFuture;
  * The player's own instructions, at {@code {minecraft_dir}/MCAgents/AGENTS.md}.
  *
  * <p>One store per game session, shared by everything that reads or writes the file: the
- * agent that puts it at the front of every prompt, the in-game editor, and the web console.
- * <strong>Sharing it is the feature.</strong> A save made in the browser has to be the
- * persona the next in-game question is asked with, and two stores each holding their own
- * copy is exactly how that stops being true.
+ * agent that puts it at the front of every prompt, and the in-game editor.
+ * <strong>Sharing it is the feature.</strong> A save made in the editor has to be the
+ * persona the next question is asked with, and two stores each holding their own copy is
+ * exactly how that stops being true.
  *
  * <h2>Every method here is asynchronous, without exception</h2>
  *
@@ -52,8 +52,8 @@ public interface PersonaStore {
     CompletableFuture<Boolean> ensureCreated();
 
     /**
-     * The store used where there is no game directory to read from — a console started
-     * outside the mod, or a test that is not about the persona.
+     * The store used where there is no game directory to read from, such as a test that is
+     * not about the persona.
      *
      * <p>It fails rather than inventing an empty file: a screen that saved into this would
      * otherwise report success and write nothing.
@@ -61,7 +61,7 @@ public interface PersonaStore {
     static PersonaStore notConfigured() {
         return new PersonaStore() {
             private static final String REASON =
-                    "No AGENTS.md is available: this console was started without a game directory.";
+                    "No AGENTS.md is available: this store was made without a game directory.";
 
             @Override
             public CompletableFuture<String> read() {
