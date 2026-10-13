@@ -127,7 +127,7 @@ copyable with no internet at all.
 
 ## Using it
 
-In the game, press `G` and choose **Chat**, then **Wallets** in the bottom-left corner.
+In the game, press `G` and choose **WALLETS** on the MCAgents menu.
 
 **Every account is a column.** Each shows five wallets and scrolls past that, so an account
 with forty wallets cannot push the others off the screen. The screen pages between

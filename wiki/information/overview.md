@@ -1,7 +1,7 @@
 # MCAgentsClient — Overview
 
 MCAgentsClient is a **client-side only** Minecraft mod for the Fabric and NeoForge loaders. It puts an
-AI assistant inside the game: the player opens a chat screen, asks a question, and an LLM
+AI assistant inside the game: the player opens a chat hologram, asks a question, and an LLM
 answers using the player's own OpenRouter API key, the conversation so far, and whichever
 stored knowledge is relevant to the question.
 
@@ -20,7 +20,7 @@ chatbot that has never heard of it.
 ### Local agent
 
 The player supplies an API key. The mod sends the prompt, the conversation history, and the
-retrieved context to the provider and shows the answer in the chat screen — whole, when it is
+retrieved context to the provider and shows the answer on the chat hologram — whole, when it is
 ready; responses are not streamed yet. Multiple keys can be stored, and a key the provider
 rejects is deactivated so the next one takes over without interrupting the conversation.
 
@@ -86,9 +86,9 @@ Everything the mod remembers lives on the player's own machine:
 
 `data.db` is SQLite. `AGENTS.md` is a plain markdown file the player edits to define how
 the agent should behave. **The mod writes it the first time it runs** — with a starting
-persona and instructions for editing it — and never rewrites it after that. Edit it from
-the AGENTS.md button on the chat screen or in any text editor: a save takes effect on the
-next question, whichever of the two made it.
+persona and instructions for editing it — and never rewrites it after that. Edit it with
+**PERSONA** on the MCAgents menu or in any text editor: a save takes effect on the next
+question, whichever of the two made it.
 
 The agent is also told **where you are playing** — the address of the server you are on, or
 that you are in single player — so an answer can take the server into account. Nothing else
@@ -107,25 +107,34 @@ accessible.
 
 ## Using it
 
-Press `G` in game and choose **Chat** to open the chat screen: conversations on the left with a search box and
-a "new chat" button, the selected conversation on the right, and a prompt box along the
-bottom. Every conversation is kept, titled, and searchable — including by what was said in
-it, not only by its title.
+Everything happens in the game; there are no pages in a browser. Press `G` for the MCAgents
+menu, a hologram standing in front of you with its buttons five to a row, and chat adds five
+of them. Point at a hologram and hold `Z` to carry it with you; let go and it stays where it
+is. Walk more than two chunks away from it and it closes.
 
-Hover a conversation to reveal two controls: a pencil to rename it, and a `×` to delete it.
-Deleting asks first, because it takes every message in that conversation with it and cannot
-be undone.
+**CHAT** opens the chat hologram in place of the menu, as three panels side by side:
+
+* **Sessions** lists every conversation, the most recently used first. Click one to pick it.
+  **NEW** starts an empty one, **RENAME** retitles the one picked, and **DELETE** removes it —
+  after asking, because it takes every message in that conversation with it and cannot be
+  undone.
+* **Conversation** shows the picked conversation, each line headed with your name or
+  `Agent`. While an answer is on its way the last line says `Thinking…`.
+* **User Prompt** is where you type. **SEND** asks the question in the picked conversation,
+  or in a new one when none is picked, and is greyed while an answer is on its way.
 
 If the agent cannot answer — no key, a model the provider does not serve, a rate limit — the
-reason appears in the conversation itself, in the provider's own words.
+reason appears as the agent's line in that conversation, in the provider's own words, until
+the next question. Closing the chat hologram and opening it again keeps the conversation you
+had picked, and an answer still on its way lands in it.
 
-The key button opens API key management — add your key there, and pick the platform it opens
+**KEYS** opens API key management — add your key there, and pick the platform it opens
 from the dropdown beside it (`openrouter` unless you say otherwise). The list holds the
 platforms the mod knows and the ones you already hold keys for, and the field still takes
 anything you type, so a platform this release has never heard of needs no update to use.
 Stored keys are only ever shown masked. The row under it sets the address the platform is
 called at: empty uses the address the mod knows, and only `https://` or a loopback address is
-taken. The line at the bottom says whether stored keys are encrypted. The gear button opens the model settings: a **Provider** row, then a chat model and an
+taken. The line at the bottom says whether stored keys are encrypted. **MODEL** opens the model settings: a **Provider** row, then a chat model and an
 embedding model, each from the suggested lists or typed as any id you like. The lists are a
 convenience, not a limit, because OpenRouter adds models faster than this mod ships.
 
@@ -138,12 +147,14 @@ it is answered by the same code the real request goes through. Typing a model id
 the provider row to match it and keeps the id you typed. The **Embedding** button on that screen turns retrieval on and off — green for on,
 red for off.
 
-The Wallets button in the bottom-left corner opens wallet management: accounts across the
-top, wallets down the left, and the selected wallet's chain addresses on the right. Click any
-address to copy it in full.
+**WALLETS** opens wallet management: accounts across the top, wallets down the left, and the
+selected wallet's chain addresses on the right. Click any address to copy it in full.
+**PERSONA** opens the editor for `AGENTS.md`.
 
-If local storage cannot be opened, the screen still opens and says so, with a Retry button.
-It never simply fails to appear.
+If local storage cannot be opened, the chat hologram still opens and says so in its
+Conversation panel, and **NEW** tries again. KEYS, MODEL and WALLETS say why on the action
+bar instead of opening; PERSONA works either way, because `AGENTS.md` is a file. Nothing
+simply fails to appear.
 
 ## What is planned but not built
 

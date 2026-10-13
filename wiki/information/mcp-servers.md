@@ -6,7 +6,7 @@ over a standard protocol. The mod runs those servers, asks what they offer, and 
 result in front of the agent alongside everything it can already do.
 
 It is entirely optional. A copy of the mod with no MCP servers is the normal case, and
-nothing about the game or the chat screen changes when there are none.
+nothing about the game or the chat hologram changes when there are none.
 
 ## Where they live
 
@@ -144,8 +144,8 @@ full. A player with many servers pays for the ones a question needs, not for all
 
 You do not call these tools; the agent does. Ask a question, and if answering it needs one
 of the tools a server offers, the agent calls it, reads the result, and answers you. All you
-see is the answer. It gets one round of tool calls per question unless you allow more in the
-agents screen's **Settings**, which **G** opens.
+see is the answer. It gets one round of tool calls per question unless you allow more under
+**SETTINGS** on the MCAgents menu, which **G** opens.
 
 Adding a server is itself one of these tools. Ask the agent to add a repository and it
 clones it and tells you what it would run and how to approve it, as in

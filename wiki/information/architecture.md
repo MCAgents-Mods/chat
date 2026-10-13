@@ -11,19 +11,19 @@ compiled, tested, and reasoned about without Minecraft anywhere near it.
 common/  |  |               implementations, no Minecraft
    ^     |  |
    |     |  |
-platforms/shared/           the mod on vanilla Minecraft: start-up, GUI, the Chat button
+platforms/shared/           the mod on vanilla Minecraft: start-up, the chat hologram, the menu buttons
    ^               ^
    |               |
-platforms/fabric/  platforms/neoforge/    each loader's entry point, the button,
+platforms/fabric/  platforms/neoforge/    each loader's entry point, the buttons,
                                           events, paths — one jar per loader
 ```
 
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, and the MCP host that runs external servers. Plain Java. |
-| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the screens, the Chat button on the agents screen, the factories that wire `common/` together. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds the Chat button, registers the connection events, and passes the game directory to `ChatRuntime`. |
+| `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
+| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
@@ -74,9 +74,11 @@ optional thing: an MCP server is not allowed onto the path of anything local.
 
 Chat is the third layer of three. MCAgents core, layer 0, sends the requests; MCAgents
 agents, layer 1, owns tool calling — the registry every mod adds its tools to, the agent that
-picks categories, then tools, then answers, the worker limit, and the agents screen; chat,
+picks categories, then tools, then answers, the worker limit, and the menu `G` shows; chat,
 layer 2, is built on both. Neither is bundled: `common/` compiles against them and the
-`mcagents_core` and `mcagents_agents` mods provide them in game.
+`mcagents_core` and `mcagents_agents` mods provide them in game. Core also draws the
+holograms: chat describes its three panels with core's hologram records, and core places
+them, takes the clicks and the typing, and closes them when the player walks away.
 
 Chat keeps what only it knows. `OpenRouterAgent` assembles the persona, where the player is,
 the earlier turns and the Knowledge Packs, and hands that conversation to the agents mod's
@@ -120,17 +122,24 @@ a convenience method is how blocking calls get back in.
 result back to the client thread before touching any Minecraft state. `join()`, `get()`,
 and `getNow()` are never called from render or tick code.
 
+The chat hologram reads `ChatController` every frame, so the controller only ever answers from
+what it already holds. Each action starts the work and hands the result back through the
+executor it was built with — the game's own, in game — and the next frame shows it. That
+executor is also why the controller is tested without Minecraft: a test hands it one that runs
+each result at once.
+
 ## Data flow of one question
 
-1. The player types a prompt in the chat screen (`platforms/shared/`).
+1. The player types a prompt on the chat hologram (`platforms/shared/`), and `ChatController`
+   stores it in the picked conversation (`common/`).
 2. The prompt is embedded and matched against the stored Knowledge Pack embeddings
    (`common/`), returning only the closest content.
 3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
    is playing, the session's prior messages from the local database, the retrieved content,
    and the prompt are assembled into a request (`common/`).
 4. The request goes to OpenRouter with the player's key — or straight to the platform's own
-   API, if the player has stored a key for the platform the model belongs to. The screen
-   shows an animated waiting state while the future is pending.
+   API, if the player has stored a key for the platform the model belongs to. The
+   conversation panel says `Thinking…` while the future is pending.
 5. The answer is written to the local database as the next message in the session and
    rendered.
 
