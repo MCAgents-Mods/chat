@@ -1,6 +1,6 @@
 ---
 name: memory-task-release-workflow
-status: in-progress
+status: done
 description: Adding the Release workflow, which attaches chat's Fabric and NeoForge mod jars to the GitHub release of each v{version} tag, and the 0.4.1 release.
 ---
 
@@ -53,9 +53,9 @@ option.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/release-workflow-plan` | |
-| 2 | Release workflow | `ci/release` | |
-| 3 | Release 0.4.1 | `release/0.4.1` | |
+| 1 | Task record | `chore/release-workflow-plan` | #35 |
+| 2 | Release workflow | `ci/release` | #36 |
+| 3 | Release 0.4.1 | `release/0.4.1` | #37 |
 
 ### Task 1 — chore/release-workflow-plan
 
@@ -78,3 +78,17 @@ and shared. Checked locally: `actionlint` 1.7.12 with shellcheck passes; the tag
 the real remote gives `v0.4.0`, `latest=true`, `release=true` with no input, `latest=false`
 for `v0.3.0`, and no release for a tag that does not exist; the jar step takes the two mod
 jars and skips the sources jars; the notes step turns the 0.4.0 changelog into the notes.
+
+### Task 3 — release/0.4.1
+
+`project-version` is `0.4.1`, a patch: the workflow changes no jar, and core 0.6.0 and agents
+0.2.0 are still the oldest it loads with. The 0.4.1 changelog and its logs-index row are new,
+and the setup page, the rule, the map and the state file say 0.4.1. Merging this branch is the
+release: Publish finds no `v0.4.1` tag, builds, publishes and tags the commit, and Release
+then makes the `v0.4.1` release with the two jars.
+
+The first real run came from merging #36: Publish found `v0.4.0` and stopped, and Release
+(run 38445251920) built the tagged commit, reading core 0.6.0 and agents 0.2.0 from GitHub
+Packages, and created the `v0.4.0` release, marked latest, with
+`MCAgentsChatFabric-0.4.0.jar` and `MCAgentsChatNeoforge-0.4.0.jar` attached and the 0.4.0
+changelog as its notes. The run's `mod-jars` artifact was deleted; the run lists none.
