@@ -12,6 +12,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 
 | Version | File | Purpose |
 |---|---|---|
+| 0.4.0 | [`../../wiki/logs/0/4/0/CHANGELOG.md`](../../wiki/logs/0/4/0/CHANGELOG.md) | In game only: the website and the chat screen go, CHAT opens a three-panel chat hologram, and keys, models, the persona and wallets get their own buttons on the MCAgents menu. |
 | 0.3.0 | [`../../wiki/logs/0/3/0/CHANGELOG.md`](../../wiki/logs/0/3/0/CHANGELOG.md) | Runs on MCAgents agents: MCP servers as tool categories, answers through the agents mod's agent, and a Chat button on the agents screen in place of chat's G key. |
 | 0.2.0 | [`../../wiki/logs/0/2/0/CHANGELOG.md`](../../wiki/logs/0/2/0/CHANGELOG.md) | A NeoForge jar, every module published as `mcagents-chat-{module}`, and releases that publish themselves to GitHub Packages. |
 | 0.1.0 | [`../../wiki/logs/0/1/0/CHANGELOG.md`](../../wiki/logs/0/1/0/CHANGELOG.md) | Runs on MCAgents core: core's model client and shared web console, and MCP servers that wait for the player's approval. |

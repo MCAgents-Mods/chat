@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.3.0 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.4.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -89,6 +89,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * Any source of Knowledge Packs. The central service client was removed, so the library is
   empty unless something else puts a pack in it.
 * Any page that lists stored Knowledge Packs: the web console's went in 0.4.0.
+* Session search: it went with the chat screen in 0.4.0.
 * Anything that tells a new player the key is `G`.
 * Any CI that builds a pull request. `.github/workflows/publish.yml` runs only on `master`
   and by hand, and publishes only a version that has no tag yet.
