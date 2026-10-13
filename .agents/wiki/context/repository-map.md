@@ -212,7 +212,7 @@ What matters before changing any of it:
 ```
 git-org=MCAgents-Mods
 git-repo=chat
-project-version=0.4.0
+project-version=0.4.1
 ```
 
 **Every dependency coordinate is in `gradle/libs.versions.toml`**, the Gradle version
@@ -234,7 +234,7 @@ names cannot be dereferenced as `project.gitOrg`.
 | Gradle | 9.7.0, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
 | Base package | `io.github.mcagentsmods.chat` |
-| Version | `0.4.0` |
+| Version | `0.4.1` |
 
 Two things about Minecraft 26.x that will waste your time if you assume otherwise:
 
