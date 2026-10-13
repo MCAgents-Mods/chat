@@ -54,6 +54,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/loader-platforms.md`](../memory/tasks/loader-platforms.md) | Renaming every jar to `MCAgentsChat{Module}` and artifact to `mcagents-chat-{module}`, and splitting the mod into `platforms/{shared, fabric, neoforge}`. |
 | [`../memory/tasks/publish-workflow.md`](../memory/tasks/publish-workflow.md) | The publish workflow: resolving published core from GitHub Packages, the `v{version}` tag check, and why the first published release is `0.2.0`. |
 | [`../memory/tasks/agents-adoption.md`](../memory/tasks/agents-adoption.md) | Moving tool calling onto the agents mod: MCP servers as tool categories, answers through `ToolAgent`, the Chat button on the agents screen, and the `0.3.0` release. |
+| [`../memory/tasks/chat-hologram.md`](../memory/tasks/chat-hologram.md) | Removing the website and moving chat onto core's hologram: three panels, the controller under them, chat's buttons on the agents menu, and the `0.4.0` release. |
 
 ## Maintenance
 
