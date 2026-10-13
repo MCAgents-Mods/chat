@@ -3,6 +3,7 @@ package io.github.mcagentsmods.chat.shared.client.gui;
 import io.github.mcagentsmods.chat.api.model.ApiKey;
 import io.github.mcagentsmods.chat.api.model.ModelCatalog;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.chat.common.security.TokenCipher;
 import io.github.mcagentsmods.core.api.model.ModelPlatform;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +35,18 @@ import java.util.function.Consumer;
  * and never constrains: a platform this release has never heard of is typed straight into the
  * field and stored exactly as typed.
  *
- * <p>A key stored for a platform the mod knows an address for is what turns a direct call on;
- * the address itself is configured in the web console, because typing a URL into a Minecraft
- * text box is a worse experience than the console's, not because the game cannot do it.
+ * <p>A key stored for a platform the mod has an address for is what turns a direct call on.
+ * The row under the platform sets that address: empty means the one this release ships, or
+ * none, and only {@code https://} or a loopback address is taken, because the address is where
+ * the platform's key is sent. OpenRouter's own address is fixed. The game is the player's own,
+ * so unlike the web console that used to do this, the screen lets an address move to another
+ * host while a key is stored.
+ *
+ * <h2>Whether keys are encrypted</h2>
+ *
+ * <p>The last line says whether {@value TokenCipher#KEY_VARIABLE} is set, and so whether the
+ * stored keys are encrypted in the database or kept as pasted. It says which of the two the
+ * player has and never implies more; see {@code .agents/security/api-keys.md}.
  *
  * <h2>Keys are never shown in full</h2>
  *
@@ -62,7 +73,11 @@ public final class ApiKeyScreen extends Screen {
      * see {@code .agents/memory/tasks/screen-layout.md}.
      */
     private static final int FORM_TOP = 40;
-    private static final int LIST_TOP = FORM_TOP + (ROW_HEIGHT * 2) + 12;
+    private static final int NOTE_TOP = FORM_TOP + (ROW_HEIGHT * 3) + 2;
+    private static final int LIST_TOP = NOTE_TOP + 14;
+
+    /** The gap kept between the last key row and the encryption line under it. */
+    private static final int FOOTER_GAP = 4;
 
     /** How much of a platform name a row has space for before the remove button. */
     private static final int PLATFORM_CHARS = 12;
@@ -73,7 +88,19 @@ public final class ApiKeyScreen extends Screen {
 
     private EditBox entryBox;
     private EditableDropdown platformPicker;
+    private EditBox addressBox;
+    private Button addressButton;
     private List<ApiKey> keys = List.of();
+
+    /** The platform the address box was last filled for, kept across a rebuild. */
+    private String addressPlatform;
+
+    /** What the address box holds, kept across a rebuild like the other two boxes. */
+    private String pendingAddress = "";
+
+    /** The result of the last address save, shown under the form, or null for none. */
+    private Component addressNote;
+    private int addressNoteColour;
 
     /**
      * Whether the key list has been read once.
@@ -130,12 +157,31 @@ public final class ApiKeyScreen extends Screen {
                 Component.translatable("gui.mcagents.keys.platform"));
         platformPicker.setBounds(left, top + ROW_HEIGHT, FIELD_WIDTH - 60, LINE);
         platformPicker.setValue(pendingPlatform);
-        platformPicker.field().setResponder(text -> pendingPlatform = text);
+        platformPicker.field().setResponder(text -> {
+            pendingPlatform = text;
+            showAddressFor(text);
+        });
         addRenderableWidget(platformPicker.field());
+
+        // Where the chosen platform is called. Filled from the stored setting whenever the
+        // platform changes, and kept as typed across a rebuild.
+        addressBox = new EditBox(font, left, top + ROW_HEIGHT * 2, FIELD_WIDTH - 60, LINE,
+                Component.translatable("gui.mcagents.keys.address"));
+        addressBox.setMaxLength(400);
+        addressBox.setValue(pendingAddress);
+        addressBox.setResponder(text -> pendingAddress = text);
+        addRenderableWidget(addressBox);
+
+        addressButton = addRenderableWidget(Button.builder(
+                        Component.translatable("gui.mcagents.keys.address.save"),
+                        button -> saveAddress())
+                .bounds(left + FIELD_WIDTH - 56, top + ROW_HEIGHT * 2, 56, LINE)
+                .build());
+        showAddressFor(pendingPlatform);
 
         // One row per stored key, each with its own remove button.
         int rowTop = LIST_TOP;
-        for (int i = 0; i < keys.size() && rowTop < height - 60; i++) {
+        for (int i = 0; i < keys.size() && rowTop + LINE <= listBottom(); i++) {
             ApiKey key = keys.get(i);
             addRenderableWidget(Button.builder(
                             Component.translatable("gui.mcagents.keys.remove"),
@@ -203,6 +249,101 @@ public final class ApiKeyScreen extends Screen {
                 stored -> loadKeys(), "Could not store the API key");
     }
 
+    /**
+     * Points the address box at {@code typed}'s platform.
+     *
+     * <p>When the platform is the one the box already holds, only its state is set again, as a
+     * rebuild needs, and what the player typed stays. A new platform empties the box and reads
+     * its stored address into it; a read that lands after the player has moved on is dropped.
+     */
+    private void showAddressFor(String typed) {
+        String platform = ModelPlatform.normalise(typed);
+        boolean gateway = ModelPlatform.isOpenRouter(platform);
+        addressBox.setEditable(!gateway);
+        addressButton.active = !gateway;
+        addressBox.setHint(gateway
+                ? Component.translatable("gui.mcagents.keys.address.gateway")
+                : ModelPlatform.knownBaseUrl(platform)
+                        .<Component>map(Component::literal)
+                        .orElse(Component.translatable("gui.mcagents.keys.address.none")));
+        if (platform.equals(addressPlatform)) {
+            return;
+        }
+        addressPlatform = platform;
+        addressNote = null;
+        addressBox.setValue("");
+        if (gateway) {
+            return;
+        }
+        onClientThread(database.settings().find(ModelPlatform.baseUrlSettingKey(platform)), stored -> {
+            if (platform.equals(addressPlatform) && addressBox.getValue().isEmpty()) {
+                addressBox.setValue(stored.map(String::trim).orElse(""));
+            }
+        }, "Could not read the address of " + platform);
+    }
+
+    /**
+     * Stores the address box for its platform, or clears the platform's address when it is
+     * empty. An address that is neither {@code https://} nor loopback is refused before
+     * anything is written.
+     */
+    private void saveAddress() {
+        String platform = addressPlatform;
+        if (platform == null || ModelPlatform.isOpenRouter(platform)) {
+            return;
+        }
+        String url = addressBox.getValue().trim();
+        if (!url.isEmpty() && !ModelPlatform.isUsableBaseUrl(url)) {
+            showAddressNote(Component.translatable("gui.mcagents.keys.address.refused"), false);
+            return;
+        }
+        waiting.track(database.settings().put(ModelPlatform.baseUrlSettingKey(platform), url))
+                .whenComplete((saved, failure) -> {
+                    if (failure != null) {
+                        LOGGER.error("Could not save the address of {}", platform, failure);
+                    }
+                    if (minecraft == null) {
+                        return;
+                    }
+                    minecraft.execute(() -> {
+                        if (minecraft == null || minecraft.gui.screen() != this) {
+                            return;
+                        }
+                        if (failure != null) {
+                            showAddressNote(Component.translatable(
+                                    "gui.mcagents.keys.address.failed"), false);
+                        } else {
+                            showAddressNote(Component.translatable(url.isEmpty()
+                                    ? "gui.mcagents.keys.address.cleared"
+                                    : "gui.mcagents.keys.address.saved", platform), true);
+                        }
+                    });
+                });
+    }
+
+    private void showAddressNote(Component note, boolean succeeded) {
+        addressNote = note;
+        addressNoteColour = succeeded ? 0xFF80FF80 : 0xFFFF8080;
+    }
+
+    /** The encryption line, wrapped to the form's width. */
+    private List<FormattedCharSequence> encryptionLines() {
+        Component text = TokenCipher.fromEnvironment().enabled()
+                ? Component.translatable("gui.mcagents.keys.encrypted", TokenCipher.KEY_VARIABLE)
+                : Component.translatable("gui.mcagents.keys.not_encrypted", TokenCipher.KEY_VARIABLE);
+        return font.split(text, FIELD_WIDTH);
+    }
+
+    /** Where the encryption line starts: as far down as it fits over the Done button. */
+    private int footerTop() {
+        return height - 38 - encryptionLines().size() * font.lineHeight;
+    }
+
+    /** The lowest point a key row may reach, above the encryption line. */
+    private int listBottom() {
+        return footerTop() - FOOTER_GAP;
+    }
+
     private void removeKey(ApiKey key) {
         onClientThread(waiting.track(database.apiKeys().remove(key.value())),
                 removed -> loadKeys(), "Could not remove the API key");
@@ -245,7 +386,7 @@ public final class ApiKeyScreen extends Screen {
         }
 
         int rowTop = LIST_TOP;
-        for (int i = 0; i < keys.size() && rowTop < height - 60; i++) {
+        for (int i = 0; i < keys.size() && rowTop + LINE <= listBottom(); i++) {
             ApiKey key = keys.get(i);
             // masked(), never the whole value.
             Component label = Component.literal(key.masked())
@@ -264,9 +405,20 @@ public final class ApiKeyScreen extends Screen {
             rowTop += ROW_HEIGHT;
         }
 
+        // One line under the form: the wait while something is being stored, otherwise what
+        // the last address save did.
         if (waiting.isWaiting()) {
-            graphics.centeredText(font, waiting.label(Component.translatable("gui.mcagents.waiting")),
-                    width / 2, height - 52, 0xFFFFFFFF);
+            graphics.text(font, waiting.label(Component.translatable("gui.mcagents.waiting")),
+                    left, NOTE_TOP, 0xFFFFFFFF);
+        } else if (addressNote != null) {
+            graphics.text(font, font.plainSubstrByWidth(addressNote.getString(), FIELD_WIDTH),
+                    left, NOTE_TOP, addressNoteColour);
+        }
+
+        int lineTop = footerTop();
+        for (FormattedCharSequence line : encryptionLines()) {
+            graphics.text(font, line, left, lineTop, 0xFF9A9AA4);
+            lineTop += font.lineHeight;
         }
 
         platformPicker.render(graphics, mouseX, mouseY);
@@ -283,6 +435,7 @@ public final class ApiKeyScreen extends Screen {
         // across the rebuild that a stored key triggers.
         if (platformPicker.clickedOverlay(event)) {
             pendingPlatform = platformPicker.value();
+            showAddressFor(pendingPlatform);
             return true;
         }
         return super.mouseClicked(event, doubleClick);
