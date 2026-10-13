@@ -57,6 +57,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/chat-hologram.md`](../memory/tasks/chat-hologram.md) | Removing the website and moving chat onto core's hologram: three panels, the controller under them, chat's buttons on the agents menu, and the `0.4.0` release. |
 | [`../memory/tasks/release-workflow.md`](../memory/tasks/release-workflow.md) | The Release workflow that attaches the Fabric and NeoForge jars to each tag's GitHub release, and the `0.4.1` release. |
 | [`../memory/tasks/minecraft-26-3.md`](../memory/tasks/minecraft-26-3.md) | Building the Fabric and NeoForge jars for Minecraft 26.2 and 26.3, one Gradle subproject per version, on core 0.7.0 and agents 0.3.0, and the `0.5.0` release. |
+| [`../memory/tasks/forge-platform.md`](../memory/tasks/forge-platform.md) | Adding the Forge platform: a Forge jar for Minecraft 26.2 and 26.3 that nests SQLite as Jar-in-Jar, and the `0.6.0` release. |
 
 ## Maintenance
 
