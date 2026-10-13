@@ -1,6 +1,6 @@
 ---
 name: memory-task-minecraft-26-3
-status: in progress
+status: done
 description: Building chat's Fabric and NeoForge jars for both Minecraft 26.2 and 26.3, one Gradle subproject per Minecraft version, on core 0.7.0 and agents 0.3.0, and releasing 0.5.0 with it.
 ---
 
@@ -50,10 +50,10 @@ option.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/minecraft-26-3-plan` | |
-| 2 | Per-version layout, 26.2 only, on core 0.7.0 and agents 0.3.0 | `build/minecraft-versions` | |
-| 3 | Minecraft 26.3 | `feat/minecraft-26-3` | |
-| 4 | Release 0.5.0 | `release/0.5.0` | |
+| 1 | Task record | `chore/minecraft-26-3-plan` | #38 |
+| 2 | Per-version layout, 26.2 only, on core 0.7.0 and agents 0.3.0 | `build/minecraft-versions` | #39 |
+| 3 | Minecraft 26.3 | `feat/minecraft-26-3` | #40 |
+| 4 | Release 0.5.0 | `release/0.5.0` | #41 |
 
 ### Task 1 — chore/minecraft-26-3-plan
 
@@ -102,3 +102,12 @@ new world was created, G showed the menu with CHAT, KEYS, MODEL, PERSONA and WAL
 CHAT's hologram opened with its three panels: four of four. On NeoForge, quitting logs a
 `NoClassDefFoundError` from chat's shutdown hook, because NeoForge has already closed the
 mod's module; the game has stopped by then.
+
+### Task 4 — release/0.5.0
+
+`project-version` is `0.5.0`, a minor: the jar names and the artifact ids of `shared` and the
+loaders change, and core 0.7.0 and agents 0.3.0 are the oldest the jars load with. The 0.5.0
+changelog and its logs-index row are new, and the setup page, the rule, the map and the state
+file say 0.5.0. Merging this branch is the release: Publish finds no `v0.5.0` tag, builds
+against core 0.7.0 and agents 0.3.0 from GitHub Packages, publishes every module and tags the
+commit, and Release then makes the `v0.5.0` release with the four loader jars.

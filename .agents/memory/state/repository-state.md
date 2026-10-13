@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.4.1 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.5.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -18,8 +18,11 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   0.2.0 draws with core 0.6.0's holograms. Run in a Fabric dev client: CHAT replaced the menu
   with Sessions, Conversation and User Prompt; a question typed into the prompt box started a
   conversation and, with no key, showed its reason as the agent's line; NEW, RENAME and DELETE
-  worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens. NeoForge is
-  compile-verified only. See [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md).
+  worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens. In 0.5.0, on core
+  0.7.0 and agents 0.3.0, the menu buttons and CHAT's hologram were seen again in Fabric and
+  NeoForge dev clients on both Minecraft 26.2 and 26.3. See
+  [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md) and
+  [`../tasks/minecraft-26-3.md`](../tasks/minecraft-26-3.md).
 * **The API key screen** — a key was pasted, stored, and listed masked. Its address row
   refused a plain `http://` address and stored a loopback one in a dev client.
 * **The model settings screen** — both dropdowns, editable and selectable.
@@ -121,7 +124,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: core's `OpenRouterClient` behind core's `HttpTransport`, built by
   `ChatModelClients` and wrapped by `CachingModelClient` (embeddings cached, completions
-  deliberately not). Chat compiles against MCAgents core `0.6.0` and ships none of it; the
+  deliberately not). Chat compiles against MCAgents core `0.7.0` and ships none of it; the
   mod depends on `mcagents_core`. See [`../tasks/core-adoption.md`](../tasks/core-adoption.md).
 * Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
   using the player's own embedding model, because a vector is only comparable inside the
@@ -160,8 +163,9 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 ## Stack
 
-Minecraft 26.2 · Fabric Loader 0.19.3 · Fabric API 0.157.0+26.2 · Fabric Loom 1.17.19 ·
-Java 25 · Gradle 9.7.0 via the committed wrapper · group `io.github.mcagentsmods` · base package
+Minecraft 26.2 and 26.3, one Gradle subproject per version · Fabric Loader 0.19.5 · Fabric API
+0.157.0+26.2 and 0.162.0+26.3 · NeoForge 26.2.0.90 and 26.3.0.76 · Fabric Loom 1.18.4 ·
+Java 25 · Gradle 9.7.1 via the committed wrapper · group `io.github.mcagentsmods` · base package
 `io.github.mcagentsmods.chat`.
 
 Facts that cost time to establish, and will again if forgotten:
