@@ -60,3 +60,21 @@ option.
 ### Task 1 — chore/release-workflow-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — ci/release
+
+`.github/workflows/release.yml`, the same workflow as core's and agents': job `build`
+(contents and packages read) finds the tag and its release, checks out the tag, checks its
+`project-version`, runs `./gradlew assemble` with the run's token, takes
+`MCAgentsChat{Fabric,Neoforge}-{version}.jar` from `platforms/{fabric,neoforge}/build/libs/`
+(the `-sources` jars are left out; NeoForge nests sqlite-jdbc inside its one jar) and uploads
+them as `mod-jars`; job `release` (contents and actions write) writes the notes from the
+changelog, creates the release with `gh release create --verify-tag`, marks it latest only
+when it is the version on `master`, and deletes the artifact. `publish.yml` is unchanged. The
+setup page, the repository map and the repository state describe it.
+
+Written after chat `0.4.0` removed the website module, so the bundled modules are api, common
+and shared. Checked locally: `actionlint` 1.7.12 with shellcheck passes; the tag check against
+the real remote gives `v0.4.0`, `latest=true`, `release=true` with no input, `latest=false`
+for `v0.3.0`, and no release for a tag that does not exist; the jar step takes the two mod
+jars and skips the sources jars; the notes step turns the 0.4.0 changelog into the notes.

@@ -104,6 +104,16 @@ tag is made; fix the cause and start the workflow again from the Actions tab
 The build in that run reads MCAgents core from core's GitHub Packages, so the core version
 named in `gradle/libs.versions.toml` has to be published before chat's release is merged.
 
+The jars a player installs are attached to the repository's **Releases** page, one GitHub
+release per version. `.github/workflows/release.yml` runs each time a Publish run on `master`
+finishes: when the `v{version}` tag exists and has no GitHub release yet, it checks out the
+tag, runs `./gradlew assemble` with the same token, and creates the release with
+`MCAgentsChatFabric-{version}.jar` and `MCAgentsChatNeoforge-{version}.jar` attached and that
+version's `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md` as its notes. It then deletes the
+copy of the jars the run kept in Actions. Chat has no Forge module, so there is no Forge jar.
+A release that failed is made by the next merge to `master`; **Run workflow** on the Release
+workflow's page does the same by hand, and its `tag` input releases an earlier tag.
+
 ## Runtime files
 
 Running the client creates a game directory under `platforms/fabric/run/`. The mod's own
