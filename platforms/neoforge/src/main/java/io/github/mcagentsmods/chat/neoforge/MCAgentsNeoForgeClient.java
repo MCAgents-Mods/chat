@@ -2,7 +2,7 @@ package io.github.mcagentsmods.chat.neoforge;
 
 import io.github.mcagentsmods.chat.api.MCAgents;
 import io.github.mcagentsmods.chat.shared.ChatRuntime;
-import io.github.mcagentsmods.chat.shared.client.ChatButton;
+import io.github.mcagentsmods.chat.shared.client.ChatButtons;
 import io.github.mcagentsmods.chat.shared.client.GameEnvironment;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * NeoForge's client entry point: the Chat button, the events, and the game directory, and
+ * NeoForge's client entry point: chat's menu buttons, the events, and the game directory, and
  * nothing else. Everything the mod does lives in {@code platforms/shared}.
  *
  * <p>Declared for the client distribution only, so a dedicated server that has the jar in its
@@ -22,9 +22,9 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class MCAgentsNeoForgeClient {
 
     public MCAgentsNeoForgeClient() {
-        // First, and before anything that can fail: the button on the agents screen, which G
-        // opens, is how the player reaches chat.
-        ChatButton.register();
+        // First, and before anything that can fail: the buttons on the agents menu, which G
+        // shows, are how the player reaches chat.
+        ChatButtons.register();
 
         // Both fire on the client thread, which is where GameEnvironment reads the server.
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class,

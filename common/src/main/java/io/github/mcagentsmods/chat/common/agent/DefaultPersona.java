@@ -84,8 +84,7 @@ final class DefaultPersona {
 
                 ## Editing this file
 
-                Use the AGENTS.md button on the in-game chat screen, or any text editor: the
-                file is at
+                Press G in game and choose PERSONA, or use any text editor: the file is at
                 `{minecraft_dir}/MCAgents/AGENTS.md`. A save takes effect on your next
                 question. MCAgents created this file once and will never overwrite it.
                 """;

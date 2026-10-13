@@ -54,7 +54,7 @@ public final class GameEnvironment implements EnvironmentSource {
     /**
      * The player joined a world. Called on the client thread by the loader's join event.
      *
-     * <p>Each loader registers its listener beside the Chat button, before storage is open:
+     * <p>Each loader registers its listener beside chat's menu buttons, before storage is open:
      * registering a listener cannot fail and touches nothing on disk or on the network, and a
      * player may be in a world before the database is.
      */

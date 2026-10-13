@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * The agent the chat screen talks to: reads the conversation, asks the model, hands back
+ * The agent the chat hologram talks to: reads the conversation, asks the model, hands back
  * the answer.
  *
  * <p>Everything it needs is local except the calls to the provider. The persona comes

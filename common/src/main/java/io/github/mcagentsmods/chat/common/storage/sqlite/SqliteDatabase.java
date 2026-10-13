@@ -204,7 +204,7 @@ public final class SqliteDatabase implements LocalDatabase {
     @Override
     public ChangeFeed changes() {
         // A read of an AtomicLong and nothing else, so this is safe to call from the client
-        // thread on every tick — which is exactly what the chat screen does with it.
+        // thread on every tick.
         return chatRevision::get;
     }
 
