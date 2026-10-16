@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    api project(':mcagents-chat-api')
+    api project(':chat-api')
 
     // Core's model client and HTTP transport. Provided in game by the mcagents_core mod,
     // so compiled against and never bundled, like core's API above.

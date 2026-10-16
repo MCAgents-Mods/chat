@@ -42,8 +42,8 @@ jarJar.register()
 dependencies {
     implementation minecraft.dependency("net.minecraftforge:forge:${versionFor('forge')}")
 
-    implementation project(':mcagents-chat-api')
-    implementation project(':mcagents-chat-common')
+    implementation project(':chat-api')
+    implementation project(':chat-common')
     implementation project(sharedModule)
 
     jarJar libs.sqlite.jdbc
@@ -53,8 +53,8 @@ dependencies {
 // merged into the mod jar rather than nested. Third-party runtime libraries are nested with
 // jarJar instead.
 def bundledModules = [
-        ':mcagents-chat-api',
-        ':mcagents-chat-common',
+        ':chat-api',
+        ':chat-common',
         sharedModule
 ]
 
@@ -71,7 +71,7 @@ def devMod = tasks.register('devModDirectory', Sync) {
 
 minecraft {
     runs {
-        // A development client: ./gradlew :mcagents-chat-forge:runClient, in run/.
+        // A development client: ./gradlew :chat-forge:runClient, in run/.
         // Core's and agents' Forge jars for the same Minecraft version go in run/mods/.
         client {
             workingDir = project.file('run')

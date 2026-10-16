@@ -29,8 +29,8 @@ Every dependency coordinate lives in the Gradle version catalog at
 | ForgeGradle | 7.0.40 |
 | Forge Jar-in-Jar plugin | 0.2.3 |
 | Java | 25 |
-| MCAgents core | 0.8.0 |
-| MCAgents agents | 0.4.0 |
+| MCAgents core | 0.9.0 |
+| MCAgents agents | 0.5.0 |
 
 The entries that move with Minecraft come in one block for the supported version, each
 suffixed with it (`fabric-api-26-3` for 26.3):
@@ -57,7 +57,7 @@ Chat supports **only the latest Minecraft release, today 26.3**, and never an ol
 it. `platforms/shared` and the three loader modules compile against Minecraft, so each is
 built for that version, listed once in `settings.gradle`. Each is a folder of shared sources
 with a Gradle subproject for the version, `platforms/{module}/{minecraft}`, named
-`mcagents-chat-{module}`, without the version; that name is also its artifact id. The subproject
+`chat-{module}`, without the version; that name is also its artifact id. The subproject
 compiles the module's shared `src/` together with its own `src/`, which holds only what is
 particular to that version. `platforms/minecraft.gradle`, which the version subproject
 applies, takes the version from the folder's name, finds its coordinates in the catalog, and
@@ -78,7 +78,7 @@ Chat compiles against MCAgents core and MCAgents agents and carries neither. Clo
 `../agents` — and `settings.gradle` builds all three together, so chat compiles and tests
 against their source. Pass `-Pcore-build=/path/to/core` or `-Pagents-build=/path/to/agents`
 for another location. Without a checkout, Gradle resolves the published
-`io.github.mcagentsmods:mcagents-core-{api,common}`, `mcagents-core-client` and `mcagents-agents-{tool,api,common}` at
+`io.github.mcagentsmods:core-{api,common}`, `core-client` and `agents-{tool,api,common}` at
 the versions in `gradle/libs.versions.toml`, from each repository's GitHub Packages registry.
 GitHub Packages asks for a token even though both are public, so export a personal access
 token with the `read:packages` scope first:
@@ -103,11 +103,11 @@ missing `mcagents_core` or `mcagents_agents`.
 | Goal | Command |
 |---|---|
 | Build everything | `./gradlew build` |
-| Run the tests | `./gradlew :mcagents-chat-common:test` |
-| Build one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client on Fabric | `./gradlew :mcagents-chat-fabric:runClient` |
-| Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge:runClient` |
-| Run the client on Forge | `./gradlew :mcagents-chat-forge:runClient` |
+| Run the tests | `./gradlew :chat-common:test` |
+| Build one module | `./gradlew :chat-common:build` |
+| Run the client on Fabric | `./gradlew :chat-fabric:runClient` |
+| Run the client on NeoForge | `./gradlew :chat-neoforge:runClient` |
+| Run the client on Forge | `./gradlew :chat-forge:runClient` |
 | Produce the mod jars | `./gradlew assemble` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
@@ -139,7 +139,7 @@ identity.
 Releases publish themselves. `.github/workflows/publish.yml` runs whenever `master` moves:
 when `project-version` in `gradle.properties` has no `v{version}` tag yet, it builds and tests
 chat, publishes the library modules, `api`, `common` and `shared`, to this repository's GitHub
-Packages as `io.github.mcagentsmods:mcagents-chat-{module}`, and then tags the commit. The mod
+Packages as `io.github.mcagentsmods:chat-{module}`, and then tags the commit. The mod
 jars are not published there; the Release workflow below attaches them to the version's GitHub
 release. When the tag already exists it does nothing, so only a merge that raises the version
 publishes. If a run fails, no tag is made; fix the cause and start the workflow again from the
@@ -180,7 +180,7 @@ mod encrypts every stored key with it:
 
 ```bash
 export MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY="$(openssl rand -base64 32)"
-./gradlew :mcagents-chat-fabric:runClient
+./gradlew :chat-fabric:runClient
 ```
 
 Anything works as a value — a passphrase, a random string — because it is hashed to a

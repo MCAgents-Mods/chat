@@ -39,8 +39,8 @@ repositories {
 dependencies {
     minecraft libraryFor('minecraft')
 
-    api project(':mcagents-chat-api')
-    api project(':mcagents-chat-common')
+    api project(':chat-api')
+    api project(':chat-common')
 
     // Core's holograms, for the chat hologram CHAT opens. The mcagents_core mod supplies them
     // in game.
