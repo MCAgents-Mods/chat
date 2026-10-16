@@ -1,12 +1,12 @@
 ---
 name: memory-task-latest-minecraft
-status: in-progress
+status: done
 description: Dropping Minecraft 26.2 so chat supports only the latest release (26.3), removing the Minecraft suffix from project and artifact ids, on core 0.8.0 and agents 0.4.0, and releasing 0.7.0.
 ---
 
 # Task: only the latest Minecraft version
 
-**Status:** in progress
+**Status:** done once the pull requests below merge and Release makes `v0.7.0` with three jars
 
 ## The request
 
@@ -35,10 +35,10 @@ published first. The plan is `plans/latest-minecraft-only.md` in the project's s
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/latest-minecraft-plan` | |
-| 2 | Only Minecraft 26.3 | `build/latest-minecraft` | |
-| 3 | Unversioned project and artifact ids, core 0.8.0 and agents 0.4.0 | `build/unversioned-ids` | |
-| 4 | Release 0.7.0 | `release/0.7.0` | |
+| 1 | Task record | `chore/latest-minecraft-plan` | #46 |
+| 2 | Only Minecraft 26.3 | `build/latest-minecraft` | #47 |
+| 3 | Unversioned project and artifact ids, core 0.8.0 and agents 0.4.0 | `build/unversioned-ids` | #48 |
+| 4 | Release 0.7.0 | `release/0.7.0` | #49 |
 
 ### Task 1 — chore/latest-minecraft-plan
 
@@ -64,3 +64,12 @@ needs too. `platforms/minecraft.gradle` points `sharedModule` at `:mcagents-chat
 `coreClient` at `mcagents-core-client`. The catalog pins core 0.8.0 and agents 0.4.0, the
 first releases with the unversioned ids. Docs follow: setup, architecture, the repository map,
 the publish workflow's header.
+
+### Task 4 — release/0.7.0
+
+`project-version` is `0.7.0`, a minor because a supported Minecraft version and the published
+ids change. `wiki/logs/0/7/0/CHANGELOG.md` and its logs-index row are new, and setup, the
+repository map, the repository rule and the state file carry the version. Merging it makes
+Publish publish 0.7.0 (`mcagents-chat-{api,common,shared,fabric,neoforge,forge}`) and push
+`v0.7.0`, and Release attach three jars, one per loader, all `+26.3`. Core 0.8.0 and agents
+0.4.0 must be on GitHub Packages first.
