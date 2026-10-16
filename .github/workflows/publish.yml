@@ -1,8 +1,9 @@
 name: Publish
 
-# Publishes chat's api and common jars, and the shared, fabric, neoforge and forge
-# jars of the Minecraft version chat supports (mcagents-chat-{module}), to GitHub
-# Packages and tags the commit when a release lands on master.
+# Publishes chat's library modules, api, common and shared (mcagents-chat-{module}),
+# to GitHub Packages and tags the commit when a release lands on master. The
+# fabric, neoforge and forge mod jars are not published here; the Release
+# workflow attaches them to the version's GitHub release.
 #
 # The version is project-version in gradle.properties. The first step looks for
 # the v{version} tag on the remote: when it exists the run stops there, so an

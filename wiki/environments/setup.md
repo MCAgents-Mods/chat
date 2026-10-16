@@ -138,11 +138,12 @@ identity.
 
 Releases publish themselves. `.github/workflows/publish.yml` runs whenever `master` moves:
 when `project-version` in `gradle.properties` has no `v{version}` tag yet, it builds and tests
-chat, publishes every module to this repository's GitHub Packages as
-`io.github.mcagentsmods:mcagents-chat-{module}`, and then tags the commit. When the tag already
-exists it does nothing, so only a merge that raises the version publishes. If a run fails, no
-tag is made; fix the cause and start the workflow again from the Actions tab
-(**Run workflow**).
+chat, publishes the library modules, `api`, `common` and `shared`, to this repository's GitHub
+Packages as `io.github.mcagentsmods:mcagents-chat-{module}`, and then tags the commit. The mod
+jars are not published there; the Release workflow below attaches them to the version's GitHub
+release. When the tag already exists it does nothing, so only a merge that raises the version
+publishes. If a run fails, no tag is made; fix the cause and start the workflow again from the
+Actions tab (**Run workflow**).
 
 The build in that run reads MCAgents core from core's GitHub Packages, so the core version
 named in `gradle/libs.versions.toml` has to be published before chat's release is merged.
