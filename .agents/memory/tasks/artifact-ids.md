@@ -1,6 +1,6 @@
 ---
 name: memory-task-artifact-ids
-status: in-progress
+status: done
 description: Dropping the repeated mcagents- from every published artifact id, publishing only api, common and shared and never the loader jars, on core 0.9.0 and agents 0.5.0, and releasing 0.8.0 with it.
 ---
 
@@ -58,10 +58,10 @@ option.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/artifact-ids-plan` | |
-| 2 | Library modules only | `build/publish-scope` | |
-| 3 | Shorter artifact ids, on core 0.9.0 and agents 0.5.0 | `build/artifact-ids` | |
-| 4 | Release 0.8.0 | `release/0.8.0` | |
+| 1 | Task record | `chore/artifact-ids-plan` | #50 |
+| 2 | Library modules only | `build/publish-scope` | #51 |
+| 3 | Shorter artifact ids, on core 0.9.0 and agents 0.5.0 | `build/artifact-ids` | #52 |
+| 4 | Release 0.8.0 | `release/0.8.0` | #53 |
 
 ### Task 1 — chore/artifact-ids-plan
 
@@ -89,3 +89,12 @@ rule, the repository map, the architecture and setup pages, the state file and t
 the new names, and the architecture page says what the ids were up to 0.7.0. Released
 changelogs, the logs and memory indexes and earlier task records keep the old names, which were
 true when written.
+
+### Task 4 — release/0.8.0
+
+`project-version` is `0.8.0`, a minor: every coordinate a consumer resolves changes, and core
+0.9.0 and agents 0.5.0 are the oldest the jars load with. The 0.8.0 changelog and its
+logs-index row are new, and the rule, the repository map, the setup page and the state file
+say 0.8.0. Merging this branch is the release: Publish finds no `v0.8.0` tag, builds against
+core 0.9.0 and agents 0.5.0 from GitHub Packages, publishes the library modules and tags the
+commit, and Release then makes the `v0.8.0` release with the three loader jars.
