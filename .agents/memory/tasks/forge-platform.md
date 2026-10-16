@@ -69,3 +69,33 @@ Forge module (Forge 26.2) built a jar with sqlite-jdbc nested; a Forge 26.2 clie
 jar and core's and agents' Forge jars in `mods/` loaded all three, Forge's Jar-in-Jar locator
 picked up sqlite-jdbc from chat's jar, the database opened, joining a world set the player
 environment, and G showed chat's buttons on the agents menu.
+
+### Task 2 — feat/forge-platform
+
+`platforms/forge/` joins the loaders in the per-version layout: shared sources in `src/`, with
+`MCAgentsForgeMod` (`@Mod`, which starts `MCAgentsForgeClient` on the client distribution only)
+adding chat's menu buttons, registering `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`
+and starting `ChatRuntime` with `FMLPaths.GAMEDIR`, and `META-INF/mods.toml`; `26.2/` and
+`26.3/` hold only a build file and that version's `pack.mcmeta`. `forge.gradle` builds on
+ForgeGradle 7.0.40 and nests `sqlite-jdbc` with Forge's Jar-in-Jar plugin 0.2.3; the Jar-in-Jar
+jar is `MCAgentsChatForge-{version}+{minecraft}.jar` in `build/libs/` and is the one published,
+and the jar without SQLite goes to `build/slim/`. The catalog gained Forge 26.2-65.1.3 and
+26.3-66.0.11 and both plugins, `settings.gradle` the Forge maven and the module, and the root
+`build.gradle` the plugins. The dev client runs from one directory holding chat's classes, as
+in agents. The README, the overview, the architecture and setup pages, the repository map, the
+`platforms/shared` build comment and the state file name Forge.
+
+Checked: `./gradlew build` passes against core 0.7.0's and agents 0.3.0's source. Each Forge
+jar holds `META-INF/jarjar/sqlite-jdbc-3.53.2.1.jar` with its `metadata.json`, its version's
+`pack.mcmeta` (107 for 26.2, 121 for 26.3), and a `mods.toml` asking for Forge `[65,)` or
+`[66,)`, Minecraft `[26.2,26.3)` or `[26.3,26.4)`, core 0.7.0 and agents 0.3.0 or newer. In
+chat's Forge dev client of each version, with core 0.7.0's and agents 0.3.0's released Forge jars
+in `run/mods/`, the database opened, a new world logged "Player environment is now single
+player", G showed CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents menu, and CHAT opened the
+three-panel hologram; MODEL opened its screen on 26.2. The built jars themselves, put beside
+core's jar in agents' Forge client, loaded with Forge's Jar-in-Jar locator taking sqlite-jdbc
+from chat's jar, and the database opened, on both versions.
+
+The instruction files that list chat's loaders, `AGENTS.md`'s overview line and
+`.agents/rules/repository.md`'s module table, are left for the owner: they are reported as
+findings, not edited.

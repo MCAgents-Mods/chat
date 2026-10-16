@@ -1,9 +1,9 @@
 # MCAgentsClient — Overview
 
-MCAgentsClient is a **client-side only** Minecraft mod for the Fabric and NeoForge loaders. It puts an
-AI assistant inside the game: the player opens a chat hologram, asks a question, and an LLM
-answers using the player's own OpenRouter API key, the conversation so far, and whichever
-stored knowledge is relevant to the question.
+MCAgentsClient is a **client-side only** Minecraft mod for the Fabric, NeoForge and Forge
+loaders. It puts an AI assistant inside the game: the player opens a chat hologram, asks a
+question, and an LLM answers using the player's own OpenRouter API key, the conversation so
+far, and whichever stored knowledge is relevant to the question.
 
 Nothing is installed on the Minecraft server. Nothing is required of the server operator.
 The mod works on single-player worlds and on any multiplayer server the player is allowed

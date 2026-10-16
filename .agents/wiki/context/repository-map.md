@@ -30,6 +30,7 @@ platforms/minecraft.gradle  applied by every Minecraft version subproject below
 platforms/shared/    shared sources; {minecraft}/ is mcagents-chat-shared-{minecraft}
 platforms/fabric/    shared sources; {minecraft}/ is mcagents-chat-fabric-{minecraft}
 platforms/neoforge/  shared sources; {minecraft}/ is mcagents-chat-neoforge-{minecraft}
+platforms/forge/     shared sources; {minecraft}/ is mcagents-chat-forge-{minecraft}
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
@@ -38,7 +39,7 @@ retrieval, and the interface are all implemented. Do not assume a source file ex
 because the architecture mentions it — check. Retrieval in particular was described in
 three documents for a long time before any code called `ModelClient.embed`.
 
-## The five modules
+## The six modules
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
@@ -47,6 +48,7 @@ three documents for a long time before any code called `ModelClient.embed`.
 | `platforms/shared/` | `mcagents-chat-shared-{minecraft}` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents mod's menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric-{minecraft}` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge-{minecraft}` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
+| `platforms/forge/` | `mcagents-chat-forge-{minecraft}` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml`; each version's `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
 `mcagents-core-common` (`compileOnlyApi`), and each version of `platforms/shared/` against
@@ -92,7 +94,7 @@ version's changelog, and deletes the run's `mod-jars` artifact afterwards.
 module names deliberately differ.
 
 The dependency chain is one-way: `api/` ← `common/` ← `platforms/shared/` ←
-`platforms/fabric/` and `platforms/neoforge/`. Before 0.4.0 a `website/` module sat between
+`platforms/fabric/`, `platforms/neoforge/` and `platforms/forge/`. Before 0.4.0 a `website/` module sat between
 `common/` and `platforms/shared/` and served chat's pages through core's web console; both are
 gone.
 
@@ -101,7 +103,8 @@ built with Loom against vanilla Minecraft alone. Their classes are **merged into
 by the `jar` task in each loader module's `build.gradle` rather than nested as Jar-in-Jar mods —
 they are not mods and have no manifest of their own. Third-party
 runtime libraries go the other way: `sqlite-jdbc` is nested with Loom's `include` at
-`META-INF/jars/` in the Fabric jar, and with `jarJar` at `META-INF/jarjar/` in the NeoForge jar. It carries native binaries for every platform, so
+`META-INF/jars/` in the Fabric jar, and with `jarJar` at `META-INF/jarjar/` in the NeoForge and
+Forge jars. It carries native binaries for every platform, so
 it alone is about 12 MB of the built jar.
 
 ## Storage
@@ -231,6 +234,8 @@ names cannot be dereferenced as `project.gitOrg`.
 | Fabric Loom | 1.18.4 |
 | NeoForge | 26.2.0.90 and 26.3.0.76 |
 | ModDevGradle | 2.0.148 |
+| Forge | 26.2-65.1.3 and 26.3-66.0.11 |
+| ForgeGradle | 7.0.40, with Forge's Jar-in-Jar plugin 0.2.3 |
 | MCAgents core | 0.7.0 |
 | MCAgents agents | 0.3.0 |
 | Java | 25 (Minecraft 26.x requires it) |
@@ -258,8 +263,8 @@ these.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric-26.2:runClient` or `:mcagents-chat-neoforge-26.2:runClient`, and the same with `-26.3` |
-| Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge}/{minecraft}/build/libs/` |
+| Run the client | `./gradlew :mcagents-chat-fabric-26.2:runClient`, `:mcagents-chat-neoforge-26.2:runClient` or `:mcagents-chat-forge-26.2:runClient`, and the same with `-26.3` |
+| Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge,Forge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
 its classpath. Put a test there whenever you can; a behaviour that can only be checked by

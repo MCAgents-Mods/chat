@@ -8,6 +8,10 @@ pluginManagement {
             name = 'NeoForged'
             url = 'https://maven.neoforged.net/releases/'
         }
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -71,7 +75,7 @@ project(':mcagents-chat-api').projectDir = file('api')
 include 'mcagents-chat-common'
 project(':mcagents-chat-common').projectDir = file('common')
 
-['shared', 'fabric', 'neoforge'].each { module ->
+['shared', 'fabric', 'neoforge', 'forge'].each { module ->
     minecraftVersions.each { minecraft ->
         include "mcagents-chat-${module}-${minecraft}"
         project(":mcagents-chat-${module}-${minecraft}").projectDir = file("platforms/${module}/${minecraft}")

@@ -20,9 +20,11 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   conversation and, with no key, showed its reason as the agent's line; NEW, RENAME and DELETE
   worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens. In 0.5.0, on core
   0.7.0 and agents 0.3.0, the menu buttons and CHAT's hologram were seen again in Fabric and
-  NeoForge dev clients on both Minecraft 26.2 and 26.3. See
-  [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md) and
-  [`../tasks/minecraft-26-3.md`](../tasks/minecraft-26-3.md).
+  NeoForge dev clients on both Minecraft 26.2 and 26.3, and then in Forge dev clients on both,
+  where the built Forge jars also loaded SQLite from their Jar-in-Jar. See
+  [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md),
+  [`../tasks/minecraft-26-3.md`](../tasks/minecraft-26-3.md) and
+  [`../tasks/forge-platform.md`](../tasks/forge-platform.md).
 * **The API key screen** — a key was pasted, stored, and listed masked. Its address row
   refused a plain `http://` address and stored a loopback one in a dev client.
 * **The model settings screen** — both dropdowns, editable and selectable.
@@ -100,8 +102,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 ## Architecture as built
 
-* `api/` contracts, `common/` implementations, `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/` and
-  `platforms/neoforge/` the jars. One-way dependency chain; no Minecraft in `api/` or `common/`.
+* `api/` contracts, `common/` implementations, `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/`,
+  `platforms/neoforge/` and `platforms/forge/` the jars. One-way dependency chain; no Minecraft in `api/` or `common/`.
 * Layers: MCAgents core (0) sends the requests, MCAgents agents (1) owns tool calling and the
   `G` menu, chat (2) is built on both and bundles neither. See
   [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md).
@@ -164,7 +166,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## Stack
 
 Minecraft 26.2 and 26.3, one Gradle subproject per version · Fabric Loader 0.19.5 · Fabric API
-0.157.0+26.2 and 0.162.0+26.3 · NeoForge 26.2.0.90 and 26.3.0.76 · Fabric Loom 1.18.4 ·
+0.157.0+26.2 and 0.162.0+26.3 · NeoForge 26.2.0.90 and 26.3.0.76 · Forge 26.2-65.1.3 and
+26.3-66.0.11 · Fabric Loom 1.18.4 · ModDevGradle 2.0.148 · ForgeGradle 7.0.40 ·
 Java 25 · Gradle 9.7.1 via the committed wrapper · group `io.github.mcagentsmods` · base package
 `io.github.mcagentsmods.chat`.
 
