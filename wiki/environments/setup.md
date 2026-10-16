@@ -148,9 +148,9 @@ The jars a player installs are attached to the repository's **Releases** page, o
 release per version. `.github/workflows/release.yml` runs each time a Publish run on `master`
 finishes: when the `v{version}` tag exists and has no GitHub release yet, it checks out the
 tag, runs `./gradlew assemble` with the same token, and creates the release with the mod jars
-attached, one per loader and Minecraft version — `MCAgentsChatFabric-{version}+{minecraft}.jar`
-and `MCAgentsChatNeoforge-{version}+{minecraft}.jar` — and that
-version's `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md` as its notes. It then deletes the
+attached, one per loader and Minecraft version — `MCAgentsChatFabric-{version}+{minecraft}.jar`,
+`MCAgentsChatNeoforge-{version}+{minecraft}.jar` and `MCAgentsChatForge-{version}+{minecraft}.jar`
+— and that version's `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md` as its notes. It then deletes the
 copy of the jars the run kept in Actions.
 A release that failed is made by the next merge to `master`; **Run workflow** on the Release
 workflow's page does the same by hand, and its `tag` input releases an earlier tag.

@@ -17,7 +17,7 @@ AGENTS.md            entry point for agents
 README.md            human overview
 LICENSE              MIT license, MCAgents, 2026
 .github/workflows/   publish.yml — publishes every module and tags a release on master
-                     release.yml — attaches the Fabric and NeoForge jars to the tag's GitHub release
+                     release.yml — attaches the Fabric, NeoForge and Forge jars to the tag's GitHub release
 .agents/             this repository's local instruction set, indexes, agent wiki, memory
 wiki/                human documentation and versioned change logs
 settings.gradle      module map and plugin repositories
@@ -77,8 +77,9 @@ its `run/mods/`.
 
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
-otherwise runs `./gradlew build`, then `./gradlew publish` — all five modules, as
-`io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's GitHub Packages — and
+otherwise runs `./gradlew build`, then `./gradlew publish` — every module, as
+`io.github.mcagentsmods:mcagents-chat-{module}` for `api` and `common` and
+`mcagents-chat-{module}-{minecraft}` for the rest, to this repository's GitHub Packages — and
 only then pushes the tag. A merge that leaves the version alone publishes nothing, and a
 failed run leaves no tag, so running the workflow again retries the release. The build step
 carries the workflow's token because it reads core and agents from GitHub Packages, so the
@@ -87,8 +88,9 @@ versions `libs.versions.toml` names must be published before a chat release is.
 **Releasing the jars.** `.github/workflows/release.yml` runs after each Publish run on
 `master` and on demand. When `v{version}` exists and has no GitHub release, it builds the
 tagged commit with `./gradlew assemble` and the same token, attaches
-`platforms/{fabric,neoforge}/build/libs/*-{version}.jar` to a new release whose notes are that
-version's changelog, and deletes the run's `mod-jars` artifact afterwards.
+`platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/*-{version}+{minecraft}.jar`, one jar per
+loader and Minecraft version, to a new release whose notes are that version's changelog, and
+deletes the run's `mod-jars` artifact afterwards.
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
 module names deliberately differ.
