@@ -1,7 +1,0 @@
-// MCAgents chat's Fabric jar for Minecraft 26.2. Everything but the version is in ../fabric.gradle.
-
-plugins {
-    id 'net.fabricmc.fabric-loom'
-}
-
-apply from: '../fabric.gradle'

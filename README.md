@@ -68,12 +68,12 @@ do not share your `data.db`.
 
 ## Quick start
 
-Install the jar for your loader and Minecraft version, 26.2 or 26.3 —
+Install the jar for your loader on Minecraft 26.3, the only version chat supports —
 `MCAgentsChatFabric-{version}+{minecraft}.jar` with Fabric API,
 `MCAgentsChatNeoforge-{version}+{minecraft}.jar`, or
 `MCAgentsChatForge-{version}+{minecraft}.jar` — and **MCAgents core** (`mcagents_core`, from
 `MCAgents-Mods/core`) and **MCAgents agents** (`mcagents_agents`, from `MCAgents-Mods/agents`)
-for the same loader and Minecraft version beside it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
+for the same loader beside it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
 either the game refuses to load MCAgentsClient.
 
 Press `G` in game for the MCAgents menu, a hologram in front of you. Chat adds five buttons

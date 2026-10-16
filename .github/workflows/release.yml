@@ -1,8 +1,9 @@
 name: Release
 
 # Builds chat's mod jars, MCAgentsChatFabric, MCAgentsChatNeoforge and
-# MCAgentsChatForge, once for every Minecraft version (each loader has a
-# subproject per version, platforms/{loader}/{minecraft}), and attaches them to a
+# MCAgentsChatForge, for every Minecraft version the tag builds (each loader has
+# a subproject per version, platforms/{loader}/{minecraft}; from 0.7.0 that is the
+# latest release alone), and attaches them to a
 # GitHub release for the v{version} tag that Publish created:
 # MCAgentsChatFabric-{version}+{minecraft}.jar and so on. The Forge jar is the one
 # with SQLite nested; the build keeps the jar without it in build/slim, out of
