@@ -54,3 +54,13 @@ each module's `.gradle` file and both workflows describe one version, the latest
 Docs updated: `README.md`, `wiki/environments/setup.md` (its "One build per Minecraft version"
 section is now "The Minecraft version"), `wiki/information/architecture.md`, the repository
 map and the stack line in the repository state.
+
+### Task 3 — build/unversioned-ids
+
+`settings.gradle` names the version once, `def minecraftVersion = '26.3'`, and includes
+`mcagents-chat-{shared,fabric,neoforge,forge}` from `platforms/{module}/26.3`. Core's composite
+substitution maps `mcagents-core-client` to `:platforms:client`, which agents' shared module
+needs too. `platforms/minecraft.gradle` points `sharedModule` at `:mcagents-chat-shared` and
+`coreClient` at `mcagents-core-client`. The catalog pins core 0.8.0 and agents 0.4.0, the
+first releases with the unversioned ids. Docs follow: setup, architecture, the repository map,
+the publish workflow's header.

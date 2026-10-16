@@ -2,7 +2,7 @@
 // There is one per module: this mod supports only the latest Minecraft release.
 //
 // The subproject's folder is named for the Minecraft version it builds for, and the
-// subproject itself mcagents-chat-{module}-{version}. Its module's shared sources sit one
+// subproject itself mcagents-chat-{module}, without the version. Its module's shared sources sit one
 // folder up, in platforms/{module}/src, and are compiled together with the subproject's own
 // src/, which holds only what is particular to that version: a class whose code changes
 // between Minecraft releases, or a resource such as Forge's pack.mcmeta. Shared code calls
@@ -23,12 +23,11 @@ def suffix = minecraftVersion.replace('.', '-')
 ext.versionFor = { String name -> catalog.findVersion("${name}-${suffix}").get().requiredVersion }
 ext.libraryFor = { String name -> catalog.findLibrary("${name}-${suffix}").get() }
 
-// This version's subproject of the shared module: sharedModule is :mcagents-chat-shared-26.3
-// in a 26.3 subproject.
-ext.sharedModule = ":mcagents-chat-shared-${minecraftVersion}"
+// The shared module, built for the same Minecraft version.
+ext.sharedModule = ':mcagents-chat-shared'
 
 // Core's holograms, built for the same Minecraft version.
-ext.coreClient = "io.github.mcagentsmods:mcagents-core-client-${minecraftVersion}:${catalog.findVersion('mcagents-core').get().requiredVersion}"
+ext.coreClient = "io.github.mcagentsmods:mcagents-core-client:${catalog.findVersion('mcagents-core').get().requiredVersion}"
 
 sourceSets {
     main {

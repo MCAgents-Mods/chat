@@ -46,7 +46,7 @@ bundledModules.each { path -> evaluationDependsOn(path) }
 neoForge {
     version = versionFor('neoforge')
 
-    // A development client: ./gradlew :mcagents-chat-neoforge-{minecraft}:runClient, in run/.
+    // A development client: ./gradlew :mcagents-chat-neoforge:runClient, in run/.
     runs {
         client {
             client()
