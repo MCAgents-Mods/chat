@@ -34,7 +34,8 @@ rootProject.name = 'chat'
 // here, the catalog block and each module's version folder; nothing else names it.
 def minecraftVersion = '26.3'
 
-// MCAgents core — the model client and the holograms chat runs on. With a checkout of
+// MCAgents core — the model client, the holograms, the tool registry and the tool-calling
+// agent chat runs on. With a checkout of
 // MCAgents-Mods/core beside this one (or wherever -Pcore-build points), Gradle builds chat
 // against that source, so a change to core is tested here before it is published. Without
 // one, the published core-api, core-common and
@@ -46,23 +47,7 @@ if (new File(coreBuild, 'settings.gradle').isFile()) {
         dependencySubstitution {
             substitute module('io.github.mcagentsmods:core-api') using project(':api')
             substitute module('io.github.mcagentsmods:core-common') using project(':common')
-            // Also what agents, built with chat below, compiles its shared module against.
             substitute module('io.github.mcagentsmods:core-client') using project(':platforms:client')
-        }
-    }
-}
-
-// MCAgents agents — the tool registry and the tool-calling agent chat answers through. The
-// same arrangement as core: a checkout of MCAgents-Mods/agents beside this one (or wherever
-// -Pagents-build points) is built with chat, and without one the published
-// agents-{tool,api,common} are read from agents' GitHub Packages repository.
-def agentsBuild = file(providers.gradleProperty('agents-build').getOrElse('../agents'))
-if (new File(agentsBuild, 'settings.gradle').isFile()) {
-    includeBuild(agentsBuild) {
-        dependencySubstitution {
-            ['tool', 'api', 'common'].each { name ->
-                substitute module("io.github.mcagentsmods:agents-${name}") using project(":agents-${name}")
-            }
         }
     }
 }

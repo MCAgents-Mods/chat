@@ -88,19 +88,17 @@ tasks.named('jar', Jar) {
 
 processResources {
     def modVersion = project.version
-    // The core and agents this build compiled against are the oldest the jar may run with.
+    // The core this build compiled against is the oldest the jar may run with.
     def coreVersion = libs.versions.mcagents.core.get()
-    def agentsVersion = libs.versions.mcagents.agents.get()
     def minecraft = minecraftVersion
     def next = minecraftNext
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
-    inputs.property 'agentsVersion', agentsVersion
     inputs.property 'minecraft', minecraft
     inputs.property 'minecraftNext', next
 
     filesMatching('META-INF/neoforge.mods.toml') {
-        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion,
+        expand version: modVersion, coreVersion: coreVersion,
                 minecraft: minecraft, minecraftNext: next
     }
 }

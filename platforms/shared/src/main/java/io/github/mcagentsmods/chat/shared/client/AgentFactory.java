@@ -1,6 +1,5 @@
 package io.github.mcagentsmods.chat.shared.client;
 
-import io.github.mcagentsmods.agents.common.Agents;
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
@@ -10,6 +9,7 @@ import io.github.mcagentsmods.chat.common.agent.ChatModelClients;
 import io.github.mcagentsmods.chat.common.agent.FilePersonaStore;
 import io.github.mcagentsmods.chat.common.agent.OpenRouterAgent;
 import io.github.mcagentsmods.core.api.model.ModelClient;
+import io.github.mcagentsmods.core.common.agent.Agents;
 
 /**
  * Builds the agent the chat hologram uses, and owns the model client's lifetime.

@@ -43,9 +43,9 @@ three documents for a long time before any code called `ModelClient.embed`.
 
 | Path | Gradle module | Holds today | Will hold |
 |---|---|---|---|
-| `api/` | `chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
-| `common/` | `chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic and `ChatController`, what the chat hologram shows and does, both tested without Minecraft — and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
-| `platforms/shared/` | `chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents mod's menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
+| `api/` | `chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is core's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
+| `common/` | `chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic and `ChatController`, what the chat hologram shows and does, both tested without Minecraft — and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in core's tool registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through core's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
+| `platforms/shared/` | `chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on core's agents menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
 | `platforms/neoforge/` | `chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
 | `platforms/forge/` | `chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml`; the version folder's `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
@@ -66,14 +66,12 @@ project name rather than its artifact id, so `common/` asks for that capability
 by name instead of writing `testFixtures(libs.core.common)`, which finds them only in the
 composite build.
 
-**MCAgents agents.** `common/` compiles against `io.github.mcagentsmods:agents-common`
-(`compileOnlyApi`), which brings `agents-api` and the pure-Java
-`agents-tool`; no chat jar carries them, and both manifests require the
-`mcagents_agents` mod. `settings.gradle` builds a checkout at `../agents` (or
-`-Pagents-build=…`) together with chat when one is there, and the root `build.gradle` reads the
-published artifacts from `https://maven.pkg.github.com/MCAgents-Mods/agents` otherwise, with the
-same token as core. A development client needs core's and agents' jars for the same loader in
-its `run/mods/`.
+**Tool calling is core's.** `core-common` brings `core-api` and the pure-Java `core-tool`: the
+tool registry (`io.github.mcagentsmods.core.tool`), the agent and the menu buttons
+(`core.api.agent`, `core.api.button`, `core.common.agent`). Up to chat 0.8.0 they were the
+separate MCAgents agents mod (`agents-common`, `mcagents_agents`); from core 0.10.0 chat names
+core alone, and a development client needs only core's jar for the same loader in its
+`run/mods/`.
 
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
@@ -81,8 +79,8 @@ otherwise runs `./gradlew build`, then `./gradlew publish` — the library modul
 `common` and `shared`, as `io.github.mcagentsmods:chat-{module}`, to this repository's
 GitHub Packages, and no loader jar — and only then pushes the tag. A merge that leaves the
 version alone publishes nothing, and a failed run leaves no tag, so running the workflow again
-retries the release. The build step carries the workflow's token because it reads core and
-agents from GitHub Packages, so the versions `libs.versions.toml` names must be published
+retries the release. The build step carries the workflow's token because it reads core
+from GitHub Packages, so the core version `libs.versions.toml` names must be published
 before a chat release is.
 
 **Releasing the jars.** `.github/workflows/release.yml` runs after each Publish run on
@@ -204,7 +202,7 @@ What matters before changing any of it:
   `McpRoutingEndToEndTest` asserts the offered name is the routable one.
 * **A tool call never fails a question.** An unknown tool, unparseable arguments, or a
   disconnected server all come back as an error result the model reads and can recover
-  from. The agents mod's agent runs the rounds — the player's setting, 1 unless they set
+  from. Core's agent runs the rounds — the player's setting, 1 unless they set
   more — and the stop is an answer, not an error.
 * Tests spawn a **real child process** — `common/src/test/resources/mcp/FakeServer.java.txt`
   run through the JVM's own source launcher, so the suite needs nothing beyond the build's
@@ -238,8 +236,7 @@ names cannot be dereferenced as `project.gitOrg`.
 | ModDevGradle | 2.0.148 |
 | Forge | 26.3-66.0.11 |
 | ForgeGradle | 7.0.40, with Forge's Jar-in-Jar plugin 0.2.3 |
-| MCAgents core | 0.9.0 |
-| MCAgents agents | 0.5.0 |
+| MCAgents core | 0.10.0 |
 | Java | 25 (Minecraft 26.x requires it) |
 | Gradle | 9.7.1, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
@@ -322,10 +319,10 @@ The decompiled jar to inspect is
 
 ## Reaching the mod in game
 
-Chat's five buttons on the agents mod's menu, and nothing else. `G` is the agents mod's key:
+Chat's five buttons on core's agents menu, and nothing else. `G` is core's key:
 it shows that menu, a core hologram, where every MCAgents mod adds buttons instead of taking a
 key of its own. Each loader adds chat's buttons first thing in its client start-up, before
-anything that can fail, and the agents mod guarantees its key the same way chat's own key used
+anything that can fail, and core guarantees its key the same way chat's own key used
 to be guaranteed — a game that reaches the main menu has registered it.
 
 **CHAT opens the chat hologram unconditionally**, in place of the menu. It does not require

@@ -1,15 +1,15 @@
 package io.github.mcagentsmods.chat.common.mcp;
 
-import io.github.mcagentsmods.agents.tool.AsyncTool;
-import io.github.mcagentsmods.agents.tool.ExecutionMode;
-import io.github.mcagentsmods.agents.tool.ToolArguments;
-import io.github.mcagentsmods.agents.tool.ToolResult;
-import io.github.mcagentsmods.agents.tool.ToolSchema;
-import io.github.mcagentsmods.agents.tool.ToolSpec;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
 import io.github.mcagentsmods.chat.api.mcp.McpServerStatus;
 import io.github.mcagentsmods.chat.api.mcp.RepositoryCoordinate;
+import io.github.mcagentsmods.core.tool.AsyncTool;
+import io.github.mcagentsmods.core.tool.ExecutionMode;
+import io.github.mcagentsmods.core.tool.ToolArguments;
+import io.github.mcagentsmods.core.tool.ToolResult;
+import io.github.mcagentsmods.core.tool.ToolSchema;
+import io.github.mcagentsmods.core.tool.ToolSpec;
 
 import java.time.Duration;
 import java.util.Optional;

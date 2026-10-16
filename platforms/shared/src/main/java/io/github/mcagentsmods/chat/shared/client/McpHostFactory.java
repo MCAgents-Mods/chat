@@ -1,6 +1,5 @@
 package io.github.mcagentsmods.chat.shared.client;
 
-import io.github.mcagentsmods.agents.common.Agents;
 import io.github.mcagentsmods.chat.api.MCAgents;
 import io.github.mcagentsmods.chat.api.mcp.McpHost;
 import io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner;
@@ -9,6 +8,7 @@ import io.github.mcagentsmods.chat.common.mcp.GitRepositoryCloner;
 import io.github.mcagentsmods.chat.common.mcp.McpTools;
 import io.github.mcagentsmods.chat.common.mcp.WatchingMcpHost;
 import io.github.mcagentsmods.core.api.http.HttpTransport;
+import io.github.mcagentsmods.core.common.agent.Agents;
 import io.github.mcagentsmods.core.common.http.JdkHttpTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

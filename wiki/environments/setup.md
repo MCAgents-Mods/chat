@@ -29,8 +29,7 @@ Every dependency coordinate lives in the Gradle version catalog at
 | ForgeGradle | 7.0.40 |
 | Forge Jar-in-Jar plugin | 0.2.3 |
 | Java | 25 |
-| MCAgents core | 0.9.0 |
-| MCAgents agents | 0.5.0 |
+| MCAgents core | 0.10.0 |
 
 The entries that move with Minecraft come in one block for the supported version, each
 suffixed with it (`fabric-api-26-3` for 26.3):
@@ -71,17 +70,15 @@ Moving to a new Minecraft release replaces the version: the entry in `settings.g
 catalog block, and each module's version folder. Chat 0.5.0 and 0.6.0 built for 26.2 and 26.3
 side by side; from 0.7.0 chat builds for 26.3 alone.
 
-## MCAgents core and agents
+## MCAgents core
 
-Chat compiles against MCAgents core and MCAgents agents and carries neither. Clone
-`MCAgents-Mods/core` and `MCAgents-Mods/agents` beside this repository — `../core` and
-`../agents` — and `settings.gradle` builds all three together, so chat compiles and tests
-against their source. Pass `-Pcore-build=/path/to/core` or `-Pagents-build=/path/to/agents`
-for another location. Without a checkout, Gradle resolves the published
-`io.github.mcagentsmods:core-{api,common}`, `core-client` and `agents-{tool,api,common}` at
-the versions in `gradle/libs.versions.toml`, from each repository's GitHub Packages registry.
-GitHub Packages asks for a token even though both are public, so export a personal access
-token with the `read:packages` scope first:
+Chat compiles against MCAgents core and carries none of it. Clone `MCAgents-Mods/core` beside
+this repository — `../core` — and `settings.gradle` builds both together, so chat compiles and
+tests against core's source. Pass `-Pcore-build=/path/to/core` for another location. Without a
+checkout, Gradle resolves the published `io.github.mcagentsmods:core-{api,common}`, which bring
+`core-tool`, and `core-client` at the version in `gradle/libs.versions.toml`, from core's
+GitHub Packages registry. GitHub Packages asks for a token even though core is public, so
+export a personal access token with the `read:packages` scope first:
 
 ```bash
 export GITHUB_ACTOR=your-github-login
@@ -89,14 +86,16 @@ export GITHUB_TOKEN=ghp_your_token
 ./gradlew build
 ```
 
-A build with both checkouts beside it needs neither.
+A build with a core checkout beside it needs neither.
 
-`runClient` does not put core or agents in the development game. Copy each one's jar for the
-same loader and Minecraft version (`MCAgentsCoreFabric-{version}+{minecraft}.jar` and
-`MCAgentsAgentsFabric-{version}+{minecraft}.jar`, or the `Neoforge` or `Forge` ones, from each
-checkout's `platforms/{loader}/{minecraft}/build/libs/` or each repository's Releases page)
-into that version subproject's `run/mods/` first, or the loader refuses to start chat for the
-missing `mcagents_core` or `mcagents_agents`.
+Up to chat 0.8.0 chat also compiled against MCAgents agents, from `MCAgents-Mods/agents`. From
+core 0.10.0 its tool registry, agent and menu are part of core, and chat names core alone.
+
+`runClient` does not put core in the development game. Copy core's jar for the same loader and
+Minecraft version (`MCAgentsCoreFabric-{version}+{minecraft}.jar`, or the `Neoforge` or
+`Forge` one, from the checkout's `platforms/{loader}/{minecraft}/build/libs/` or core's
+Releases page) into that version subproject's `run/mods/` first, or the loader refuses to start
+chat for the missing `mcagents_core`.
 
 ## Commands
 

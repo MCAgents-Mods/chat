@@ -72,9 +72,9 @@ Install the jar for your loader on Minecraft 26.3, the only version chat support
 `MCAgentsChatFabric-{version}+{minecraft}.jar` with Fabric API,
 `MCAgentsChatNeoforge-{version}+{minecraft}.jar`, or
 `MCAgentsChatForge-{version}+{minecraft}.jar` — and **MCAgents core** (`mcagents_core`, from
-`MCAgents-Mods/core`) and **MCAgents agents** (`mcagents_agents`, from `MCAgents-Mods/agents`)
-for the same loader beside it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
-either the game refuses to load MCAgentsClient.
+`MCAgents-Mods/core`) for the same loader beside it. Core carries the model client and the tool
+calling every MCAgents mod shares; without it the game refuses to load MCAgentsClient. The
+separate MCAgents agents mod is part of core from core 0.10.0: remove its jar.
 
 Press `G` in game for the MCAgents menu, a hologram in front of you. Chat adds five buttons
 to it. **CHAT** opens the chat hologram: your conversations under **Sessions**, with **NEW**,

@@ -21,9 +21,8 @@ name: Release
 # build job to the release job as a workflow artifact, which is deleted once the
 # release holds them.
 #
-# Chat compiles against MCAgents core and MCAgents agents, which the build reads
-# from each one's GitHub Packages repository with the run's token, as Publish
-# does.
+# Chat compiles against MCAgents core, which the build reads from core's GitHub
+# Packages repository with the run's token, as Publish does.
 #
 # workflow_dispatch runs the same steps by hand. Its tag input releases an
 # earlier tag that has no release.

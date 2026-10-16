@@ -1,12 +1,5 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.agents.common.agent.ToolAgent;
-import io.github.mcagentsmods.agents.tool.ExecutionMode;
-import io.github.mcagentsmods.agents.tool.ToolExecutor;
-import io.github.mcagentsmods.agents.tool.ToolRegistry;
-import io.github.mcagentsmods.agents.tool.ToolResult;
-import io.github.mcagentsmods.agents.tool.ToolSpec;
-import io.github.mcagentsmods.agents.tool.WorkerPool;
 import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
@@ -18,6 +11,13 @@ import io.github.mcagentsmods.core.api.model.PromptMessage;
 import io.github.mcagentsmods.core.api.model.TokenUsage;
 import io.github.mcagentsmods.core.api.model.ToolCall;
 import io.github.mcagentsmods.core.api.model.ToolDefinition;
+import io.github.mcagentsmods.core.common.agent.ToolAgent;
+import io.github.mcagentsmods.core.tool.ExecutionMode;
+import io.github.mcagentsmods.core.tool.ToolExecutor;
+import io.github.mcagentsmods.core.tool.ToolRegistry;
+import io.github.mcagentsmods.core.tool.ToolResult;
+import io.github.mcagentsmods.core.tool.ToolSpec;
+import io.github.mcagentsmods.core.tool.WorkerPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
