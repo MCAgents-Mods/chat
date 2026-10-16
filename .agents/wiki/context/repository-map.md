@@ -27,10 +27,10 @@ gradle/              the wrapper and libs.versions.toml
 api/                 mcagents-chat-api
 common/              mcagents-chat-common
 platforms/minecraft.gradle  applied by each Minecraft version subproject below
-platforms/shared/    shared sources; {minecraft}/ is mcagents-chat-shared-{minecraft}
-platforms/fabric/    shared sources; {minecraft}/ is mcagents-chat-fabric-{minecraft}
-platforms/neoforge/  shared sources; {minecraft}/ is mcagents-chat-neoforge-{minecraft}
-platforms/forge/     shared sources; {minecraft}/ is mcagents-chat-forge-{minecraft}
+platforms/shared/    shared sources; {minecraft}/ is mcagents-chat-shared
+platforms/fabric/    shared sources; {minecraft}/ is mcagents-chat-fabric
+platforms/neoforge/  shared sources; {minecraft}/ is mcagents-chat-neoforge
+platforms/forge/     shared sources; {minecraft}/ is mcagents-chat-forge
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
@@ -45,14 +45,14 @@ three documents for a long time before any code called `ModelClient.embed`.
 |---|---|---|---|
 | `api/` | `mcagents-chat-api` | `MCAgents` (identity, on-disk layout), `api.model` (`ApiKey`, `ChatSession`, `ChatMessage`, `ChatRole`, `ContentCategory`, `KnowledgeContent`, `ContentQuery`, `ContentAvailability`, `ModelPreferences` and `ModelCatalog`), `api.agent` (the prompt contracts: `Agent`, `PersonaStore`, `PlayerEnvironment`, `EnvironmentSource`), `api.wallet` (`ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`), `api.storage` (`LocalDatabase` and the five repository interfaces), and `api.mcp` (the MCP host contracts — `McpHost`, `McpSession`, `McpServerSpec`, `McpContextRegistry`, `RepositoryCoordinate`, `McpRepositoryCloner`). Tool calling is the agents mod's. The model request types, `ModelName`/`ModelPlatform`, `ProviderRoutes` and `ChatRole` are MCAgents core's, under `io.github.mcagentsmods.core.api`. | The retrieval contracts. Every I/O method returns `CompletableFuture<T>`. |
 | `common/` | `mcagents-chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `StoredProviderRoutes`, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, the screen arithmetic and `ChatController`, what the chat hologram shows and does, both tested without Minecraft — and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in the agents mod's registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through the agents mod's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
-| `platforms/shared/` | `mcagents-chat-shared-{minecraft}` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents mod's menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric-{minecraft}` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
-| `platforms/neoforge/` | `mcagents-chat-neoforge-{minecraft}` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
-| `platforms/forge/` | `mcagents-chat-forge-{minecraft}` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml`; each version's `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
+| `platforms/shared/` | `mcagents-chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on the agents mod's menu; the loader adds them), `client.ChatHologram` (the three panels CHAT opens, built on core's holograms from one `ChatController`), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — and `client.gui` — the persona editor, the rename screen, the key screen, the model settings screen, and the wallet screens. | Further context injection. No loader type. |
+| `platforms/fabric/` | `mcagents-chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
+| `platforms/neoforge/` | `mcagents-chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
+| `platforms/forge/` | `mcagents-chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml`; the version folder's `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:mcagents-core-api` and
-`mcagents-core-common` (`compileOnlyApi`), and each version of `platforms/shared/` against
-`mcagents-core-client-{minecraft}` (`compileOnly`) for the holograms. No chat jar carries them: the `mcagents_core` mod provides
+`mcagents-core-common` (`compileOnlyApi`), and `platforms/shared/` against
+`mcagents-core-client` (`compileOnly`) for the holograms. No chat jar carries them: the `mcagents_core` mod provides
 them in game, and `fabric.mod.json` depends on it. `settings.gradle` builds a
 checkout of `MCAgents-Mods/core` at `../core` (or `-Pcore-build=…`) together with chat when
 one is there; without one, the published artifacts are resolved from core's GitHub Packages
@@ -78,8 +78,7 @@ its `run/mods/`.
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
 otherwise runs `./gradlew build`, then `./gradlew publish` — every module, as
-`io.github.mcagentsmods:mcagents-chat-{module}` for `api` and `common` and
-`mcagents-chat-{module}-{minecraft}` for the rest, to this repository's GitHub Packages — and
+`io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's GitHub Packages — and
 only then pushes the tag. A merge that leaves the version alone publishes nothing, and a
 failed run leaves no tag, so running the workflow again retries the release. The build step
 carries the workflow's token because it reads core and agents from GitHub Packages, so the
@@ -238,8 +237,8 @@ names cannot be dereferenced as `project.gitOrg`.
 | ModDevGradle | 2.0.148 |
 | Forge | 26.3-66.0.11 |
 | ForgeGradle | 7.0.40, with Forge's Jar-in-Jar plugin 0.2.3 |
-| MCAgents core | 0.7.0 |
-| MCAgents agents | 0.3.0 |
+| MCAgents core | 0.8.0 |
+| MCAgents agents | 0.4.0 |
 | Java | 25 (Minecraft 26.x requires it) |
 | Gradle | 9.7.1, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
@@ -265,7 +264,7 @@ these.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric-26.3:runClient`, `:mcagents-chat-neoforge-26.3:runClient` or `:mcagents-chat-forge-26.3:runClient` |
+| Run the client | `./gradlew :mcagents-chat-fabric:runClient`, `:mcagents-chat-neoforge:runClient` or `:mcagents-chat-forge:runClient` |
 | Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge,Forge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on

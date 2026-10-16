@@ -71,7 +71,7 @@ def devMod = tasks.register('devModDirectory', Sync) {
 
 minecraft {
     runs {
-        // A development client: ./gradlew :mcagents-chat-forge-{minecraft}:runClient, in run/.
+        // A development client: ./gradlew :mcagents-chat-forge:runClient, in run/.
         // Core's and agents' Forge jars for the same Minecraft version go in run/mods/.
         client {
             workingDir = project.file('run')
