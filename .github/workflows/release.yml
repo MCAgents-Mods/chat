@@ -1,11 +1,13 @@
 name: Release
 
-# Builds chat's mod jars, MCAgentsChatFabric and MCAgentsChatNeoforge, once for
-# every Minecraft version (each loader has a subproject per version,
-# platforms/{loader}/{minecraft}), and attaches them to a GitHub release for the
-# v{version} tag that Publish created: MCAgentsChatFabric-{version}+{minecraft}.jar
-# and so on. Chat has no Forge module, so there is no Forge jar. api, common and
-# shared are bundled inside each jar, so they are not attached on their own.
+# Builds chat's mod jars, MCAgentsChatFabric, MCAgentsChatNeoforge and
+# MCAgentsChatForge, once for every Minecraft version (each loader has a
+# subproject per version, platforms/{loader}/{minecraft}), and attaches them to a
+# GitHub release for the v{version} tag that Publish created:
+# MCAgentsChatFabric-{version}+{minecraft}.jar and so on. The Forge jar is the one
+# with SQLite nested; the build keeps the jar without it in build/slim, out of
+# build/libs. api, common and shared are bundled inside each jar, so they are not
+# attached on their own.
 #
 # A tag pushed with the workflow's own token starts no other workflow, so this
 # one runs when a Publish run on master finishes instead. It releases the
@@ -56,7 +58,7 @@ jobs:
       latest: ${{ steps.release.outputs.latest }}
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
     env:
-      LOADERS: fabric neoforge
+      LOADERS: fabric neoforge forge
     steps:
       - name: Check out
         uses: actions/checkout@v4

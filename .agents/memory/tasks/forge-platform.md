@@ -99,3 +99,16 @@ from chat's jar, and the database opened, on both versions.
 The instruction files that list chat's loaders, `AGENTS.md`'s overview line and
 `.agents/rules/repository.md`'s module table, are left for the owner: they are reported as
 findings, not edited.
+
+### Task 3 — ci/forge-jars
+
+`release.yml`'s `LOADERS` gains `forge`, so a release carries six jars, one per loader and
+Minecraft version, and its header names the Forge jar and why the jar without SQLite is not in
+`build/libs/`. `publish.yml`'s header names the forge module among those it publishes. The
+setup page, the repository map and the state file list the Forge jar among the release's; the
+map's publishing and release paragraphs also give the per-version artifact ids and jar paths
+they had not been updated for in `0.5.0`.
+
+Checked: `actionlint` passes on both workflows, with shellcheck. The release workflow's
+collection step, run over a local `./gradlew build`, picks exactly one jar per loader and
+Minecraft version: six.
