@@ -13,6 +13,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 | Version | File | Purpose |
 |---|---|---|
 | 0.6.0 | [`../../wiki/logs/0/6/0/CHANGELOG.md`](../../wiki/logs/0/6/0/CHANGELOG.md) | A Forge jar for Minecraft 26.2 and 26.3, with SQLite nested as Jar-in-Jar; releases carry six jars. |
+| 0.9.0 | [`../../wiki/logs/0/9/0/CHANGELOG.md`](../../wiki/logs/0/9/0/CHANGELOG.md) | Chat on core alone: tools, the agent and menu buttons from core 0.10.0, which took in the agents mod; `mcagents_agents` no longer required. |
 | 0.8.0 | [`../../wiki/logs/0/8/0/CHANGELOG.md`](../../wiki/logs/0/8/0/CHANGELOG.md) | Artifact ids without the repeated `mcagents-`, as in `chat-common`; only the library modules published; core 0.9.0 and agents 0.5.0. |
 | 0.7.0 | [`../../wiki/logs/0/7/0/CHANGELOG.md`](../../wiki/logs/0/7/0/CHANGELOG.md) | Minecraft 26.3 only; ids without the Minecraft version; core 0.8.0 and agents 0.4.0; releases carry three jars. |
 | 0.5.0 | [`../../wiki/logs/0/5/0/CHANGELOG.md`](../../wiki/logs/0/5/0/CHANGELOG.md) | Minecraft 26.3 beside 26.2: one jar per loader and Minecraft version, artifact ids suffixed with the version; core 0.7.0 and agents 0.3.0 required. |
