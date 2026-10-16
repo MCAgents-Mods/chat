@@ -35,9 +35,10 @@ subprojects {
         }
     }
 
-    // Every module publishes under its project name, which settings.gradle sets to
-    // mcagents-chat-{module}: the group alone cannot tell chat's api from core's. The jar
-    // each module builds is named by its own archivesName, MCAgentsChat{Module}.
+    // Every library module publishes under its project name, which settings.gradle sets to
+    // mcagents-chat-{module}: the group alone cannot tell chat's api from core's. The loader
+    // modules publish nothing; their jars go to the GitHub release instead. The jar each
+    // module builds is named by its own archivesName, MCAgentsChat{Module}.
     apply plugin: 'maven-publish'
 
     publishing {

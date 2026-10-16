@@ -16,7 +16,7 @@ AGENTS.md            entry point for agents
 .claude/CLAUDE.md    one import of AGENTS.md, so Claude Code reads the same file
 README.md            human overview
 LICENSE              MIT license, MCAgents, 2026
-.github/workflows/   publish.yml — publishes every module and tags a release on master
+.github/workflows/   publish.yml — publishes the library modules and tags a release on master
                      release.yml — attaches the Fabric, NeoForge and Forge jars to the tag's GitHub release
 .agents/             this repository's local instruction set, indexes, agent wiki, memory
 wiki/                human documentation and versioned change logs
@@ -77,12 +77,13 @@ its `run/mods/`.
 
 **Publishing.** `.github/workflows/publish.yml` runs on every push to `master` and on demand.
 It reads `project-version`, stops when the `v{version}` tag is already on the remote, and
-otherwise runs `./gradlew build`, then `./gradlew publish` — every module, as
-`io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's GitHub Packages — and
-only then pushes the tag. A merge that leaves the version alone publishes nothing, and a
-failed run leaves no tag, so running the workflow again retries the release. The build step
-carries the workflow's token because it reads core and agents from GitHub Packages, so the
-versions `libs.versions.toml` names must be published before a chat release is.
+otherwise runs `./gradlew build`, then `./gradlew publish` — the library modules, `api`,
+`common` and `shared`, as `io.github.mcagentsmods:mcagents-chat-{module}`, to this repository's
+GitHub Packages, and no loader jar — and only then pushes the tag. A merge that leaves the
+version alone publishes nothing, and a failed run leaves no tag, so running the workflow again
+retries the release. The build step carries the workflow's token because it reads core and
+agents from GitHub Packages, so the versions `libs.versions.toml` names must be published
+before a chat release is.
 
 **Releasing the jars.** `.github/workflows/release.yml` runs after each Publish run on
 `master` and on demand. When `v{version}` exists and has no GitHub release, it builds the

@@ -100,19 +100,5 @@ tasks.named('jar', Jar) {
     }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            // The mod jar alone, with no dependency list: it already carries api, common
-            // and shared, nests SQLite, and the loader, mcagents_core and
-            // mcagents_agents supply the rest.
-            artifact tasks.named('jar')
-
-            pom {
-                name = 'MCAgentsChatFabric'
-                description = "MCAgents chat for Fabric, Minecraft ${minecraftVersion}"
-                url = 'https://github.com/MCAgents-Mods/chat'
-            }
-        }
-    }
-}
+// The mod jar is never published to GitHub Packages: the Release workflow attaches it to the
+// GitHub release of each version, and only the library modules are published.

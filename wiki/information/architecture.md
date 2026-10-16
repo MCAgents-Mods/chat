@@ -42,10 +42,12 @@ folder under `platforms/`.
 `platforms/shared/` is built with Loom for the vanilla game alone. Minecraft 26.x ships
 unobfuscated, so the classes it compiles link against any loader's game.
 
-The Gradle module name is also the Maven artifact id, so every module publishes as
-`io.github.mcagentsmods:mcagents-chat-{module}`, the version subprojects included, and the jar it builds is named `MCAgentsChat{Module}-{version}.jar` by its own
-`archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version subproject. The `mcagents-chat-` prefix
-keeps chat's modules apart from core's, which share the group.
+The Gradle module name is also the Maven artifact id, so every library module publishes as
+`io.github.mcagentsmods:mcagents-chat-{module}`; the loader modules publish nothing, and their
+jars go to the GitHub release. Every module's jar is named `MCAgentsChat{Module}-{version}.jar`
+by its own `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version
+subproject. The `mcagents-chat-` prefix keeps chat's modules apart from core's, which share
+the group.
 
 Before 0.4.0 another module, `website/`, served chat's pages in a browser through core's web
 console. Both are gone: everything the player does with chat happens in the game.
