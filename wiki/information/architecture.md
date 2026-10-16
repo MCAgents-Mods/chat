@@ -26,15 +26,16 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 | `platforms/shared/` | `mcagents-chat-shared-{minecraft}` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric-{minecraft}` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge-{minecraft}` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
-| `platforms/forge/` | `mcagents-chat-forge-{minecraft}` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Each version keeps its own `pack.mcmeta`, which Forge does not make for a mod. |
+| `platforms/forge/` | `mcagents-chat-forge-{minecraft}` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-and `mcagents-chat-{module}-{minecraft}` to `platforms/{module}/{minecraft}/`, one subproject
-per Minecraft version of `shared`, `fabric`, `neoforge` and `forge`. Each of those four is a folder of
-shared sources, `platforms/{module}/src/`, which every version subproject compiles together
-with its own `src/`, holding only what differs for that version; see
-[`../environments/setup.md`](../environments/setup.md#one-build-per-minecraft-version). A
+and `mcagents-chat-{module}-{minecraft}` to `platforms/{module}/{minecraft}/`, the subproject
+of `shared`, `fabric`, `neoforge` and `forge` for the one Minecraft version chat supports, the
+latest release. Each of those four is a folder of shared sources, `platforms/{module}/src/`,
+which the version subproject compiles together with its own `src/`, holding only what is
+particular to that version; see
+[`../environments/setup.md`](../environments/setup.md#the-minecraft-version). A
 loader module is a few lines on top of `platforms/shared/`, so another loader is one more
 folder under `platforms/`.
 

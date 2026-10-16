@@ -5,9 +5,10 @@
 // This is the only module that may reference Forge types. The screens and start-up live in
 // platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-// Built once per Minecraft version: platforms/forge/{version}/build.gradle applies ForgeGradle
-// and Forge's Jar-in-Jar plugin, then this. The version folder holds the pack.mcmeta for that
-// version; Forge, unlike NeoForge and Fabric, does not make one for a mod.
+// Built for the Minecraft version chat supports: platforms/forge/{version}/build.gradle applies
+// ForgeGradle and Forge's Jar-in-Jar plugin, then this. The version folder holds the
+// pack.mcmeta for that version; Forge, unlike NeoForge and Fabric, does not make one for a
+// mod.
 
 apply from: '../../minecraft.gradle'
 
@@ -126,7 +127,7 @@ processResources {
     def agentsVersion = libs.versions.mcagents.agents.get()
     def minecraft = minecraftVersion
     def next = minecraftNext
-    // The loader's major version, which mods.toml ranges are in: 65 from 26.2-65.1.3.
+    // The loader's major version, which mods.toml ranges are in: 66 from 26.3-66.0.11.
     def forgeMajor = versionFor('forge').tokenize('-')[1].tokenize('.')[0]
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion

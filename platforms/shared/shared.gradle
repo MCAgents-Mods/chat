@@ -6,8 +6,9 @@
 // loader's game. platforms/fabric, platforms/neoforge and platforms/forge each bundle this
 // module into their jar and add only their entry point, key registration and events.
 
-// Built once per Minecraft version: platforms/shared/{version}/build.gradle applies Loom,
-// used for the vanilla game alone (no loader, no mod metadata, no run configs), then this.
+// Built for the Minecraft version chat supports: platforms/shared/{version}/build.gradle
+// applies Loom, used for the vanilla game alone (no loader, no mod metadata, no run
+// configs), then this.
 
 apply from: '../../minecraft.gradle'
 

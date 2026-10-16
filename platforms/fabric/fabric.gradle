@@ -5,8 +5,8 @@
 // This is the only module that may reference Fabric types. The screens and start-up live in
 // platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-// Built once per Minecraft version: platforms/fabric/{version}/build.gradle applies
-// Loom, then this.
+// Built for the Minecraft version chat supports: platforms/fabric/{version}/build.gradle
+// applies Loom, then this.
 
 apply from: '../../minecraft.gradle'
 

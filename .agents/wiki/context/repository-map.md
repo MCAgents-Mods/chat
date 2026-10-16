@@ -26,7 +26,7 @@ gradle.properties    project identity only — organization, repository, version
 gradle/              the wrapper and libs.versions.toml
 api/                 mcagents-chat-api
 common/              mcagents-chat-common
-platforms/minecraft.gradle  applied by every Minecraft version subproject below
+platforms/minecraft.gradle  applied by each Minecraft version subproject below
 platforms/shared/    shared sources; {minecraft}/ is mcagents-chat-shared-{minecraft}
 platforms/fabric/    shared sources; {minecraft}/ is mcagents-chat-fabric-{minecraft}
 platforms/neoforge/  shared sources; {minecraft}/ is mcagents-chat-neoforge-{minecraft}
@@ -230,13 +230,13 @@ names cannot be dereferenced as `project.gitOrg`.
 
 | Thing | Value |
 |---|---|
-| Minecraft | 26.2 and 26.3, one subproject per version |
+| Minecraft | 26.3, the latest release and the only one supported |
 | Fabric Loader | 0.19.5 |
-| Fabric API | 0.157.0+26.2 and 0.162.0+26.3 |
+| Fabric API | 0.162.0+26.3 |
 | Fabric Loom | 1.18.4 |
-| NeoForge | 26.2.0.90 and 26.3.0.76 |
+| NeoForge | 26.3.0.76 |
 | ModDevGradle | 2.0.148 |
-| Forge | 26.2-65.1.3 and 26.3-66.0.11 |
+| Forge | 26.3-66.0.11 |
 | ForgeGradle | 7.0.40, with Forge's Jar-in-Jar plugin 0.2.3 |
 | MCAgents core | 0.7.0 |
 | MCAgents agents | 0.3.0 |
@@ -265,7 +265,7 @@ these.
 | Build everything | `./gradlew build` |
 | Run the tests | `./gradlew :mcagents-chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :mcagents-chat-common:build` |
-| Run the client | `./gradlew :mcagents-chat-fabric-26.2:runClient`, `:mcagents-chat-neoforge-26.2:runClient` or `:mcagents-chat-forge-26.2:runClient`, and the same with `-26.3` |
+| Run the client | `./gradlew :mcagents-chat-fabric-26.3:runClient`, `:mcagents-chat-neoforge-26.3:runClient` or `:mcagents-chat-forge-26.3:runClient` |
 | Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge,Forge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
@@ -305,7 +305,7 @@ this repository.**
 Every one of these changed, and each fails as "cannot find symbol" against older knowledge.
 Check the class with `javap` before assuming a signature.
 
-| What you would reach for | What 26.2 has |
+| What you would reach for | What 26.3 has |
 |---|---|
 | `GuiGraphics` | `net.minecraft.client.gui.GuiGraphicsExtractor` |
 | `Screen#render(GuiGraphics, int, int, float)` | `Screen#extractRenderState(GuiGraphicsExtractor, int, int, float)`, which draws **widgets only** — the background is a separate `extractBackground` call made by the caller |
@@ -318,7 +318,7 @@ Check the class with `javap` before assuming a signature.
 | `KeyBindingHelper` | `net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper`, and `KeyMapping.Category` is a registered record, not a string |
 
 The decompiled jar to inspect is
-`~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.2/`.
+`~/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.3/`.
 
 ## Reaching the mod in game
 

@@ -1,29 +1,30 @@
 // Applied first by every Minecraft version subproject, platforms/{module}/{version}.
+// There is one per module: this mod supports only the latest Minecraft release.
 //
 // The subproject's folder is named for the Minecraft version it builds for, and the
 // subproject itself mcagents-chat-{module}-{version}. Its module's shared sources sit one
 // folder up, in platforms/{module}/src, and are compiled together with the subproject's own
-// src/, which holds only what differs for that version: a class of the same name in every
-// version folder, or a resource. Shared code calls those classes and never checks a
-// version.
+// src/, which holds only what is particular to that version: a class whose code changes
+// between Minecraft releases, or a resource such as Forge's pack.mcmeta. Shared code calls
+// those classes and never checks a version.
 
 ext.minecraftVersion = projectDir.name
 
 // The first Minecraft version this one does not cover, for the closed ranges the loader
-// metadata declares: 26.2 -> 26.3.
+// metadata declares: 26.3 -> 26.4.
 ext.minecraftNext = minecraftVersion.tokenize('.').with { parts ->
     "${parts[0]}.${(parts[1] as int) + 1}"
 }
 
-// The catalog's entries for this version carry its number as a suffix, fabric-api-26-2 for
-// 26.2, so the same build file serves every version.
+// The catalog's entries for this version carry its number as a suffix, fabric-api-26-3 for
+// 26.3, so no build file names the version.
 def catalog = extensions.getByType(VersionCatalogsExtension).named('libs')
 def suffix = minecraftVersion.replace('.', '-')
 ext.versionFor = { String name -> catalog.findVersion("${name}-${suffix}").get().requiredVersion }
 ext.libraryFor = { String name -> catalog.findLibrary("${name}-${suffix}").get() }
 
-// This version's subproject of the shared module: sharedModule is :mcagents-chat-shared-26.2
-// in a 26.2 subproject.
+// This version's subproject of the shared module: sharedModule is :mcagents-chat-shared-26.3
+// in a 26.3 subproject.
 ext.sharedModule = ":mcagents-chat-shared-${minecraftVersion}"
 
 // Core's holograms, built for the same Minecraft version.
@@ -37,6 +38,6 @@ sourceSets {
 }
 
 tasks.named('jar', Jar) {
-    // MCAgentsChatFabric-0.5.0+26.2.jar: the mod's version, then the game's.
+    // MCAgentsChatFabric-0.7.0+26.3.jar: the mod's version, then the game's.
     archiveVersion = "${project.version}+${minecraftVersion}"
 }

@@ -28,9 +28,8 @@ published first. The plan is `plans/latest-minecraft-only.md` in the project's s
   loaders `mcagents-chat-{fabric,neoforge,forge}`. Dropping the `mcagents-` prefix is the next
   task chain's (artifact ids), not this one's.
 - **Core 0.8.0 and agents 0.4.0**, whose ids drop the version the same way.
-- **Release 0.7.0**, a minor. 0.6.0 (the Forge jar) is merged but was never published or
-  tagged, because GitHub Packages had lost core 0.7.0; it is skipped, and its Forge jar ships in
-  0.7.0.
+- **Release 0.7.0**, a minor: it drops a supported Minecraft version and renames the version
+  subprojects' artifact ids.
 
 ## Tasks
 
@@ -44,3 +43,14 @@ published first. The plan is `plans/latest-minecraft-only.md` in the project's s
 ### Task 1 — chore/latest-minecraft-plan
 
 This record, the decision record, and their rows in the memory index.
+
+### Task 2 — build/latest-minecraft
+
+Every `platforms/{module}/26.2/` folder is gone (the four `build.gradle` files and Forge's
+`pack.mcmeta`, format 107); `settings.gradle` lists `['26.3']` alone, and the catalog lost its
+`-26-2` block. The comments in `settings.gradle`, the catalog, `platforms/minecraft.gradle`,
+each module's `.gradle` file and both workflows describe one version, the latest release.
+`release.yml` already collects `platforms/{loader}/*/build.gradle`, so it attaches three jars.
+Docs updated: `README.md`, `wiki/environments/setup.md` (its "One build per Minecraft version"
+section is now "The Minecraft version"), `wiki/information/architecture.md`, the repository
+map and the stack line in the repository state.

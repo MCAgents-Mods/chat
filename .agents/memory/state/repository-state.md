@@ -166,9 +166,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 ## Stack
 
-Minecraft 26.2 and 26.3, one Gradle subproject per version · Fabric Loader 0.19.5 · Fabric API
-0.157.0+26.2 and 0.162.0+26.3 · NeoForge 26.2.0.90 and 26.3.0.76 · Forge 26.2-65.1.3 and
-26.3-66.0.11 · Fabric Loom 1.18.4 · ModDevGradle 2.0.148 · ForgeGradle 7.0.40 ·
+Minecraft 26.3 only, the latest release · Fabric Loader 0.19.5 · Fabric API 0.162.0+26.3 ·
+NeoForge 26.3.0.76 · Forge 26.3-66.0.11 · Fabric Loom 1.18.4 · ModDevGradle 2.0.148 · ForgeGradle 7.0.40 ·
 Java 25 · Gradle 9.7.1 via the committed wrapper · group `io.github.mcagentsmods` · base package
 `io.github.mcagentsmods.chat`.
 

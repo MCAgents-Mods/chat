@@ -5,8 +5,8 @@
 // This is the only module that may reference NeoForge types. The screens and start-up live
 // in platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-// Built once per Minecraft version: platforms/neoforge/{version}/build.gradle applies
-// ModDevGradle, then this.
+// Built for the Minecraft version chat supports: platforms/neoforge/{version}/build.gradle
+// applies ModDevGradle, then this.
 
 apply from: '../../minecraft.gradle'
 
