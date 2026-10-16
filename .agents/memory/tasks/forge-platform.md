@@ -121,3 +121,15 @@ page, the rule, the map and the state file say 0.6.0. Merging this branch is the
 Publish finds no `v0.6.0` tag, builds against core 0.7.0 and agents 0.3.0 from GitHub Packages,
 publishes every module, the Forge ones included, and tags the commit, and Release then makes
 the `v0.6.0` release with the six loader jars.
+
+## 2026-10-16 — Released, and the two instruction findings applied
+
+The Forge jar shipped in `v0.6.0` (six jars, Forge for 26.2 and 26.3) and again in `v0.7.0` and
+`v0.8.0` for 26.3. Checked on `MCAgentsChatForge-0.8.0+26.3.jar`: `pack.mcmeta` at format 121,
+`META-INF/jarjar/sqlite-jdbc-3.53.2.1.jar` with its metadata, and mods.toml asking for Forge
+`[66,)`, Minecraft `[26.3,26.4)`, core `[0.9.0,)` and agents `[0.5.0,)`.
+
+The owner's standing rule settled the two findings this task raised, and both were applied on
+`chore/forge-instructions`: `.agents/rules/repository.md` lists the Forge platform module
+(`platforms/forge/`, `chat-forge`) and names it among the loader modules, and `AGENTS.md`
+names the Fabric, NeoForge and Forge loaders.
