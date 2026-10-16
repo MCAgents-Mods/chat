@@ -75,3 +75,17 @@ their jars, which the Release workflow picks up from their `build/libs/` unchang
 comment, the architecture and setup pages, the README and the repository map now say the
 loader jars go to GitHub releases only. Artifact ids are still `mcagents-chat-*` here; task 3
 renames them.
+
+### Task 3 — build/artifact-ids
+
+Every Gradle project is renamed from `mcagents-chat-{module}` to `chat-{module}`, which is also
+the artifact id: `chat-api`, `chat-common` and `chat-shared` are published, and the loader
+subprojects are `chat-fabric`, `chat-neoforge` and `chat-forge`. Core moved to 0.9.0 and agents
+to 0.5.0: the catalog's `core-api`, `core-common` and `agents-common`, `coreClient` in
+`platforms/minecraft.gradle`, the substitutions in `settings.gradle` and the registry filter in
+`build.gradle`, which now matches `core-.*` and `agents-.*`, name the new ids, so each loader
+manifest asks for `mcagents_core` 0.9.0 and `mcagents_agents` 0.5.0 or newer. The repository
+rule, the repository map, the architecture and setup pages, the state file and the README use
+the new names, and the architecture page says what the ids were up to 0.7.0. Released
+changelogs, the logs and memory indexes and earlier task records keep the old names, which were
+true when written.

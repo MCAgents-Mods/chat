@@ -34,8 +34,8 @@ repositories {
 // resources are merged into the mod jar rather than nested. Third-party runtime libraries
 // are nested with jarJar instead.
 def bundledModules = [
-        ':mcagents-chat-api',
-        ':mcagents-chat-common',
+        ':chat-api',
+        ':chat-common',
         sharedModule
 ]
 
@@ -46,7 +46,7 @@ bundledModules.each { path -> evaluationDependsOn(path) }
 neoForge {
     version = versionFor('neoforge')
 
-    // A development client: ./gradlew :mcagents-chat-neoforge:runClient, in run/.
+    // A development client: ./gradlew :chat-neoforge:runClient, in run/.
     runs {
         client {
             client()
@@ -63,8 +63,8 @@ neoForge {
 }
 
 dependencies {
-    implementation project(':mcagents-chat-api')
-    implementation project(':mcagents-chat-common')
+    implementation project(':chat-api')
+    implementation project(':chat-common')
     implementation project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads

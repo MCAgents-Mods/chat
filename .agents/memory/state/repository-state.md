@@ -127,7 +127,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: core's `OpenRouterClient` behind core's `HttpTransport`, built by
   `ChatModelClients` and wrapped by `CachingModelClient` (embeddings cached, completions
-  deliberately not). Chat compiles against MCAgents core `0.8.0` and ships none of it; the
+  deliberately not). Chat compiles against MCAgents core `0.9.0` and ships none of it; the
   mod depends on `mcagents_core`. See [`../tasks/core-adoption.md`](../tasks/core-adoption.md).
 * Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
   using the player's own embedding model, because a vector is only comparable inside the

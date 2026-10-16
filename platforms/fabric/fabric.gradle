@@ -47,8 +47,8 @@ dependencies {
     implementation libs.fabric.loader
     implementation libraryFor('fabric-api')
 
-    implementation project(':mcagents-chat-api')
-    implementation project(':mcagents-chat-common')
+    implementation project(':chat-api')
+    implementation project(':chat-common')
     implementation project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
@@ -60,8 +60,8 @@ dependencies {
 // resources are merged into the mod jar rather than nested as separate Fabric mods.
 // Third-party runtime libraries are bundled with Loom's `include` instead.
 def bundledModules = [
-        ':mcagents-chat-api',
-        ':mcagents-chat-common',
+        ':chat-api',
+        ':chat-common',
         sharedModule
 ]
 

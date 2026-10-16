@@ -1,6 +1,6 @@
 name: Publish
 
-# Publishes chat's library modules, api, common and shared (mcagents-chat-{module}),
+# Publishes chat's library modules, api, common and shared (chat-{module}),
 # to GitHub Packages and tags the commit when a release lands on master. The
 # fabric, neoforge and forge mod jars are not published here; the Release
 # workflow attaches them to the version's GitHub release.

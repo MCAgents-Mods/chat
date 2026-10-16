@@ -21,16 +21,16 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
-| `api/` | `mcagents-chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `mcagents-chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
-| `platforms/shared/` | `mcagents-chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
-| `platforms/fabric/` | `mcagents-chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
-| `platforms/neoforge/` | `mcagents-chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
-| `platforms/forge/` | `mcagents-chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
+| `api/` | `chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
+| `common/` | `chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
+| `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
+| `platforms/fabric/` | `chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
+| `platforms/neoforge/` | `chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
+| `platforms/forge/` | `chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
-`mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
-and `mcagents-chat-{module}` to `platforms/{module}/{minecraft}/`, the subproject
+`chat-api` to `api/`, `chat-common` to `common/`,
+and `chat-{module}` to `platforms/{module}/{minecraft}/`, the subproject
 of `shared`, `fabric`, `neoforge` and `forge` for the one Minecraft version chat supports, the
 latest release. Each of those four is a folder of shared sources, `platforms/{module}/src/`,
 which the version subproject compiles together with its own `src/`, holding only what is
@@ -43,11 +43,12 @@ folder under `platforms/`.
 unobfuscated, so the classes it compiles link against any loader's game.
 
 The Gradle module name is also the Maven artifact id, so every library module publishes as
-`io.github.mcagentsmods:mcagents-chat-{module}`; the loader modules publish nothing, and their
-jars go to the GitHub release. Every module's jar is named `MCAgentsChat{Module}-{version}.jar`
-by its own `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version
-subproject. The `mcagents-chat-` prefix keeps chat's modules apart from core's, which share
-the group.
+`io.github.mcagentsmods:chat-{module}`; the loader modules publish nothing, and their jars go
+to the GitHub release. Every module's jar is named `MCAgentsChat{Module}-{version}.jar` by its
+own `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version
+subproject. The `chat-` prefix keeps chat's modules apart from core's, which share the group.
+Up to 0.7.0 every id started with `mcagents-`, as in `mcagents-chat-common`, and the loader
+modules were published too.
 
 Before 0.4.0 another module, `website/`, served chat's pages in a browser through core's web
 console. Both are gone: everything the player does with chat happens in the game.
