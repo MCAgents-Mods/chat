@@ -26,6 +26,8 @@ Every dependency coordinate lives in the Gradle version catalog at
 | Fabric Loader | 0.19.5 |
 | Fabric Loom | 1.18.4 |
 | ModDevGradle | 2.0.148 |
+| ForgeGradle | 7.0.40 |
+| Forge Jar-in-Jar plugin | 0.2.3 |
 | Java | 25 |
 | MCAgents core | 0.7.0 |
 | MCAgents agents | 0.3.0 |
@@ -38,6 +40,7 @@ with it (`fabric-api-26-2` for 26.2):
 | Minecraft | 26.2 | 26.3 |
 | Fabric API | 0.157.0+26.2 | 0.162.0+26.3 |
 | NeoForge | 26.2.0.90 | 26.3.0.76 |
+| Forge | 26.2-65.1.3 | 26.3-66.0.11 |
 
 Change a platform version there, not in `gradle.properties`. Keep the Minecraft and loader
 versions the same as core's own catalog: a mod built for a different Minecraft than core's
@@ -50,16 +53,18 @@ Minecraft version.
 
 ## One build per Minecraft version
 
-`platforms/shared` and the two loader modules compile against Minecraft, so each is built
-once for every Minecraft version, 26.2 and 26.3, listed once in `settings.gradle`. Each is a folder of shared
-sources with one Gradle subproject per version, `platforms/{module}/{minecraft}`, named
+`platforms/shared` and the three loader modules compile against Minecraft, so each is built
+once for every Minecraft version, 26.2 and 26.3, listed once in `settings.gradle`. Each is a
+folder of shared sources with one Gradle subproject per version, `platforms/{module}/{minecraft}`, named
 `mcagents-chat-{module}-{minecraft}`; that name is also its artifact id. The subproject
 compiles the module's shared `src/` together with its own `src/`, which holds only what
 differs for that version. `platforms/minecraft.gradle`, which every version subproject
 applies, takes the version from the folder's name, finds its coordinates in the catalog, and
 names the jar `MCAgentsChat{Module}-{version}+{minecraft}.jar`. The loader metadata is
-expanded per version, so each jar declares its own Minecraft version and no other. `api` and
-`common` name no Minecraft type and are built once.
+expanded per version, so each jar declares its own Minecraft version and no other. Forge's
+`pack.mcmeta` lives in each Forge version folder, because Forge does not make one for a mod
+and its pack format moves with Minecraft (107 for 26.2, 121 for 26.3). `api` and `common`
+name no Minecraft type and are built once.
 
 ## MCAgents core and agents
 
@@ -83,7 +88,7 @@ A build with both checkouts beside it needs neither.
 
 `runClient` does not put core or agents in the development game. Copy each one's jar for the
 same loader and Minecraft version (`MCAgentsCoreFabric-{version}+{minecraft}.jar` and
-`MCAgentsAgentsFabric-{version}+{minecraft}.jar`, or the `Neoforge` ones, from each
+`MCAgentsAgentsFabric-{version}+{minecraft}.jar`, or the `Neoforge` or `Forge` ones, from each
 checkout's `platforms/{loader}/{minecraft}/build/libs/` or each repository's Releases page)
 into that version subproject's `run/mods/` first, or the loader refuses to start chat for the
 missing `mcagents_core` or `mcagents_agents`.
@@ -97,17 +102,22 @@ missing `mcagents_core` or `mcagents_agents`.
 | Build one module | `./gradlew :mcagents-chat-common:build` |
 | Run the client on Fabric | `./gradlew :mcagents-chat-fabric-26.2:runClient` |
 | Run the client on NeoForge | `./gradlew :mcagents-chat-neoforge-26.2:runClient` |
+| Run the client on Forge | `./gradlew :mcagents-chat-forge-26.2:runClient` |
 | Run a 26.3 client | The same with `-26.3`, such as `./gradlew :mcagents-chat-fabric-26.3:runClient` |
 | Produce the mod jars | `./gradlew assemble` |
 
 Tests live in `common/` and run in seconds without Minecraft — that is the payoff of
 keeping the logic out of the platform module. Run them before you launch the game.
 
-The mod jars land in `platforms/{fabric,neoforge}/{minecraft}/build/libs/`, one per loader and
-Minecraft version, such as `platforms/fabric/26.2/build/libs/MCAgentsChatFabric-{version}+26.2.jar`
-and `MCAgentsChatNeoforge-{version}+26.2.jar` beside it under `neoforge`. Each carries the
-classes of `api/`, `common/` and `platforms/shared/`, merged into it rather than
-nested as separate mods, and nests `sqlite-jdbc` its loader's way.
+The mod jars land in `platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/`, one per
+loader and Minecraft version, such as
+`platforms/fabric/26.2/build/libs/MCAgentsChatFabric-{version}+26.2.jar`, with
+`MCAgentsChatNeoforge-{version}+26.2.jar` and `MCAgentsChatForge-{version}+26.2.jar` beside it
+under `neoforge` and `forge`. Each carries the classes of `api/`, `common/` and
+`platforms/shared/`, merged into it rather than nested as separate mods, and nests
+`sqlite-jdbc` its loader's way: Loom's `include` for Fabric, Jar-in-Jar for NeoForge and
+Forge. Forge's Jar-in-Jar plugin builds the jar a second time with `sqlite-jdbc` nested, so
+the first, which could not open the database, goes to `build/slim/` instead.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection. Minecraft 26.3 draws through Vulkan or OpenGL with an sRGB surface. On a
 virtual display (Xvfb), which offers no sRGB OpenGL surface, a 26.3 client needs a Vulkan
@@ -141,7 +151,7 @@ tag, runs `./gradlew assemble` with the same token, and creates the release with
 attached, one per loader and Minecraft version — `MCAgentsChatFabric-{version}+{minecraft}.jar`
 and `MCAgentsChatNeoforge-{version}+{minecraft}.jar` — and that
 version's `wiki/logs/{Major}/{Minor}/{Patch}/CHANGELOG.md` as its notes. It then deletes the
-copy of the jars the run kept in Actions. Chat has no Forge module, so there is no Forge jar.
+copy of the jars the run kept in Actions.
 A release that failed is made by the next merge to `master`; **Run workflow** on the Release
 workflow's page does the same by hand, and its `tag` input releases an earlier tag.
 

@@ -1,6 +1,6 @@
 # MCAgentsClient
 
-A **client-side-only** Minecraft mod for the Fabric and NeoForge loaders that puts an AI assistant inside
+A **client-side-only** Minecraft mod for the Fabric, NeoForge and Forge loaders that puts an AI assistant inside
 the game. You ask a question on a hologram in front of you; a language model answers using your
 own API key, the conversation so far, and whichever stored knowledge is relevant to what
 you asked.
@@ -69,8 +69,9 @@ do not share your `data.db`.
 ## Quick start
 
 Install the jar for your loader and Minecraft version, 26.2 or 26.3 —
-`MCAgentsChatFabric-{version}+{minecraft}.jar` with Fabric API, or
-`MCAgentsChatNeoforge-{version}+{minecraft}.jar` — and **MCAgents core** (`mcagents_core`, from
+`MCAgentsChatFabric-{version}+{minecraft}.jar` with Fabric API,
+`MCAgentsChatNeoforge-{version}+{minecraft}.jar`, or
+`MCAgentsChatForge-{version}+{minecraft}.jar` — and **MCAgents core** (`mcagents_core`, from
 `MCAgents-Mods/core`) and **MCAgents agents** (`mcagents_agents`, from `MCAgents-Mods/agents`)
 for the same loader and Minecraft version beside it. Core carries the model client every MCAgents mod shares and agents the tool calling; without
 either the game refuses to load MCAgentsClient.

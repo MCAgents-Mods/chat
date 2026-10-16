@@ -1,10 +1,10 @@
-// The client code both loaders share: start-up, the screens, the menu buttons and the
+// The client code every loader shares: start-up, the screens, the menu buttons and the
 // factories that wire common/ together.
 //
-// Compiled against vanilla Minecraft and nothing else — no Fabric, no NeoForge type may
-// appear here. Minecraft 26.x ships unobfuscated, so the same classes link against either
-// loader's game. platforms/fabric and platforms/neoforge each bundle this module into their
-// jar and add only their entry point, key registration and events.
+// Compiled against vanilla Minecraft and nothing else — no Fabric, NeoForge or Forge type may
+// appear here. Minecraft 26.x ships unobfuscated, so the same classes link against any
+// loader's game. platforms/fabric, platforms/neoforge and platforms/forge each bundle this
+// module into their jar and add only their entry point, key registration and events.
 
 // Built once per Minecraft version: platforms/shared/{version}/build.gradle applies Loom,
 // used for the vanilla game alone (no loader, no mod metadata, no run configs), then this.

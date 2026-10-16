@@ -1,6 +1,6 @@
 # Architecture
 
-MCAgentsClient is split into five Gradle modules with a one-way dependency chain. The
+MCAgentsClient is split into six Gradle modules with a one-way dependency chain. The
 split exists so that the logic that matters — storage, retrieval, the model client — can be
 compiled, tested, and reasoned about without Minecraft anywhere near it.
 
@@ -12,10 +12,11 @@ common/  |  |               implementations, no Minecraft
    ^     |  |
    |     |  |
 platforms/shared/           the mod on vanilla Minecraft: start-up, the chat hologram, the menu buttons
-   ^               ^
-   |               |
-platforms/fabric/  platforms/neoforge/    each loader's entry point, the buttons,
-                                          events, paths — one jar per loader
+   ^               ^                    ^
+   |               |                    |
+platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry point, the
+                                                            buttons, events, paths — one
+                                                            jar per loader
 ```
 
 | Directory | Gradle module | Depends on | Contains |
@@ -25,11 +26,12 @@ platforms/fabric/  platforms/neoforge/    each loader's entry point, the buttons
 | `platforms/shared/` | `mcagents-chat-shared-{minecraft}` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `mcagents-chat-fabric-{minecraft}` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `mcagents-chat-neoforge-{minecraft}` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
+| `platforms/forge/` | `mcagents-chat-forge-{minecraft}` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Each version keeps its own `pack.mcmeta`, which Forge does not make for a mod. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `mcagents-chat-api` to `api/`, `mcagents-chat-common` to `common/`,
 and `mcagents-chat-{module}-{minecraft}` to `platforms/{module}/{minecraft}/`, one subproject
-per Minecraft version of `shared`, `fabric` and `neoforge`. Each of those three is a folder of
+per Minecraft version of `shared`, `fabric`, `neoforge` and `forge`. Each of those four is a folder of
 shared sources, `platforms/{module}/src/`, which every version subproject compiles together
 with its own `src/`, holding only what differs for that version; see
 [`../environments/setup.md`](../environments/setup.md#one-build-per-minecraft-version). A
@@ -45,7 +47,7 @@ subprojects), and the jar it builds is named `MCAgentsChat{Module}-{version}.jar
 `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version subproject. The `mcagents-chat-` prefix
 keeps chat's modules apart from core's, which share the group.
 
-Before 0.4.0 a sixth module, `website/`, served chat's pages in a browser through core's web
+Before 0.4.0 another module, `website/`, served chat's pages in a browser through core's web
 console. Both are gone: everything the player does with chat happens in the game.
 
 Each loader module merges `api/`, `common/` and `platforms/shared/` into its mod
