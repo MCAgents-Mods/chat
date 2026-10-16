@@ -136,7 +136,7 @@ Every connected server's tools are merged into one list, each renamed to
 the other. Resources keep their own URIs, which are already unique to the server that
 published them.
 
-The tools are offered through the agents mod, grouped by server: for each question the agent
+The tools are offered through MCAgents core's agent, grouped by server: for each question the agent
 first picks the servers it needs, then their tools, and only then is shown those tools in
 full. A player with many servers pays for the ones a question needs, not for all of them.
 

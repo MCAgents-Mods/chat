@@ -52,7 +52,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
 * **The whole MCP client.** The mod can clone external MCP servers into
   `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`, discover and run them over stdio or
-  HTTP, register their tools with the agents mod, one category per server, and route the
+  HTTP, register their tools in core's tool registry, one category per server, and route the
   model's tool calls back to the server that owns each one. Covered by tests in `common/`, seventeen of which drive a
   **real child process** — but **no game has ever started the host**, **no real
   third-party MCP server has been connected**, and **no real model has been driven through
@@ -105,9 +105,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 
 * `api/` contracts, `common/` implementations, `platforms/shared/` the mod on vanilla Minecraft, `platforms/fabric/`,
   `platforms/neoforge/` and `platforms/forge/` the jars. One-way dependency chain; no Minecraft in `api/` or `common/`.
-* Layers: MCAgents core (0) sends the requests, MCAgents agents (1) owns tool calling and the
-  `G` menu, chat (2) is built on both and bundles neither. See
-  [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md).
+* Built on MCAgents core alone, which sends the requests, owns tool calling and the `G` menu, and
+  is not bundled. Tool calling was the separate agents mod up to chat 0.8.0. See
+  [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md) and
+  [`../tasks/core-agents.md`](../tasks/core-agents.md).
 * Every I/O method returns `CompletableFuture`. 415 tests in `common/`.
 * The chat hologram: `ChatController` in `common.ui` holds the conversations, the chosen one,
   the question waiting and why the last was not answered, and hands results to the client
@@ -127,7 +128,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `DriverManager`. `CachingContentRepository` wraps it.
 * Model access: core's `OpenRouterClient` behind core's `HttpTransport`, built by
   `ChatModelClients` and wrapped by `CachingModelClient` (embeddings cached, completions
-  deliberately not). Chat compiles against MCAgents core `0.9.0` and ships none of it; the
+  deliberately not). Chat compiles against MCAgents core `0.10.0` and ships none of it; the
   mod depends on `mcagents_core`. See [`../tasks/core-adoption.md`](../tasks/core-adoption.md).
 * Knowledge: stored as text with no vector. `EmbeddingBackfill` gives stored packs a vector
   using the player's own embedding model, because a vector is only comparable inside the
@@ -143,8 +144,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`, `HttpMcpSession`,
   `WatchingMcpHost` (connects, watches the directory, reloads as a diff so an unchanged
   server keeps its process), `GitRepositoryCloner`, and `McpTools`, which registers each
-  server's tools in the agents registry under a category named after the server and follows
-  the host. `OpenRouterAgent` answers through the agents mod's agent; rounds of tool calls
+  server's tools in core's tool registry under a category named after the server and follows
+  the host. `OpenRouterAgent` answers through core's agent; rounds of tool calls
   are the player's agents setting, 1 by default.
   `McpHostFactory` owns one host per game session on daemon threads. Tools are exposed as
   `{server}__{tool}` capped at 64 characters, because a provider rejects the whole request
@@ -214,7 +215,7 @@ Two things are outstanding, and the second is the more interesting.
    server and then ask it something that needs one of that server's tools — it is the only
    way to learn what a real model does with these tool descriptions, and what a real
    third-party server does that the fake one does not. Since 0.3.0 it also shows whether a
-   real model picks the right server and tool in the agents mod's first two steps.
+   real model picks the right server and tool in core's agent's first two steps.
 2. **No pack has been embedded against a real provider.** The harness carries fake keys, so
    the failure path is exercised and the success path is not. One press with a real key
    would settle it — and would be the first end-to-end proof that a stored pack can be

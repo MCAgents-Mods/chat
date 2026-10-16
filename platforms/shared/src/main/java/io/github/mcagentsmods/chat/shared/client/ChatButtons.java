@@ -1,7 +1,5 @@
 package io.github.mcagentsmods.chat.shared.client;
 
-import io.github.mcagentsmods.agents.api.button.AgentButton;
-import io.github.mcagentsmods.agents.common.Agents;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.shared.ChatRuntime;
@@ -9,6 +7,8 @@ import io.github.mcagentsmods.chat.shared.client.gui.ApiKeyScreen;
 import io.github.mcagentsmods.chat.shared.client.gui.ModelSettingsScreen;
 import io.github.mcagentsmods.chat.shared.client.gui.PersonaScreen;
 import io.github.mcagentsmods.chat.shared.client.gui.WalletScreen;
+import io.github.mcagentsmods.core.api.button.AgentButton;
+import io.github.mcagentsmods.core.common.agent.Agents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;

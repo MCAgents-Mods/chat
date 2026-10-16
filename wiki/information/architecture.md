@@ -23,7 +23,7 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 |---|---|---|---|
 | `api/` | `chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
-| `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on the agents mod's menu, the factories that wire `common/` together. No loader type. |
+| `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on core's agents menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 | `platforms/forge/` | `chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
@@ -65,7 +65,7 @@ the agent. Player-facing documentation is [`mcp-servers.md`](mcp-servers.md).
 It obeys the same split as everything else. `api/` holds the contracts — `McpHost`,
 `McpSession` and the descriptors. `common/` holds the implementations: discovery, the stdio
 and HTTP transports, the directory watch, the git cloner, and `McpTools`, which registers
-every server's tools with the agents mod and resolves a tool name back to the server that
+every server's tools in core's tool registry and resolves a tool name back to the server that
 owns it. `platforms/shared/` owns the host's lifetime, as it does for storage,
 from the game directory the loader module hands it.
 
@@ -79,18 +79,18 @@ which is how it is tested. Nothing about a server may need a Minecraft type.
 and the rest carry on. This is the offline-first rule of this document applied to an
 optional thing: an MCP server is not allowed onto the path of anything local.
 
-## Where the agents mod sits
+## Where core sits
 
-Chat is the third layer of three. MCAgents core, layer 0, sends the requests; MCAgents
-agents, layer 1, owns tool calling — the registry every mod adds its tools to, the agent that
-picks categories, then tools, then answers, the worker limit, and the menu `G` shows; chat,
-layer 2, is built on both. Neither is bundled: `common/` compiles against them and the
-`mcagents_core` and `mcagents_agents` mods provide them in game. Core also draws the
+Chat is built on MCAgents core, which sends the requests and owns tool calling — the registry
+every mod adds its tools to, the agent that picks categories, then tools, then answers, the
+worker limit, and the menu `G` shows. Up to chat 0.8.0 tool calling was a separate mod,
+MCAgents agents; from core 0.10.0 it is part of core. Core is not bundled: `common/` compiles
+against it and the `mcagents_core` mod provides it in game. Core also draws the
 holograms: chat describes its three panels with core's hologram records, and core places
 them, takes the clicks and the typing, and closes them when the player walks away.
 
 Chat keeps what only it knows. `OpenRouterAgent` assembles the persona, where the player is,
-the earlier turns and the Knowledge Packs, and hands that conversation to the agents mod's
+the earlier turns and the Knowledge Packs, and hands that conversation to core's
 agent with the newest question, which is what the tools are picked by. The MCP servers'
 tools reach that agent the way any mod's do: `McpTools` registers them, one category per
 server.

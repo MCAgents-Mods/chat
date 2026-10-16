@@ -21,8 +21,9 @@ for every branch to be opened and rebase-merged in order. The plan is
 changes: `io.github.mcagentsmods.agents.tool` becomes `…core.tool`, `…agents.api.agent`
 becomes `…core.api.agent`, `…agents.api.button` becomes `…core.api.button`, and
 `…agents.common` and `…agents.common.agent` become `…core.common.agent`. `agents-common` and
-the composite build of a `../agents` checkout leave the build; core's `core-tool` is
-substituted beside its other modules. The Fabric, NeoForge and Forge manifests stop requiring
+the composite build of a `../agents` checkout leave the build. `core-tool` needs no
+substitution of its own: chat names only `core-api`, `core-common` and `core-client`, and they
+bring it. The Fabric, NeoForge and Forge manifests stop requiring
 `mcagents_agents` and require the core release that carries it.
 
 **Decisions.**
@@ -44,3 +45,15 @@ substituted beside its other modules. The Fabric, NeoForge and Forge manifests s
 ### Task 1 — chore/core-agents-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — refactor/core-agents
+
+Nine classes import the tool registry, the agent and `AgentButton` from core's packages;
+nothing else in them changes. `settings.gradle` no longer builds a `../agents` checkout,
+`libs.versions.toml` drops `mcagents-agents` and `agents-common` and names core 0.10.0, the
+first with tool calling, and `common/` compiles and tests against core alone. The root
+`build.gradle` asks only core's GitHub Packages registry, for `core-*`. The three loader
+manifests, and the `processResources` blocks that fill them, no longer name `mcagents_agents`.
+The Publish and Release headers, the README, the setup and architecture pages, the MCP servers
+page, the repository map and the state file say tools come from core, and the setup and
+architecture pages say what changed after 0.8.0.

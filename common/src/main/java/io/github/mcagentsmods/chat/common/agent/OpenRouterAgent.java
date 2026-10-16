@@ -1,20 +1,20 @@
 package io.github.mcagentsmods.chat.common.agent;
 
-import io.github.mcagentsmods.agents.api.agent.AgentAnswer;
-import io.github.mcagentsmods.agents.api.agent.AgentRequest;
-import io.github.mcagentsmods.agents.common.agent.ToolAgent;
-import io.github.mcagentsmods.agents.tool.ToolExecutor;
-import io.github.mcagentsmods.agents.tool.ToolRegistry;
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.agent.AgentAnswer;
+import io.github.mcagentsmods.core.api.agent.AgentRequest;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 import io.github.mcagentsmods.core.api.model.ModelException;
 import io.github.mcagentsmods.core.api.model.PromptMessage;
+import io.github.mcagentsmods.core.common.agent.ToolAgent;
+import io.github.mcagentsmods.core.tool.ToolExecutor;
+import io.github.mcagentsmods.core.tool.ToolRegistry;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
@@ -46,7 +46,7 @@ public final class OpenRouterAgent implements Agent {
     private final KnowledgeRetriever retriever;
     private final PersonaStore persona;
     private final EnvironmentSource environment;
-    private final io.github.mcagentsmods.agents.api.agent.Agent tools;
+    private final io.github.mcagentsmods.core.api.agent.Agent tools;
 
     /**
      * @param database the player's local store
@@ -83,7 +83,7 @@ public final class OpenRouterAgent implements Agent {
      */
     public OpenRouterAgent(LocalDatabase database, ModelClient client, PersonaStore persona,
                            EnvironmentSource environment,
-                           io.github.mcagentsmods.agents.api.agent.Agent tools) {
+                           io.github.mcagentsmods.core.api.agent.Agent tools) {
         this.database = Objects.requireNonNull(database, "database");
         this.client = Objects.requireNonNull(client, "client");
         this.persona = Objects.requireNonNull(persona, "persona");
@@ -103,7 +103,7 @@ public final class OpenRouterAgent implements Agent {
     }
 
     /** An agent with an empty registry of its own, for a chat that offers no tools. */
-    private static io.github.mcagentsmods.agents.api.agent.Agent withoutTools(ModelClient client) {
+    private static io.github.mcagentsmods.core.api.agent.Agent withoutTools(ModelClient client) {
         return new ToolAgent(client, new ToolRegistry(), ToolExecutor.shared(), () -> 1);
     }
 

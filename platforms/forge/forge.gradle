@@ -72,7 +72,7 @@ def devMod = tasks.register('devModDirectory', Sync) {
 minecraft {
     runs {
         // A development client: ./gradlew :chat-forge:runClient, in run/.
-        // Core's and agents' Forge jars for the same Minecraft version go in run/mods/.
+        // Core's Forge jar for the same Minecraft version goes in run/mods/.
         client {
             workingDir = project.file('run')
         }
@@ -122,22 +122,20 @@ tasks.named('jarJar', Jar) {
 
 processResources {
     def modVersion = project.version
-    // The core and agents this build compiled against are the oldest the jar may run with.
+    // The core this build compiled against is the oldest the jar may run with.
     def coreVersion = libs.versions.mcagents.core.get()
-    def agentsVersion = libs.versions.mcagents.agents.get()
     def minecraft = minecraftVersion
     def next = minecraftNext
     // The loader's major version, which mods.toml ranges are in: 66 from 26.3-66.0.11.
     def forgeMajor = versionFor('forge').tokenize('-')[1].tokenize('.')[0]
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
-    inputs.property 'agentsVersion', agentsVersion
     inputs.property 'minecraft', minecraft
     inputs.property 'minecraftNext', next
     inputs.property 'forgeMajor', forgeMajor
 
     filesMatching('META-INF/mods.toml') {
-        expand version: modVersion, coreVersion: coreVersion, agentsVersion: agentsVersion,
+        expand version: modVersion, coreVersion: coreVersion,
                 minecraft: minecraft, minecraftNext: next, forgeMajor: forgeMajor
     }
 }

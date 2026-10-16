@@ -24,7 +24,6 @@
     "minecraft": "~${minecraft}",
     "java": ">=25",
     "fabric-api": "*",
-    "mcagents_core": ">=${coreVersion}",
-    "mcagents_agents": ">=${agentsVersion}"
+    "mcagents_core": ">=${coreVersion}"
   }
 }
