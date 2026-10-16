@@ -19,6 +19,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | File | Purpose |
 |---|---|
 | [`../memory/decisions/token-encryption-at-rest.md`](../memory/decisions/token-encryption-at-rest.md) | Why stored tokens are encrypted, which local rule that set aside, and on whose instruction. |
+| [`../memory/decisions/minecraft-latest-only.md`](../memory/decisions/minecraft-latest-only.md) | The owner's permanent decision: only the latest Minecraft release, the version kept in jar names but not in artifact ids. |
 
 ## tasks
 
@@ -58,6 +59,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/release-workflow.md`](../memory/tasks/release-workflow.md) | The Release workflow that attaches the Fabric and NeoForge jars to each tag's GitHub release, and the `0.4.1` release. |
 | [`../memory/tasks/minecraft-26-3.md`](../memory/tasks/minecraft-26-3.md) | Building the Fabric and NeoForge jars for Minecraft 26.2 and 26.3, one Gradle subproject per version, on core 0.7.0 and agents 0.3.0, and the `0.5.0` release. |
 | [`../memory/tasks/forge-platform.md`](../memory/tasks/forge-platform.md) | Adding the Forge platform: a Forge jar for Minecraft 26.2 and 26.3 that nests SQLite as Jar-in-Jar, and the `0.6.0` release. |
+| [`../memory/tasks/latest-minecraft.md`](../memory/tasks/latest-minecraft.md) | Only the latest Minecraft release (26.3): 26.2 dropped, no Minecraft version in project or artifact ids, core 0.8.0 and agents 0.4.0, and the `0.7.0` release. |
 
 ## Maintenance
 
