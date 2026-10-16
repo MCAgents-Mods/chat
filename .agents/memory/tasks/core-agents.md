@@ -1,6 +1,6 @@
 ---
 name: memory-task-core-agents
-status: in-progress
+status: done
 description: Moving chat onto core alone once the agents mod became part of MCAgents core — tools, the agent and the menu buttons from core's packages, the agents dependency and manifest entries dropped — and releasing it as a minor.
 ---
 
@@ -38,9 +38,9 @@ bring it. The Fabric, NeoForge and Forge manifests stop requiring
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/core-agents-plan` | |
-| 2 | Tools, agent and buttons from core | `refactor/core-agents` | |
-| 3 | Release | `release/{version}` | |
+| 1 | Task record | `chore/core-agents-plan` | #55 |
+| 2 | Tools, agent and buttons from core | `refactor/core-agents` | #56 |
+| 3 | Release 0.9.0 | `release/0.9.0` | #57 |
 
 ### Task 1 — chore/core-agents-plan
 
@@ -57,3 +57,11 @@ manifests, and the `processResources` blocks that fill them, no longer name `mca
 The Publish and Release headers, the README, the setup and architecture pages, the MCP servers
 page, the repository map and the state file say tools come from core, and the setup and
 architecture pages say what changed after 0.8.0.
+
+### Task 3 — release/0.9.0
+
+`project-version` is `0.9.0`, a minor: the mods a player installs change, and core 0.10.0 is
+the oldest the jars load with. The 0.9.0 changelog and its logs-index row are new, and the
+rule, the repository map, the setup page and the state file say 0.9.0. Merging this branch is
+the release: Publish builds against core 0.10.0 from GitHub Packages, publishes the library
+modules and tags `v0.9.0`, and Release attaches the three loader jars.
