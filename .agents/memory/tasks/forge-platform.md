@@ -1,6 +1,6 @@
 ---
 name: memory-task-forge-platform
-status: in-progress
+status: done
 description: Adding a Forge platform to chat — a Forge jar for Minecraft 26.2 and 26.3 that nests SQLite as Jar-in-Jar — and the release that ships it.
 ---
 
@@ -55,10 +55,10 @@ option.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/forge-platform-plan` | |
-| 2 | Forge platform | `feat/forge-platform` | |
-| 3 | Forge jars on the release | `ci/forge-jars` | |
-| 4 | Release 0.6.0 | `release/0.6.0` | |
+| 1 | Task record | `chore/forge-platform-plan` | #42 |
+| 2 | Forge platform | `feat/forge-platform` | #43 |
+| 3 | Forge jars on the release | `ci/forge-jars` | #44 |
+| 4 | Release 0.6.0 | `release/0.6.0` | #45 |
 
 Merge order: 1 to 4, stacked, rebase-merged.
 
@@ -112,3 +112,12 @@ they had not been updated for in `0.5.0`.
 Checked: `actionlint` passes on both workflows, with shellcheck. The release workflow's
 collection step, run over a local `./gradlew build`, picks exactly one jar per loader and
 Minecraft version: six.
+
+### Task 4 — release/0.6.0
+
+`project-version` is `0.6.0`, a minor: a new loader is a feature, and nothing changes for
+Fabric and NeoForge players. The 0.6.0 changelog and its logs-index row are new, and the setup
+page, the rule, the map and the state file say 0.6.0. Merging this branch is the release:
+Publish finds no `v0.6.0` tag, builds against core 0.7.0 and agents 0.3.0 from GitHub Packages,
+publishes every module, the Forge ones included, and tags the commit, and Release then makes
+the `v0.6.0` release with the six loader jars.
