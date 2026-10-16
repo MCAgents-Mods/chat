@@ -117,7 +117,7 @@ in this repository are written in **English**.
 
 ## Version carrier
 
-`project-version` in `gradle.properties` is this repository's version. It is `0.6.0` and
+`project-version` in `gradle.properties` is this repository's version. It is `0.7.0` and
 is never changed without explicit user approval — `{shared}/rules/versioning.md`.
 
 ## Build and run
