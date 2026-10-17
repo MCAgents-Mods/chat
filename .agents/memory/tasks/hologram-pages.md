@@ -51,3 +51,13 @@ released as core 0.12.0.
 ### Task 1 — chore/hologram-pages-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — feat/hologram-dialogs
+
+Chat compiles against core 0.12.0. `HologramDialogs` builds the two questions every page asks,
+as normal-width form holograms with id `mcagents.dialog`, so one stands at a time: `name`
+(the subject, a Name field, the answer button and CANCEL) and `confirm` (the message, the
+answer button and CANCEL). Both close before running the answer, and X answers no. The chat
+hologram's RENAME and DELETE use them instead of `RenameScreen` and vanilla's `ConfirmScreen`.
+`RenameScreen` stays until task 4, because the wallet screen still opens it. New text: the
+Name label. `wiki/information/overview.md` says where the two questions open.
