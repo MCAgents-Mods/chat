@@ -193,6 +193,52 @@ class KnowledgeRetrieverTest {
                         + "one at all");
     }
 
+    @Test
+    void reEmbedsThePacksWhenTheQuestionsModelIsNotTheLibrarys() {
+        // Stored in the library's model: by those vectors, "nether" is the closer pack.
+        store("redstone", "Repeaters delay a signal.", "[0, 1, 0]");
+        store("nether", "Portals need obsidian.", "[1, 0, 0]");
+        // In the conversation's own model, the question and the redstone pack agree.
+        client.vector = new float[] {1, 0, 0};
+        client.byText.put("Repeaters delay a signal.", new float[] {1, 0, 0});
+        client.byText.put("Portals need obsidian.", new float[] {0, 1, 0});
+
+        List<String> chosen = await(retriever.retrieve(
+                on().withEmbeddingModel("qwen/qwen3-embedding-8b"), "repeaters?",
+                "openai/text-embedding-3-small")).stream().map(KnowledgeContent::id).toList();
+
+        assertEquals(List.of("redstone"), chosen,
+                "vectors from two models must never be compared with each other");
+        assertEquals(3, client.embedCalls.get(), "the question and each pack, in the question's model");
+        assertEquals("qwen/qwen3-embedding-8b", client.lastModel);
+    }
+
+    @Test
+    void usesTheStoredVectorsWhenTheQuestionIsInTheLibrarysModel() {
+        store("redstone", "Repeaters delay a signal.", "[1, 0, 0]");
+        client.vector = new float[] {1, 0, 0};
+
+        List<KnowledgeContent> chosen = await(retriever.retrieve(on(), "repeaters?",
+                on().embeddingModel()));
+
+        assertEquals(1, chosen.size());
+        assertEquals(1, client.embedCalls.get(), "only the question is embedded");
+    }
+
+    @Test
+    void aPackThatCannotBeReEmbeddedIsLeftOutNotTheQuestion() {
+        store("redstone", "Repeaters delay a signal.", "[1, 0, 0]");
+        store("nether", "Portals need obsidian.", "[1, 0, 0]");
+        client.vector = new float[] {1, 0, 0};
+        client.failingText = "Portals need obsidian.";
+
+        List<String> chosen = await(retriever.retrieve(
+                on().withEmbeddingModel("qwen/qwen3-embedding-8b"), "anything",
+                "openai/text-embedding-3-small")).stream().map(KnowledgeContent::id).toList();
+
+        assertEquals(List.of("redstone"), chosen);
+    }
+
     private static <T> T await(CompletableFuture<T> future) {
         return assertDoesNotThrow(() -> future.get(10, TimeUnit.SECONDS));
     }
@@ -204,6 +250,8 @@ class KnowledgeRetrieverTest {
         private float[] vector = new float[] {1, 0, 0};
         private String lastModel;
         private RuntimeException failure;
+        private final java.util.Map<String, float[]> byText = new java.util.HashMap<>();
+        private String failingText;
 
         @Override
         public CompletableFuture<ChatCompletion> complete(ChatRequest request) {
@@ -217,7 +265,11 @@ class KnowledgeRetrieverTest {
             if (failure != null) {
                 return CompletableFuture.failedFuture(failure);
             }
-            return CompletableFuture.completedFuture(vector.clone());
+            if (text.equals(failingText)) {
+                return CompletableFuture.failedFuture(
+                        new ModelException(ModelException.Kind.REQUEST, "no"));
+            }
+            return CompletableFuture.completedFuture(byText.getOrDefault(text, vector).clone());
         }
 
         @Override

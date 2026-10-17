@@ -4,6 +4,7 @@ import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 
@@ -68,6 +69,11 @@ public final class RevisionedChatRepository implements ChatRepository {
         return delegate.findMessages(sessionId);
     }
 
+    @Override
+    public CompletableFuture<SessionModels> findSessionModels(String sessionId) {
+        return delegate.findSessionModels(sessionId);
+    }
+
     // ------------------------------------------------------------ writes
 
     @Override
@@ -83,6 +89,11 @@ public final class RevisionedChatRepository implements ChatRepository {
     @Override
     public CompletableFuture<Boolean> deleteSession(String id) {
         return bumpIfChanged(delegate.deleteSession(id));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> saveSessionModels(String sessionId, SessionModels models) {
+        return bumpIfChanged(delegate.saveSessionModels(sessionId, models));
     }
 
     @Override

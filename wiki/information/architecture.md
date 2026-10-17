@@ -168,6 +168,12 @@ no key stored fails asking for one; it is never quietly sent through OpenRouter.
 configures nothing gets OpenRouter, as before. Chat's own older settings move into the global
 model once, on the first start of 0.12.0.
 
+A conversation may choose its own chat model and embedding model, each with its provider,
+with MODEL on its chat hologram. They are stored on the conversation's row; one it did not
+choose is the global model, read again for every question, so a conversation left on the
+global model follows the Models page at once and one with its own keeps it. This is core's one
+fallback rule, `ModelChoice.orElse(own, global)`.
+
 The difference on the wire is small and total: the gateway is sent the whole
 `openai/gpt-4o-mini`, a platform is sent `gpt-4o-mini` (or the whole name, when the model is
 another platform's, as on a host like Together), and the gateway's own extensions —

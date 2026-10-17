@@ -4,6 +4,7 @@ import io.github.mcagentsmods.chat.api.model.ContentQuery;
 import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 
 import java.lang.System.Logger;
@@ -11,7 +12,9 @@ import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,6 +30,15 @@ import java.util.concurrent.CompletableFuture;
  * no embedding call, no read of the pack table, no provider request. That is the point of
  * the switch: retrieval costs an extra provider call per question, and a player who does
  * not want to pay for it should not be charged for it silently.
+ *
+ * <h2>A conversation with its own embedding model</h2>
+ *
+ * <p>The library's vectors are all in one model's space, the one that embedded it. A question
+ * embedded with another model cannot be compared with them: the widths may differ, and when they
+ * do not the scores mean nothing. So when the question's model is not the library's, the packs
+ * are embedded with the question's model as well, through the client's embedding cache, and
+ * compared in that space. The first question costs one embedding call per pack; the next ones
+ * are answered from the cache.
  *
  * <h2>Failing quietly is the correct behaviour here</h2>
  *
@@ -85,13 +97,32 @@ public final class KnowledgeRetriever {
      */
     public CompletableFuture<List<KnowledgeContent>> retrieve(ModelPreferences preferences,
                                                               String question) {
+        return retrieve(preferences, question, null);
+    }
+
+    /**
+     * The packs to put in front of {@code question}, best first, knowing which model the
+     * library's vectors are in.
+     *
+     * @param preferences  the models for this question and the retrieval switch
+     * @param question     what the player just asked
+     * @param libraryModel the model the stored vectors were made with, or {@code null} when it
+     *                     is not known, in which case they are taken to be in the question's
+     * @return the chosen packs, or an empty list — never a failed future
+     */
+    public CompletableFuture<List<KnowledgeContent>> retrieve(ModelPreferences preferences,
+                                                              String question, String libraryModel) {
         Objects.requireNonNull(preferences, "preferences");
         if (!preferences.embeddingEnabled() || question == null || question.isBlank()) {
             return CompletableFuture.completedFuture(List.of());
         }
+        ModelChoice model = preferences.embedding();
+        boolean sameSpace = libraryModel == null || libraryModel.equals(model.model());
 
-        return client.embed(preferences.embedding(), question)
-                .thenCompose(this::scoreAgainstStoredPacks)
+        return client.embed(model, question)
+                .thenCompose(vector -> sameSpace
+                        ? scoreAgainstStoredPacks(vector)
+                        : scoreReembedded(model, vector))
                 .exceptionally(failure -> {
                     // Deliberately swallowed. The player asked a question; they get an
                     // answer without the extra context rather than an error about it.
@@ -105,18 +136,62 @@ public final class KnowledgeRetriever {
         // is the one read in the mod that deliberately pulls bodies for every row; the
         // browser list uses summaries for exactly the reason this cannot.
         return database.contents().find(ContentQuery.all())
-                .thenApply(packs -> choose(question, packs));
+                .thenApply(packs -> choose(question, packs, KnowledgeRetriever::storedVector));
     }
 
-    private static List<KnowledgeContent> choose(float[] question, List<KnowledgeContent> packs) {
+    /**
+     * Scores every pack with text after embedding it with {@code model}, the question's, one at
+     * a time: the library was embedded with another model, so its stored vectors are in a space
+     * the question is not.
+     */
+    private CompletableFuture<List<KnowledgeContent>> scoreReembedded(ModelChoice model, float[] question) {
+        return database.contents().find(ContentQuery.all())
+                .thenCompose(packs -> embedEach(model, packs, 0, new java.util.IdentityHashMap<>()))
+                .thenApply(vectors -> choose(question, List.copyOf(vectors.keySet()),
+                        pack -> Optional.ofNullable(vectors.get(pack))));
+    }
+
+    /**
+     * Embeds the packs from {@code index} on, in order, into {@code vectors}. A pack that fails
+     * is left out of the ranking rather than failing it: the next question tries it again.
+     */
+    private CompletableFuture<java.util.Map<KnowledgeContent, float[]>> embedEach(
+            ModelChoice model, List<KnowledgeContent> packs, int index,
+            java.util.Map<KnowledgeContent, float[]> vectors) {
+        if (index == packs.size()) {
+            return CompletableFuture.completedFuture(vectors);
+        }
+        KnowledgeContent pack = packs.get(index);
+        if (pack.rawContent() == null || pack.rawContent().isBlank()) {
+            return embedEach(model, packs, index + 1, vectors);
+        }
+        return client.embed(model, pack.rawContent())
+                .handle((vector, failure) -> {
+                    if (failure != null) {
+                        LOGGER.log(Level.DEBUG, "Could not embed " + pack.id() + " for retrieval", failure);
+                    } else {
+                        vectors.put(pack, vector);
+                    }
+                    return vectors;
+                })
+                .thenCompose(next -> embedEach(model, packs, index + 1, next));
+    }
+
+    private static Optional<float[]> storedVector(KnowledgeContent pack) {
+        return pack.hasEmbedding() ? Vectors.parse(pack.embeddedData()) : Optional.empty();
+    }
+
+    private static List<KnowledgeContent> choose(float[] question, List<KnowledgeContent> packs,
+                                                 Function<KnowledgeContent, Optional<float[]>> vectorOf) {
         List<Scored> ranked = new ArrayList<>();
         int incomparable = 0;
 
         for (KnowledgeContent pack : packs) {
-            if (!pack.hasEmbedding()) {
+            Optional<float[]> packVector = vectorOf.apply(pack);
+            if (packVector.isEmpty() && !pack.hasEmbedding()) {
                 continue;
             }
-            double score = Vectors.parse(pack.embeddedData())
+            double score = packVector
                     .map(vector -> Vectors.cosine(question, vector))
                     .orElse(Double.NaN);
             if (Double.isNaN(score)) {
