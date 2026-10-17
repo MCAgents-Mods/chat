@@ -78,3 +78,18 @@ screens still use them. Text added for the new labels and notes; the Embedding o
 became one switch label. README, overview, knowledge retrieval, setup and the repository map
 name the pages. `.agents/security/api-keys.md` still says "key screen"; that is an instruction
 file, so the wording is left to owen as a finding.
+
+### Task 4 — feat/wallet-holograms
+
+WALLETS opens `WalletsHologram` in the menu's place: three `SelectList`s, Accounts (ADD,
+CONNECT, NEW WALLET; the player's own account always first and chosen on open), the chosen
+account's Wallets (RENAME, DELETE) and the chosen wallet's Addresses (ADD, COPY, REMOVE).
+Writes still go through `AccountWallets`. A button that needs a choice made says so on the
+action bar, and so do copied and recorded notices. `WalletDialogs` holds the two larger
+questions as form holograms in the dialog place: add an address (chain with suggestions, the
+address, the format notice as it is typed, ADD enabled only when the address passes) and
+connect MetaMask (the warnings, the state line, the link, OPEN / COPY LINK / CANCEL); the
+bridge stops in the hologram's `onClose`, so every way of closing it stops the listener. The
+whole `client.gui` package is deleted, with `StackedRows`, `AccountColumns` and their tests.
+Text for the list titles, short buttons and notices added; the screen-only text removed.
+`wallet-binding.md`, overview, architecture and the repository map describe the hologram.

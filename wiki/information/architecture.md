@@ -23,7 +23,7 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 |---|---|---|---|
 | `api/` | `chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
 | `common/` | `chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatSessions` and `ChatConversation`, what the chat holograms show and do. Plain Java. |
-| `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on core's agents menu, the factories that wire `common/` together. No loader type. |
+| `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the page holograms (keys, models, persona, wallets) and their dialogs, chat's buttons on core's agents menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
 | `platforms/forge/` | `chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
@@ -179,8 +179,8 @@ implements or supplies.
 **The persona.** `PersonaStore` is `AGENTS.md`, and `FilePersonaStore` in `common/` is the
 only thing that reads or writes it. The mod writes a starting file the first time it runs,
 so a player who has never heard of the file still has one to edit; after that it is theirs,
-and nothing in the mod rewrites it. It can be edited from the in-game screen or in a text
-editor, and both agree because **there is one store per game session** and every screen is
+and nothing in the mod rewrites it. It can be edited from the in-game PERSONA hologram or in a
+text editor, and both agree because **there is one store per game session** and every page is
 handed the same instance. It caches the text and
 re-reads whenever the file's timestamp or size has moved, which is what keeps the text
 editor working without a disk read per question.
@@ -223,7 +223,7 @@ page has MetaMask sign a one-off message, and the mod recovers the signing addre
 signature rather than trusting the address the page claims.
 
 **The listener stops the moment the signature verifies**, and on cancel, on timeout, and
-whenever the screen closes. It binds to loopback on an operating-system-assigned port and
+whenever the Connect MetaMask hologram closes. It binds to loopback on an operating-system-assigned port and
 answers only requests carrying a one-time token, so nothing off the machine can reach it and
 nothing on it can guess its way in. It never touches the network, so offline-first is
 untouched: wallets already bound stay readable with no internet at all.

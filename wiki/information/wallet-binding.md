@@ -60,9 +60,9 @@ MetaMask is a browser extension: `window.ethereum` exists on a web page and nowh
 There is no Java API, no local socket, nothing a desktop program can talk to. So proving an
 address means a web page, and for the length of one handshake the mod becomes a web server.
 
-1. The player clicks **Connect MetaMask**.
+1. The player presses **CONNECT** under the Accounts list.
 2. The mod opens a listener on `127.0.0.1`, on a port the operating system
-   picks, and opens the player's browser at it. The address is shown on screen too, because
+   picks, and opens the player's browser at it. The address is shown on the hologram too, because
    the default browser is often not the one MetaMask is installed in.
 3. The page asks MetaMask which accounts it may see, and then asks the mod for **one message
    per address** — each naming the account, naming the address it proves, carrying a nonce
@@ -73,7 +73,7 @@ address means a web page, and for the length of one handshake the mod becomes a 
    and derives the signer from the signature itself. If the two do not match, that one is
    refused; the others are unaffected.
 6. **The listener stops when the page says it has run through the list** — and on cancel, on
-   timeout after five minutes, and whenever the screen closes.
+   timeout after five minutes, and whenever the Connect MetaMask hologram closes.
 
 ### Every address in one trip
 
@@ -118,7 +118,7 @@ two separate records.
 | A 256-bit one-time token, required on every request, only ever in the URL | Another program on the machine driving the handshake; another web page cannot read it |
 | `Host` header must be a loopback name | DNS rebinding — a hostile site pointing a domain of its own at `127.0.0.1` |
 | No CORS headers, and a JSON content type on the callback | A hostile page reading the mod's replies, or posting to it without a preflight it will not get |
-| Stops when the page is finished, and on cancel, timeout, and screen close | The listener outliving the screen that opened it |
+| Stops when the page is finished, and on cancel, timeout, and the hologram closing | The listener outliving the hologram that opened it |
 | One challenge per address, its nonce spent on redemption | A signature standing for an address it was not issued for, or counting twice |
 
 The handshake is a loopback conversation. It never touches the network, and the mod's
@@ -129,25 +129,26 @@ copyable with no internet at all.
 
 In the game, press `G` and choose **WALLETS** on the MCAgents menu.
 
-**Every account is a column.** Each shows five wallets and scrolls past that, so an account
-with forty wallets cannot push the others off the screen. The screen pages between
-columns with `◀ ▶` when there are more accounts than fit. It used to be one account at a time behind a dropdown, which meant a player with
-two identities could never see both.
+The Wallets hologram opens in the menu's place, with three lists side by side, one for each
+level a player has: **Accounts**, the chosen account's **Wallets**, and the chosen wallet's
+**Addresses**. Your own account is always first, even before it holds a wallet.
 
-* **Add account** asks for a name. There is nothing else to create — an account exists as
-  soon as a wallet names it — so this makes its first wallet, and the account arrives with
+* **ADD** under Accounts asks for a name. There is nothing else to create — an account exists
+  as soon as a wallet names it — so this makes its first wallet, and the account arrives with
   it.
-* **Add wallet** makes an empty wallet in that column's account. Rename and delete are on
-  each row; deleting asks first, because it takes every address in it.
-* **Copy** puts the whole address on the clipboard. The list shows the shortened form —
-  `0x4b470…6BB75` — only because forty characters do not fit beside a chain name.
-* **Add address** records one by hand, with the shape checked against the chain as it is
-  typed. Pick **Other** for a chain this release has never heard of; nothing is checked
-  there.
-* **Connect MetaMask** proves every EVM address the browser shares, into that column's
-  account. No wallet has to exist first: what comes back decides how many there are.
+* **CONNECT** proves every EVM address the browser shares, into the chosen account. No wallet
+  has to exist first: what comes back decides how many there are.
+* **NEW WALLET** makes an empty wallet in the chosen account. **RENAME** and **DELETE** under
+  Wallets act on the chosen wallet; deleting asks first, because it takes every address in it.
+* **COPY** puts the whole of the chosen address on the clipboard. The list shows the shortened
+  form — `0x4b470…6BB75` — only because forty characters do not fit beside a chain name.
+* **ADD** under Addresses records one by hand, with the shape checked against the chain as it
+  is typed. Pick **Other** for a chain this release has never heard of; nothing is checked
+  there. **REMOVE** takes the chosen address out of the wallet.
 
-Every question the screen asks — rename, delete, remove an address — is drawn by the mod.
+Every question the page asks — a name, a rename, a delete, an address, the MetaMask
+connection — opens as a small hologram beside it, and short notices such as "copied" show on
+the action bar.
 
 Deleting a wallet from the mod removes the mod's record of it. It does nothing to the wallet
 itself, which lives in MetaMask and knows nothing about any of this.
@@ -157,15 +158,11 @@ itself, which lives in MetaMask and knows nothing about any of this.
 | Layer | What it holds |
 |---|---|
 | `api/` | `ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`, `WalletRepository` |
-| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser`; `AccountColumns` for the screen's layout |
-| `platforms/shared/` | `WalletScreen`, `WalletListPanel`, `ChainAddressPanel`, `AddAddressScreen`, `WalletConnectScreen`, `PlayerAccounts` |
+| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser` |
+| `platforms/shared/` | `WalletsHologram` (the three lists), `WalletDialogs` (add an address, connect MetaMask), `HologramDialogs` (names and confirmations), `PlayerAccounts` |
 
-`WalletChallenges` and `AccountWallets` sit in `common/`, apart from the screens, so the
+`WalletChallenges` and `AccountWallets` sit in `common/`, apart from the holograms, so the
 handshake and the rule about which account a wallet may go in are tested without a game.
-
-`AccountColumns` holds the screen's arithmetic — how many columns fit, how the width divides,
-which accounts are on screen — because `platforms/shared/` has no test source set. A sum can
-be wrong without Minecraft being involved, and there it can be tested.
 
 Keccak-256 and secp256k1 recovery are written out rather than taken from a library. The JDK
 ships SHA3-256, which is **a different function** — Ethereum standardised on Keccak before

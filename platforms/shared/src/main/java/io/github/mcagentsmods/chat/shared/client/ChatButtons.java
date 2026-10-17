@@ -3,7 +3,6 @@ package io.github.mcagentsmods.chat.shared.client;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.chat.shared.ChatRuntime;
-import io.github.mcagentsmods.chat.shared.client.gui.WalletScreen;
 import io.github.mcagentsmods.core.api.button.AgentButton;
 import io.github.mcagentsmods.core.common.agent.Agents;
 import net.minecraft.client.Minecraft;
@@ -18,9 +17,9 @@ import java.util.function.Consumer;
  *
  * <p>The agents mod owns the key: G shows its menu, a hologram, and every MCAgents mod adds
  * buttons there rather than taking a key of its own. Chat adds five: CHAT opens the Chat
- * Sessions hologram, and KEYS, MODEL and PERSONA open their page holograms, each in the menu's
- * place. WALLETS still opens its screen over the menu. Each loader adds them first thing in its
- * client start-up, before anything that can fail, so chat can always be reached.
+ * Sessions hologram, and KEYS, MODEL, PERSONA and WALLETS open their page holograms, each in
+ * the menu's place. Each loader adds them first thing in its client start-up, before anything
+ * that can fail, so chat can always be reached.
  *
  * <p>A button whose page needs storage says why on the action bar while there is none, rather
  * than doing nothing.
@@ -57,8 +56,7 @@ public final class ChatButtons {
         Agents.buttons().register(new AgentButton(PERSONA, "gui.mcagents.agents.persona", 3,
                 ChatButtons::openPersona));
         Agents.buttons().register(new AgentButton(WALLETS, "gui.mcagents.agents.wallets", 4,
-                () -> withStorage(database -> Minecraft.getInstance().setScreenAndShow(new WalletScreen(
-                        database, null, PlayerAccounts.current(Minecraft.getInstance()))))));
+                () -> withStorage(WalletsHologram::open)));
         // At INFO so it survives into logs/latest.log: "is chat on the agents menu at all?"
         // is the first question when a player cannot find it.
         LOGGER.info("Added chat's buttons to the agents menu");
