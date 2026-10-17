@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.12.0 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.13.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -41,6 +41,12 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   "api.deepseek.com · no key yet" and a question failed naming deepseek rather than going
   through OpenRouter; on Forge REMOVE dropped `homelab` from the file. See
   [`../tasks/model-providers.md`](../tasks/model-providers.md).
+* **Per-chat models** (0.13.0, core 0.13.0), in 26.3 dev clients against a loopback stub
+  provider: on Fabric a chat with its own chat and embedding models was answered and embedded
+  with them while another chat used the global ones, and the choice was on its row; on NeoForge
+  an own chat model with the global embedding, the amber no-key warning, and USE GLOBAL putting
+  the chat back on the global model; on Forge an own embedding model, a blank model refused, and
+  DELETE closing the Chat Model page. See [`../tasks/per-chat-models.md`](../tasks/per-chat-models.md).
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
 * **Storage.** `sqlite-jdbc` loads from the Jar-in-Jar nested jar on Windows and the
@@ -86,11 +92,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   asserted against a stub transport, and the one-time move of 0.11.0's settings by
   `LegacyModelSettings` is tested; **no request has ever reached a platform's real API**, and
   the six shipped addresses have not been called.
-* **Per-chat models** (storage and answering). A conversation's own chat and embedding
-  choices are stored on its `chat_sessions` row, null meaning the global model, and resolved
-  per question by `OpenRouterAgent`; a conversation whose embedding model is not the
-  library's re-embeds the packs in its own model. Proven against the real store and a recording
-  client, including a database from before the columns.
+* **Per-chat retrieval in another model.** A conversation whose embedding model is not the
+  library's re-embeds the packs in its own model; proven against a recording client only.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
