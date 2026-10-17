@@ -1,6 +1,6 @@
 ---
 name: memory-task-own-modules
-status: in progress
+status: done
 description: Making each loader module declare chat's own submodules with implementation, keeping the loader, Fabric API and core compileOnly, without changing a jar, released as a patch.
 ---
 
@@ -39,9 +39,9 @@ as `compileOnly` with a `runtimeOnly` twin. Core is `compileOnlyApi` in `api/` a
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/own-modules-plan` | |
-| 2 | implementation for own modules | `build/own-modules` | |
-| 3 | Release 0.13.1 | `release/0.13.1` | |
+| 1 | Task record | `chore/own-modules-plan` | #78 |
+| 2 | implementation for own modules | `build/own-modules` | #79 |
+| 3 | Release 0.13.1 | `release/0.13.1` | #80 |
 
 ### Task 1 — chore/own-modules-plan
 
@@ -55,3 +55,10 @@ with the `runtimeOnly` line `runClient` needs, and sqlite-jdbc keeps its `includ
 and dev-client `runtimeOnly`. No loader module declares core. The repository map and the state
 file say so. `./gradlew build` is green against core's `build/own-modules`, and the three loader
 jars hold exactly the entries, at the same sizes, of the v0.13.0 release jars.
+
+### Task 3 — release/0.13.1
+
+`project-version` is `0.13.1`, a patch release: a build change, no behaviour change, and jars
+with the same entries as 0.13.0's. Chat stays on core 0.13.0. `wiki/logs/0/13/1/` says players
+and builders need do nothing; the logs index has its row at the top, and the repository rule,
+map, state and setup page name the version. The `PR` column is filled.
