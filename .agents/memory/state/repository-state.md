@@ -121,12 +121,15 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   is not bundled. Tool calling was the separate agents mod up to chat 0.8.0. See
   [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md) and
   [`../tasks/core-agents.md`](../tasks/core-agents.md).
-* Every I/O method returns `CompletableFuture`. 415 tests in `common/`.
+* Every I/O method returns `CompletableFuture`. 416 tests in `common/`.
 * The chat hologram: in `common.ui`, `ChatSessions` holds the store, the agent and the list of
   conversations, and each `ChatConversation` one conversation's messages, the question waiting
   in it and why the last was not answered; both hand results to the client thread through an
   executor. In `platforms/shared/`, `ChatSessionsHologram` is the Chat Sessions pick list CHAT
   opens, and `ChatHologram` one two-panel hologram per conversation, several at once.
+  MODEL under a conversation opens `ChatModelHologram`, a form for that conversation's own
+  chat and embedding models; `ChatConversation.chooseModels` keeps them, a new conversation's
+  until its first question stores it.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to every page, so a save is the persona
   the next question uses. It generates the file when it is missing

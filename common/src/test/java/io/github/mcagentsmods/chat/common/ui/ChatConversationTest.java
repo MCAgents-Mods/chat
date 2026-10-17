@@ -3,11 +3,13 @@ package io.github.mcagentsmods.chat.common.ui;
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 import io.github.mcagentsmods.core.api.hologram.TranscriptEntry;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 import io.github.mcagentsmods.core.api.model.ModelException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -274,15 +276,65 @@ class ChatConversationTest {
     }
 
     /** Answers each question with the next future in its script, and records where it was asked. */
+    private static final SessionModels OWN = new SessionModels(
+            new ModelChoice("deepseek", "deepseek/deepseek-v4-pro"),
+            ModelChoice.throughOpenRouter("qwen/qwen3-embedding-8b"));
+
+    @Test
+    void aStoredConversationKeepsTheModelsItChose() {
+        ChatSession stored = await(chat.createSession("Stored"));
+        await(sessions.refresh());
+        ChatConversation conversation = sessions.open(stored.id());
+
+        await(conversation.chooseModels(OWN));
+
+        assertEquals(OWN, conversation.models());
+        assertEquals(OWN, await(chat.findSessionModels(stored.id())));
+    }
+
+    @Test
+    void aNewConversationStoresItsModelsBeforeItsFirstQuestionIsAnswered() {
+        ChatConversation conversation = sessions.open(null);
+        await(conversation.chooseModels(OWN));
+        assertEquals(OWN, conversation.models(), "kept in memory until there is a row to put it on");
+        // Read when the agent is asked, not awaited there: the agent is asked on the store's
+        // own thread, and the read queues behind it.
+        List<CompletableFuture<SessionModels>> seenByTheAgent = new ArrayList<>();
+        agent.onAsk = id -> seenByTheAgent.add(chat.findSessionModels(id));
+        agent.answers.add(CompletableFuture.completedFuture("Answered."));
+
+        await(conversation.ask("Hello"));
+
+        assertEquals(1, seenByTheAgent.size());
+        assertEquals(OWN, await(seenByTheAgent.getFirst()));
+        assertEquals(OWN, await(chat.findSessionModels(conversation.sessionId().orElseThrow())));
+    }
+
+    @Test
+    void goingBackToGlobalClearsTheChoice() {
+        ChatSession stored = await(chat.createSession("Stored"));
+        await(chat.saveSessionModels(stored.id(), OWN));
+        await(sessions.refresh());
+        ChatConversation conversation = sessions.open(stored.id());
+        await(conversation.refresh());
+        assertEquals(OWN, conversation.models());
+
+        await(conversation.chooseModels(SessionModels.GLOBAL));
+
+        assertEquals(SessionModels.GLOBAL, await(chat.findSessionModels(stored.id())));
+    }
+
     static final class ScriptedAgent implements Agent {
 
         final List<CompletableFuture<String>> answers = new ArrayList<>();
         final List<String> askedIn = new ArrayList<>();
         final CompletableFuture<Void> asked = new CompletableFuture<>();
+        java.util.function.Consumer<String> onAsk = id -> { };
 
         @Override
         public synchronized CompletableFuture<String> respond(String sessionId, String prompt) {
             askedIn.add(sessionId);
+            onAsk.accept(sessionId);
             asked.complete(null);
             return answers.remove(0);
         }

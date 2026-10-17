@@ -40,6 +40,8 @@ do not share your `data.db`.
 
 * **Conversations that continue** — every chat kept and titled, picked from the Chat Sessions
   hologram, several open side by side, and renamed or deleted from its own chat hologram.
+* **A model per conversation** — any conversation can pick its own chat model and embedding
+  model, each with its provider; one that does not uses the global model from **MODEL**.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
@@ -78,8 +80,8 @@ separate MCAgents agents mod is part of core from core 0.10.0: remove its jar.
 
 Press `G` in game for the MCAgents menu, a hologram in front of you. Chat adds five buttons
 to it. **CHAT** opens **Chat Sessions**, your conversations with **NEW CHAT** at the top
-right. Click one to open its chat hologram, its messages under **Conversation** with **RENAME**
-and **DELETE**, and a box under **User Prompt** where you type and press **SEND**; open
+right. Click one to open its chat hologram, its messages under **Conversation** with **RENAME**,
+**MODEL** (this conversation's own chat and embedding model) and **DELETE**, and a box under **User Prompt** where you type and press **SEND**; open
 conversations are faded in the list, and several can stand at once. Add an API key with **KEYS** before asking
 anything — the dropdown there is the platform the key opens, and `openrouter` is the default.
 **MODEL** picks the global model and its providers and adds your own, **PERSONA** edits `AGENTS.md`, and **WALLETS**
