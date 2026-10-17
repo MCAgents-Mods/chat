@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
  * on, they start from the global model and can be changed. SAVE keeps the choice on the
  * conversation, or, for a new conversation not stored yet, keeps it until its first question
  * stores it. USE GLOBAL turns both off and saves at once.
+ *
+ * <p>Six fields and two switches fill the panel, so the Models page's route notes are left out:
+ * SAVE refuses a provider with no address and warns about one with no key instead.
  */
 final class ChatModelHologram extends HologramPage {
 
@@ -54,7 +57,7 @@ final class ChatModelHologram extends HologramPage {
     private String embeddingProvider = ModelPlatform.OPENROUTER;
     private String embeddingModel = "";
 
-    /** The providers a key is stored for; read once, for the notes. */
+    /** The providers a key is stored for; read once, to warn when SAVE picks one with none. */
     private Set<String> keyed = Set.of();
 
     private String status = "";
@@ -84,14 +87,13 @@ final class ChatModelHologram extends HologramPage {
     @Override
     Hologram build() {
         Form form = new Form(PREFIX + "title", List.of(
-                new FormText(this::subject, () -> FormTone.SOFT, 1),
+                new FormText(this::topLine, this::topTone, 1),
                 new FormToggle(PREFIX + "own_chat", () -> ownChat, this::flipChat),
                 FormField.of(MODELS + "chat.provider", () -> ownChat ? chatProvider : global().chat().provider(),
                                 text -> chatProvider = text)
                         .withChoices(this::providerIds)
                         .onPick(this::pickChatProvider)
                         .editableWhen(() -> ownChat),
-                new FormText(() -> noteText(shownChatProvider()), () -> noteTone(shownChatProvider()), 1),
                 FormField.of(MODELS + "chat", () -> ownChat ? chatModel : global().chat().model(),
                                 text -> chatModel = text)
                         .withChoices(this::chatSuggestions)
@@ -102,14 +104,11 @@ final class ChatModelHologram extends HologramPage {
                                 text -> embeddingProvider = text)
                         .withChoices(this::providerIds)
                         .editableWhen(() -> ownEmbedding),
-                new FormText(() -> noteText(shownEmbeddingProvider()),
-                        () -> noteTone(shownEmbeddingProvider()), 1),
                 FormField.of(MODELS + "embedding",
                                 () -> ownEmbedding ? embeddingModel : global().embedding().model(),
                                 text -> embeddingModel = text)
                         .withChoices(() -> ModelCatalog.SUGGESTED_EMBEDDING_MODELS)
-                        .editableWhen(() -> ownEmbedding),
-                new FormText(this::statusLine, () -> statusTone, 2)),
+                        .editableWhen(() -> ownEmbedding)),
                 List.of(new FormButton(MODELS + "save", () -> !waiting(), this::save),
                         new FormButton(PREFIX + "use_global", () -> !waiting(), this::useGlobal))).wide();
         return Hologram.of(id, form);
@@ -126,14 +125,6 @@ final class ChatModelHologram extends HologramPage {
         return I18n.get(PREFIX + "for", title);
     }
 
-    private String shownChatProvider() {
-        return ownChat ? chatProvider : global().chat().provider();
-    }
-
-    private String shownEmbeddingProvider() {
-        return ownEmbedding ? embeddingProvider : global().embedding().provider();
-    }
-
     private List<String> providerIds() {
         return global().providerIds();
     }
@@ -147,30 +138,34 @@ final class ChatModelHologram extends HologramPage {
         return own.isEmpty() ? ModelCatalog.SUGGESTED_CHAT_MODELS : own;
     }
 
-    private String noteText(String provider) {
-        ProviderNotes.Note note = ProviderNotes.of(global(), provider, keyed);
-        String where = note.isOpenRouter() ? "OpenRouter" : note.host();
-        return switch (note.kind()) {
-            case CALLED -> I18n.get(MODELS + "route.called", where);
-            case NO_KEY -> I18n.get(MODELS + "route.no_key", where);
-            case UNKNOWN -> I18n.get(MODELS + "route.unknown", note.provider());
-        };
+    /**
+     * The line under the title: what the last SAVE did, or else which conversation this page
+     * sets. One line for both, so every field fits the panel.
+     */
+    private String topLine() {
+        if (waiting()) {
+            return I18n.get("gui.mcagents.waiting");
+        }
+        return status.isEmpty() ? subject() : status;
     }
 
-    private FormTone noteTone(String provider) {
-        return switch (ProviderNotes.of(global(), provider, keyed).kind()) {
-            case CALLED -> FormTone.GOOD;
-            case NO_KEY -> FormTone.WARN;
-            case UNKNOWN -> FormTone.BAD;
-        };
+    private FormTone topTone() {
+        return waiting() || status.isEmpty() ? FormTone.SOFT : statusTone;
     }
 
-    private String statusLine() {
-        return waiting() ? I18n.get("gui.mcagents.waiting") : status;
+    /** An own provider the conversation would be sent to with no key stored for it, or null. */
+    private String keylessProvider(SessionModels chosen) {
+        for (ModelChoice own : new ModelChoice[] {chosen.chat(), chosen.embedding()}) {
+            if (own != null && ProviderNotes.of(global(), own.provider(), keyed).kind()
+                    == ProviderNotes.Kind.NO_KEY) {
+                return own.provider();
+            }
+        }
+        return null;
     }
 
     /**
-     * Reads which providers hold a key, for the notes. Only their provider names: no key value
+     * Reads which providers hold a key, for SAVE's warning. Only their provider names: no key value
      * is read back, and none could be shown here.
      */
     private void loadKeys() {
@@ -247,8 +242,11 @@ final class ChatModelHologram extends HologramPage {
         boolean stored = conversation.sessionId().isPresent();
         request(conversation.chooseModels(chosen), done -> {
             show(chosen);
+            String keyless = keylessProvider(chosen);
             if (chosen.isGlobal()) {
                 say(I18n.get(PREFIX + "global_saved"), FormTone.GOOD);
+            } else if (keyless != null) {
+                say(I18n.get(PREFIX + "saved_no_key", keyless), FormTone.WARN);
             } else {
                 say(I18n.get(stored ? PREFIX + "saved" : PREFIX + "kept"), FormTone.GOOD);
             }
