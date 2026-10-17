@@ -166,8 +166,9 @@ retrieval on and off — green for on, red for off.
 the file, and **RELOAD** reads it again, dropping what you typed. Closing it without saving
 leaves the file as it was.
 
-**WALLETS** opens wallet management: accounts across the top, wallets down the left, and the
-selected wallet's chain addresses on the right. Click any address to copy it in full.
+**WALLETS** opens the Wallets hologram: three lists side by side, your accounts, the chosen
+account's wallets and the chosen wallet's chain addresses. **COPY** puts an address on the
+clipboard in full. See [`wallet-binding.md`](wallet-binding.md).
 
 If local storage cannot be opened, the Chat Sessions hologram still opens and says so in its
 list, and **NEW CHAT** tries again. KEYS, MODEL and WALLETS say why on the action
