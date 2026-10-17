@@ -66,6 +66,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/compile-only.md`](../memory/tasks/compile-only.md) | Every `implementation` dependency replaced by `compileOnly`, with a dev-client `runtimeOnly` twin in the loader modules; published `chat-common` stops asking for sqlite-jdbc. |
 | [`../memory/tasks/hologram-pages.md`](../memory/tasks/hologram-pages.md) | Keys, Models, Persona and Wallets, and every dialog they and the chat hologram open, as holograms built from core 0.12.0's form panel; the flat screens deleted. |
 | [`../memory/tasks/model-providers.md`](../memory/tasks/model-providers.md) | The Models page calling the provider the player picks, custom providers, and editing core's global model every task falls back to. |
+| [`../memory/tasks/per-chat-models.md`](../memory/tasks/per-chat-models.md) | Each conversation choosing its own chat and embedding model, falling back to core's global model, and retrieval in a model other than the library's. |
 
 ## Maintenance
 
