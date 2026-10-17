@@ -107,13 +107,15 @@ runtime libraries go the other way: `sqlite-jdbc` is nested with Loom's `include
 Forge jars. It carries native binaries for every platform, so
 it alone is about 12 MB of the built jar.
 
-**No build file declares `implementation`.** Every dependency is `compileOnly` (or
-`compileOnlyApi`, or `api` between chat's own modules): what reaches a jar is decided only by
-the `jar` task's merge and by `include` / `jarJar`, never by a configuration. `common/` compiles
-against `sqlite-jdbc` and runs its tests with it (`testImplementation`), so published `chat-common`
-lists no runtime dependency. The loader modules give each `compileOnly` line a `runtimeOnly`
-twin, sqlite-jdbc included, because `runClient` runs from their class path; they are never
-published, so that reaches nothing else.
+**Only the loader modules declare `implementation`, and only for chat's own modules.** Each of
+`platforms/{fabric,forge,neoforge}` implements `chat-api`, `chat-common` and the shared module.
+Everything provided at runtime by someone else is `compileOnly`: core (`compileOnlyApi` in
+`api/` and `common/`, `compileOnly` in `platforms/shared/`), Fabric Loader, Fabric API and Forge.
+What reaches a jar is decided only by the `jar` task's merge and by `include` / `jarJar`, never by
+a configuration. `common/` compiles against `sqlite-jdbc` and runs its tests with it
+(`testImplementation`), so published `chat-common` lists no runtime dependency. The loader
+modules add Fabric Loader, Fabric API, Forge and sqlite-jdbc to `runClient` with `runtimeOnly`;
+they are never published, so neither scope reaches anything else.
 
 ## Storage
 
