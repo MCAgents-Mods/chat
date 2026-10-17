@@ -63,14 +63,23 @@ neoForge {
 }
 
 dependencies {
-    implementation project(':chat-api')
-    implementation project(':chat-common')
-    implementation project(sharedModule)
+    // Compiled against, never shipped through a configuration: ModDevGradle provides NeoForge
+    // itself, and the jar task below merges chat's own modules.
+    compileOnly project(':chat-api')
+    compileOnly project(':chat-common')
+    compileOnly project(sharedModule)
+
+    // The dev client (runClient) runs from this module's class path, so it needs them there
+    // too. This module is never published, so runtimeOnly reaches nothing else.
+    runtimeOnly project(':chat-api')
+    runtimeOnly project(':chat-common')
+    runtimeOnly project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads
     // it as a library, which is what lets the mod store data on a machine that has never
-    // been online.
+    // been online. common/ only compiles against it, so the dev client gets it here.
     jarJar libs.sqlite.jdbc
+    runtimeOnly libs.sqlite.jdbc
 }
 
 tasks.named('jar', Jar) {

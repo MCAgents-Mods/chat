@@ -107,6 +107,14 @@ runtime libraries go the other way: `sqlite-jdbc` is nested with Loom's `include
 Forge jars. It carries native binaries for every platform, so
 it alone is about 12 MB of the built jar.
 
+**No build file declares `implementation`.** Every dependency is `compileOnly` (or
+`compileOnlyApi`, or `api` between chat's own modules): what reaches a jar is decided only by
+the `jar` task's merge and by `include` / `jarJar`, never by a configuration. `common/` compiles
+against `sqlite-jdbc` and runs its tests with it (`testImplementation`), so published `chat-common`
+lists no runtime dependency. The loader modules give each `compileOnly` line a `runtimeOnly`
+twin, sqlite-jdbc included, because `runClient` runs from their class path; they are never
+published, so that reaches nothing else.
+
 ## Storage
 
 `SqliteDatabase.open(Path)` returns a `CompletableFuture<LocalDatabase>` and is the only
@@ -251,8 +259,8 @@ Two things about Minecraft 26.x that will waste your time if you assume otherwis
 * **Nothing is remapped, so there is no `remapJar`.** The `jar` task produces the final
   artifact directly. Do not wire a task to `remapJar` — it does not run.
 
-Fabric API and the loader are declared with plain `implementation`, not `modImplementation`,
-for the same reason. Check `https://meta.fabricmc.net/v2/versions/` before changing any of
+Fabric API and the loader are declared with plain `compileOnly` and `runtimeOnly`, not
+`modImplementation`, for the same reason. Check `https://meta.fabricmc.net/v2/versions/` before changing any of
 these.
 
 ## Commands

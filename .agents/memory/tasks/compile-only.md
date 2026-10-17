@@ -48,3 +48,16 @@ core class. `implementation` was left in two places:
 ### Task 1 — chore/compile-only-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — build/compile-only
+
+`common/` declares sqlite-jdbc `compileOnly`, and `testImplementation` for the tests, which
+open SQLite data sources themselves; the generated `chat-common` POM now lists only `chat-api`
+and `core-common`. The Fabric, Forge and NeoForge modules declare `chat-api`, `chat-common`,
+the shared module and their loader as `compileOnly`, each with a `runtimeOnly` twin, and add
+sqlite-jdbc as `runtimeOnly` beside their `include` or `jarJar`. No Gradle file in chat declares
+`implementation` any more (`testImplementation` aside). The repository map and the state file
+say so. `./gradlew build` is green, and the three loader jars hold exactly the entries (and
+sizes) of the v0.10.0 release jars. Chat's own dev clients on Fabric, NeoForge and Forge 26.3
+joined a world with core 0.11.0 beside them and opened the local database; in core's dev
+clients, chat loaded with the template and G then CHAT opened Chat Sessions on all three.
