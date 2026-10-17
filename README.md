@@ -30,7 +30,7 @@ shortened form.
 Set `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` in your environment and the keys are encrypted
 in the database as well, with the same key encrypting differently every time it is written.
 Leave it unset and they are stored as you pasted them, which is what the mod did before.
-Either way the key screen tells you which.
+Either way the KEYS page tells you which.
 
 The consequence is worth stating plainly: **because the key never leaves your machine, the
 risk of leaking it is yours alone to manage.** Do not paste it where others can see it, and
@@ -52,7 +52,7 @@ do not share your `data.db`.
   next takes over without interrupting the conversation. Each key records the platform it
   opens, and is only ever sent there.
 * **OpenRouter, or a platform directly** — store a key for `openai`, `deepseek`, `groq` or a
-  gateway you run yourself, with its address set on the key screen, and questions for that
+  gateway you run yourself, with its address set on the KEYS page, and questions for that
   platform's models go straight to it.
   Anything you have not set up goes through OpenRouter, as it always did.
 * **Model choice** — pick a chat model and an embedding model, or type any id your provider

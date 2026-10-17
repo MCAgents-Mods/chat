@@ -190,7 +190,7 @@ Anything works as a value — a passphrase, a random string — because it is ha
   not delete them — put the same value back and they return — but nothing else can recover
   them.
 * **Leaving it unset is supported.** Keys are then stored as you pasted them, which is what
-  the mod did before this existed. The key screen says which of the two you are in.
+  the mod did before this existed. The KEYS page says which of the two you are in.
 
 It protects a database file that leaves the machine — a backup, a synced folder, a bug
 report. It is not a defence against something already running on your machine, which can read

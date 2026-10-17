@@ -55,7 +55,7 @@ and sends only that to the model. The model never receives the whole library.
 The mod has no way to fetch packs: it has no catalog and no download path, and contacts no
 server of its own.
 
-Retrieval can be switched off on the model settings screen. Off means the question is sent
+Retrieval can be switched off on the Models hologram. Off means the question is sent
 on its own: no embedding call, no packs attached, nothing charged for it — and chatting is
 otherwise unchanged. See [`knowledge-retrieval.md`](knowledge-retrieval.md).
 
@@ -138,28 +138,36 @@ reason appears as the agent's line in that conversation, in the provider's own w
 the next question. An answer still on its way when you close a chat hologram is still stored,
 and shows when you open the conversation again.
 
-**KEYS** opens API key management — add your key there, and pick the platform it opens
-from the dropdown beside it (`openrouter` unless you say otherwise). The list holds the
-platforms the mod knows and the ones you already hold keys for, and the field still takes
-anything you type, so a platform this release has never heard of needs no update to use.
-Stored keys are only ever shown masked. The row under it sets the address the platform is
-called at: empty uses the address the mod knows, and only `https://` or a loopback address is
-taken. The line at the bottom says whether stored keys are encrypted. **MODEL** opens the model settings: a **Provider** row, then a chat model and an
-embedding model, each from the suggested lists or typed as any id you like. The lists are a
-convenience, not a limit, because OpenRouter adds models faster than this mod ships.
+**KEYS** opens the Keys hologram in place of the menu: an **Add Key** form beside the list of
+**Stored Keys**. Paste your key into the first box, where it shows as stars, and pick the
+platform it opens from the arrow beside the box under it (`openrouter` unless you say
+otherwise). The list holds the platforms the mod knows and the ones you already hold keys for,
+and the box still takes anything you type, so a platform this release has never heard of needs
+no update to use. **ADD** stores the key and empties the box. Stored keys are only ever shown
+masked; pick one and press **REMOVE** to delete it. The third box sets the address the platform
+is called at, stored with **SET**: empty uses the address the mod knows, and only `https://` or
+a loopback address is taken. The line at the bottom says whether stored keys are encrypted.
+
+**MODEL** opens the Models hologram: a **Provider** box, then a chat model and an embedding
+model, each picked from the arrow's suggestions or typed as any id you like. The lists are a
+convenience, not a limit, because OpenRouter adds models faster than this mod ships. Nothing is
+stored until **SAVE**; **USE DEFAULTS** puts the defaults back in the boxes.
 
 Picking a provider rewrites the chat model, because a model id names both who serves it and
 which model it is: staying on the provider you are already on changes nothing, a provider that
 cannot serve your current model moves you to its own suggested one, and a provider the mod
 suggests nothing for carries your model id over for that provider to accept or refuse. The line
-under the row says whether that provider is **called directly** or **through OpenRouter**, and
+under the box says whether that provider is **called directly** or **through OpenRouter**, and
 it is answered by the same code the real request goes through. Typing a model id directly moves
-the provider row to match it and keeps the id you typed. The **Embedding** button on that screen turns retrieval on and off — green for on,
-red for off.
+the provider box to match it and keeps the id you typed. The **Embedding** switch turns
+retrieval on and off — green for on, red for off.
+
+**PERSONA** opens the editor for `AGENTS.md` as a hologram: type into its box, **SAVE** writes
+the file, and **RELOAD** reads it again, dropping what you typed. Closing it without saving
+leaves the file as it was.
 
 **WALLETS** opens wallet management: accounts across the top, wallets down the left, and the
 selected wallet's chain addresses on the right. Click any address to copy it in full.
-**PERSONA** opens the editor for `AGENTS.md`.
 
 If local storage cannot be opened, the Chat Sessions hologram still opens and says so in its
 list, and **NEW CHAT** tries again. KEYS, MODEL and WALLETS say why on the action
