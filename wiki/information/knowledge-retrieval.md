@@ -49,8 +49,9 @@ history would keep it anchored to what it used to be about.
 
 ## The switch
 
-There is one control: the **Embedding** button on the model screen, which **MODEL** on the
-MCAgents menu opens. Green means on, red means off, and the label says which in words.
+There is one control: the **Embedding** switch on the Models hologram, which **MODEL** on the
+MCAgents menu opens. Green means on, red means off, and the switch says which in words. Like
+everything on that page, it is stored when you press **SAVE**.
 
 **Off means off.** No embedding call is made, the pack table is not read, and nothing is
 attached. It is not a filter applied after the fact — the work simply does not happen, and
@@ -115,7 +116,7 @@ flipping the switch never costs you an uncached turn.
 |---|---|
 | `api/` | `ModelPreferences` — the two model ids and the switch, loaded together |
 | `common/` | `KnowledgeRetriever` (choosing), `Vectors` (parsing and cosine), `PromptAssembler` (placement), `EmbeddingBackfill` (giving packs a vector) |
-| `platforms/shared/` | the toggle on `ModelSettingsScreen` |
+| `platforms/shared/` | the switch on `ModelsHologram` |
 
 ## Related
 

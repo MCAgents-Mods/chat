@@ -61,3 +61,20 @@ answer button and CANCEL). Both close before running the answer, and X answers n
 hologram's RENAME and DELETE use them instead of `RenameScreen` and vanilla's `ConfirmScreen`.
 `RenameScreen` stays until task 4, because the wallet screen still opens it. New text: the
 Name label. `wiki/information/overview.md` says where the two questions open.
+
+### Task 3 — feat/settings-holograms
+
+KEYS, MODEL and PERSONA open hologram pages in the menu's place, all built on
+`HologramPage`, which counts the storage requests a page waits on and drops an answer that
+lands after the page closed. `KeysHologram` is a wide Add Key form (the key as stars, the
+platform with its suggestions, the address greyed for OpenRouter, a note line, the encryption
+line; ADD and SET) beside a Stored Keys list (masked, platform, rejected) with REMOVE.
+`ModelsHologram` is a wide form with the provider, route line, chat and embedding fields, the
+Embedding switch and SAVE / USE DEFAULTS; nothing is stored before SAVE. `PersonaHologram` is a
+wide form with the file's path, a status line and the text area; SAVE writes and RELOAD reads
+again. `ApiKeyScreen`, `ModelSettingsScreen`, `PersonaScreen`, `ModelSettingsRows` and its test
+are deleted; `EditableDropdown` and `WaitingIndicator` stay until task 4, because the wallet
+screens still use them. Text added for the new labels and notes; the Embedding on/off pair
+became one switch label. README, overview, knowledge retrieval, setup and the repository map
+name the pages. `.agents/security/api-keys.md` still says "key screen"; that is an instruction
+file, so the wording is left to owen as a finding.
