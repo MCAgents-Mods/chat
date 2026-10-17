@@ -86,6 +86,11 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   asserted against a stub transport, and the one-time move of 0.11.0's settings by
   `LegacyModelSettings` is tested; **no request has ever reached a platform's real API**, and
   the six shipped addresses have not been called.
+* **Per-chat models** (storage and answering). A conversation's own chat and embedding
+  choices are stored on its `chat_sessions` row, null meaning the global model, and resolved
+  per question by `OpenRouterAgent`; a conversation whose embedding model is not the
+  library's re-embeds the packs in its own model. Proven against the real store and a recording
+  client, including a database from before the columns.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
@@ -143,7 +148,8 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   space of the model that made it. Nothing lists, shows or deletes stored packs since the
   console went in 0.4.0, and there is no catalog, download or update path.
 * Retrieval: `KnowledgeRetriever` embeds the newest question, ranks stored packs by
-  cosine similarity, and `PromptAssembler` places the best few after the last cache
+  cosine similarity (embedding the packs with the question's model when a conversation's own
+  embedding model is not the one the library was embedded with), and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
   `model.embedding.enabled`, carried on `ModelPreferences` and set on the in-game
   Models hologram. Off does no work at all rather than filtering afterwards, and

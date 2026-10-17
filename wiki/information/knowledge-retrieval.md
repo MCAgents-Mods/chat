@@ -43,6 +43,13 @@ switch governs whether retrieval happens, not whether you may prepare for it.
 Step 1 is the only part that leaves your machine before the answer itself. Steps 2 and 3
 are arithmetic over the packs already on your disk.
 
+**A conversation with its own embedding model searches in that model.** The library's
+vectors are all in one model's space: the one recorded when the library was last embedded,
+or the global embedding model if no run has finished. When a conversation's embedding model
+is another one, its question cannot be compared with those vectors, so the packs are embedded
+with the conversation's model too, one call per pack for the first question and from a
+six-hour memory cache after that. The library on disk is not changed.
+
 **Only the newest question is matched, not the conversation.** A thread that started about
 redstone and wandered onto villagers should retrieve villager packs, and scoring the whole
 history would keep it anchored to what it used to be about.
