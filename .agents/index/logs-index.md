@@ -12,6 +12,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 
 | Version | File | Purpose |
 |---|---|---|
+| 0.13.1 | [`../../wiki/logs/0/13/1/CHANGELOG.md`](../../wiki/logs/0/13/1/CHANGELOG.md) | Build only: the loader modules `implementation` chat's own modules while the loader, Fabric API and core stay `compileOnly`; the jars are unchanged; core stays 0.13.0. |
 | 0.13.0 | [`../../wiki/logs/0/13/0/CHANGELOG.md`](../../wiki/logs/0/13/0/CHANGELOG.md) | MODEL under each conversation opens a Chat Model page: its own chat and embedding model, or the global ones; packs are re-embedded in a conversation's own embedding model; core stays 0.13.0. |
 | 0.12.0 | [`../../wiki/logs/0/12/0/CHANGELOG.md`](../../wiki/logs/0/12/0/CHANGELOG.md) | The picked provider is called at its own address; a chat and an embedding provider, any number of custom providers on the Models page; the models move into core 0.13.0's global model. |
 | 0.11.0 | [`../../wiki/logs/0/11/0/CHANGELOG.md`](../../wiki/logs/0/11/0/CHANGELOG.md) | Every G menu page is a hologram: Keys, Models, Persona and Wallets, and their questions as dialog holograms; the flat screens are gone; core 0.12.0. |
