@@ -2,11 +2,14 @@ package io.github.mcagentsmods.chat.common.storage.sqlite;
 
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
+import io.github.mcagentsmods.chat.api.model.ModelCatalog;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -187,6 +190,58 @@ final class SqliteChatRepository implements ChatRepository {
                 return statement.executeUpdate() > 0;
             }
         });
+    }
+
+    @Override
+    public CompletableFuture<SessionModels> findSessionModels(String sessionId) {
+        return worker.submit("Reading a chat session's models", connection -> {
+            String sql = "SELECT chat_provider, chat_model, embedding_provider, embedding_model "
+                    + "FROM chat_sessions WHERE id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, sessionId);
+                try (ResultSet rows = statement.executeQuery()) {
+                    if (!rows.next()) {
+                        return SessionModels.GLOBAL;
+                    }
+                    return new SessionModels(
+                            readChoice(rows.getString("chat_provider"), rows.getString("chat_model")),
+                            readChoice(rows.getString("embedding_provider"),
+                                    rows.getString("embedding_model")));
+                }
+            }
+        });
+    }
+
+    @Override
+    public CompletableFuture<Boolean> saveSessionModels(String sessionId, SessionModels models) {
+        java.util.Objects.requireNonNull(models, "models");
+        // Not touching updated_at, unlike a rename: choosing a model is not a turn, and the
+        // conversation must not jump to the top of the list for it.
+        return worker.submit("Storing a chat session's models", connection -> {
+            String sql = "UPDATE chat_sessions SET chat_provider = ?, chat_model = ?, "
+                    + "embedding_provider = ?, embedding_model = ? WHERE id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                ModelChoice chat = models.chat();
+                ModelChoice embedding = models.embedding();
+                statement.setString(1, chat == null ? null : chat.provider());
+                statement.setString(2, chat == null ? null : chat.model());
+                statement.setString(3, embedding == null ? null : embedding.provider());
+                statement.setString(4, embedding == null ? null : embedding.model());
+                statement.setString(5, sessionId);
+                return statement.executeUpdate() > 0;
+            }
+        });
+    }
+
+    /**
+     * One stored choice, or null for "the global model". A blank model is no choice at all, and
+     * a retired id is moved off, as the global model's is: a choice that cannot work is not one.
+     */
+    private static ModelChoice readChoice(String provider, String model) {
+        if (model == null || model.isBlank()) {
+            return null;
+        }
+        return ModelChoice.qualified(provider, ModelCatalog.resolve(model));
     }
 
     @Override

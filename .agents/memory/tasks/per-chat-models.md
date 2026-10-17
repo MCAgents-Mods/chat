@@ -46,3 +46,23 @@ in the project's shared files.
 ### Task 1 — chore/per-chat-models-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — feat/session-models
+
+A conversation's models are stored and answered with.
+
+- `chat-api`: `SessionModels(ModelChoice chat, ModelChoice embedding)`, either null for the
+  global model, with `applyTo(ModelPreferences)` resolving by `ModelChoice.orElse`.
+  `ChatRepository` gains `findSessionModels` (`GLOBAL` for a conversation with none, or none at
+  all) and `saveSessionModels` (false when the conversation does not exist).
+- `SqliteSchema` adds `chat_provider`, `chat_model`, `embedding_provider` and `embedding_model`
+  to `chat_sessions` through the guarded column list; `SqliteChatRepository` reads a blank model
+  as no choice and moves a retired id off, and saving leaves `updated_at` alone.
+  `RevisionedChatRepository` moves its revision when a save changed a row.
+- `OpenRouterAgent` reads the global preferences, the conversation's models and the library's
+  model (`knowledge.embedded.model`, else the global embedding model) per question.
+  `KnowledgeRetriever.retrieve(preferences, question, libraryModel)` embeds the packs with the
+  question's model when the two differ, leaving out a pack whose call fails.
+- Tests: `SqliteSessionModelsTest` (8, including a database from before the columns),
+  `PerChatModelsTest` (4), three more in `KnowledgeRetrieverTest`; `:chat-common:test` passes,
+  413 tests. The schema page, the architecture and retrieval pages and the state file describe it.

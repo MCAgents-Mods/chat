@@ -30,7 +30,7 @@ begins "delete your data.db".
 | `api_keys` | The player's API keys, and which platform each one opens | the stored form of the key |
 | `content_categories` | Groupings for the content browser | the id the caller supplies |
 | `contents` | Stored Knowledge Packs, text and embedding | the pack's own id |
-| `chat_sessions` | One row per conversation | a UUID string |
+| `chat_sessions` | One row per conversation, with the models it chose for itself | a UUID string |
 | `chat_messages` | One row per turn | autoincrement |
 | `settings` | Player preferences, including the selected models | the setting key |
 | `player_wallets` | The wallets a player has bound, under an account | a UUID string |
@@ -48,6 +48,11 @@ These are not incidental; code depends on each one.
   the session inside the same transaction as the insert.
 * **Appending a message touches its session's `updated_at`.** The session list sorts on
   that column, so skipping it leaves the conversation the player is in buried.
+* **A conversation's models are nullable pairs on its row**: `chat_provider` with `chat_model`,
+  `embedding_provider` with `embedding_model`. A null or blank model means "use the global
+  model" from core's `models.properties`, which is what every conversation used before the
+  columns existed, so the migration writes nothing. Storing them does not touch `updated_at`:
+  choosing a model is not a turn, and the list must not re-sort for it.
 * **`chat_messages` cascades from `chat_sessions`,** and that only works because the
   connection enables foreign key enforcement — SQLite defaults it off. Deleting a session
   must never leave orphaned messages.

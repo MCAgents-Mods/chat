@@ -126,7 +126,18 @@ final class SqliteSchema {
             // default is both the migration and the fallback.
             new AddedColumn("api_keys", "platform",
                     "ALTER TABLE api_keys ADD COLUMN platform VARCHAR(32) "
-                            + "NOT NULL DEFAULT 'openrouter'"));
+                            + "NOT NULL DEFAULT 'openrouter'"),
+            // The models a conversation chose for itself, each a provider and a model. Null is
+            // "use the global model", which is what every conversation used before it could
+            // choose, so existing rows need nothing written.
+            new AddedColumn("chat_sessions", "chat_provider",
+                    "ALTER TABLE chat_sessions ADD COLUMN chat_provider VARCHAR(32)"),
+            new AddedColumn("chat_sessions", "chat_model",
+                    "ALTER TABLE chat_sessions ADD COLUMN chat_model VARCHAR(255)"),
+            new AddedColumn("chat_sessions", "embedding_provider",
+                    "ALTER TABLE chat_sessions ADD COLUMN embedding_provider VARCHAR(32)"),
+            new AddedColumn("chat_sessions", "embedding_model",
+                    "ALTER TABLE chat_sessions ADD COLUMN embedding_model VARCHAR(255)"));
 
     /**
      * One column added to an existing table.

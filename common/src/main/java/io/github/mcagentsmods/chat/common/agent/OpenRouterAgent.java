@@ -5,6 +5,7 @@ import io.github.mcagentsmods.chat.api.agent.EnvironmentSource;
 import io.github.mcagentsmods.chat.api.agent.PersonaStore;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.core.api.agent.AgentAnswer;
 import io.github.mcagentsmods.core.api.agent.AgentRequest;
@@ -27,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
  * the answer.
  *
  * <p>Everything it needs is local except the calls to the provider. The persona comes
- * from a file on disk, the conversation from the local database, and the model id from the
- * player's stored preferences — so the only thing that can fail for a network reason is the
+ * from a file on disk, the conversation from the local database, and the models from the
+ * conversation's own choice or, where it made none, the global model — so the only thing that can fail for a network reason is the
  * completion itself, and it fails with a message the player can act on.
  *
  * <p><b>Tools are the agents mod's.</b> This assembles what chat alone knows — the persona,
@@ -96,8 +97,20 @@ public final class OpenRouterAgent implements Agent {
     public CompletableFuture<String> respond(String sessionId, String prompt) {
         Objects.requireNonNull(sessionId, "sessionId");
 
-        return database.settings().loadModelPreferences()
-                .thenCombine(database.chat().findMessages(sessionId), Conversation::new)
+        // Read per question, never held: a model changed on the Models page, or for this
+        // conversation, is in force for the next question asked.
+        CompletableFuture<ModelPreferences> global = database.settings().loadModelPreferences();
+        CompletableFuture<SessionModels> own = database.chat().findSessionModels(sessionId);
+        CompletableFuture<String> library = database.settings().find(EmbeddingBackfill.EMBEDDED_WITH_KEY)
+                .thenCombine(global, (recorded, preferences) ->
+                        // Nothing recorded means no run has finished, and anything embedded so
+                        // far was embedded with the global model.
+                        recorded.orElse(preferences.embeddingModel()));
+
+        return global.thenCombine(own, (preferences, models) -> models.applyTo(preferences))
+                .thenCombine(library, QuestionModels::new)
+                .thenCombine(database.chat().findMessages(sessionId),
+                        (models, messages) -> new Conversation(models.preferences(), models.library(), messages))
                 .thenCompose(this::complete)
                 .thenApply(AgentAnswer::text);
     }
@@ -124,7 +137,7 @@ public final class OpenRouterAgent implements Agent {
         // only once the first has finished.
         CompletableFuture<String> instructions = readPersona();
 
-        return retriever.retrieve(conversation.preferences(), question)
+        return retriever.retrieve(conversation.preferences(), question, conversation.libraryModel())
                 .thenCombine(instructions, (knowledge, personaText) -> PromptAssembler.assemble(
                         // Read here rather than held: the player may have joined a server
                         // since this agent was built, or since their last question.
@@ -181,13 +194,22 @@ public final class OpenRouterAgent implements Agent {
         });
     }
 
+    /** The models for this question and the model the library's vectors are in. */
+    private record QuestionModels(ModelPreferences preferences, String library) {
+    }
+
     /**
-     * The player's model settings and the conversation to send, gathered in one step.
+     * The models for this question and the conversation to send, gathered in one step.
      *
      * <p>Holds the whole preference record rather than just the chat model id: retrieval
      * needs the embedding model and the switch, and reading the settings twice could see
      * two different answers if the player saved between the reads.
+     *
+     * @param preferences  the conversation's own models where it chose them, else the global ones
+     * @param libraryModel the model the stored pack vectors were made with
+     * @param messages     the conversation
      */
-    private record Conversation(ModelPreferences preferences, List<ChatMessage> messages) {
+    private record Conversation(ModelPreferences preferences, String libraryModel,
+                                List<ChatMessage> messages) {
     }
 }

@@ -4,6 +4,7 @@ import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.model.Page;
 import io.github.mcagentsmods.chat.api.model.PageRequest;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 
 import java.util.List;
@@ -62,6 +63,21 @@ public interface ChatRepository {
      * @return whether a conversation was deleted
      */
     CompletableFuture<Boolean> deleteSession(String id);
+
+    /**
+     * The models a conversation chose for itself, or {@link SessionModels#GLOBAL} when it chose
+     * none or does not exist.
+     */
+    CompletableFuture<SessionModels> findSessionModels(String sessionId);
+
+    /**
+     * Stores the models a conversation chose for itself; an absent choice goes back to the
+     * global model. Does not touch the conversation's {@code updatedAt}: choosing a model is not
+     * a turn, and the list must not re-sort for it.
+     *
+     * @return whether a conversation was found and updated
+     */
+    CompletableFuture<Boolean> saveSessionModels(String sessionId, SessionModels models);
 
     /** Every message in a conversation, in order, ready to send to the model API. */
     CompletableFuture<List<ChatMessage>> findMessages(String sessionId);
