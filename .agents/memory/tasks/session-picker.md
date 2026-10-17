@@ -1,6 +1,6 @@
 ---
 name: memory-task-session-picker
-status: in progress
+status: done
 description: A Chat Sessions hologram that lists every conversation with NEW CHAT on its nav bar, one chat hologram per conversation with several open at once and the open ones faded in the list, on core 0.11.0, released as a minor.
 ---
 
@@ -46,10 +46,10 @@ that can be faded), and gives `Transcript` a live heading and buttons under it.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/session-picker-plan` | |
-| 2 | One conversation per hologram | `refactor/chat-conversations` | |
-| 3 | Session picker and chat holograms | `feat/session-picker` | |
-| 4 | Release 0.10.0 | `release/0.10.0` | |
+| 1 | Task record | `chore/session-picker-plan` | #58 |
+| 2 | One conversation per hologram | `refactor/chat-conversations` | #59 |
+| 3 | Session picker and chat holograms | `feat/session-picker` | #60 |
+| 4 | Release 0.10.0 | `release/0.10.0` | #61 |
 
 ### Task 1 — chore/session-picker-plan
 
@@ -83,3 +83,16 @@ deletes the conversation and closes its hologram. The Sessions panel, the NEW bu
 `hologram.mcagents.sessions` and `.new` keys are gone; `chat_sessions` and `new_chat` are new,
 and the storage messages name NEW CHAT. The overview, README, architecture page, repository
 map and state file describe the picker.
+
+### Task 4 — release/0.10.0
+
+`project-version` is `0.10.0`, a minor release: the chat hologram and the CHAT button changed
+what a player sees, and `ChatController` gave way to `ChatSessions` and `ChatConversation`.
+`wiki/logs/0/10/0/` says what players do (install core 0.11.0 beside it) and what changed; the
+logs index has its row at the top, and the repository rule, map, state and setup page name the
+version. The `PR` column is filled. In the Fabric, NeoForge and Forge 26.3 dev clients on core
+0.11.0, G then CHAT replaced the menu with Chat Sessions; NEW CHAT opened two chat holograms
+beside it, each took a typed question and showed its own answer, both rows were faded, and
+closing one with its X brought its row back. On Fabric a click on a faded row did nothing, and
+picking the row that came back opened the conversation again with its messages. Screenshots are in the project's shared files
+under `reports/multi-hologram/`.
