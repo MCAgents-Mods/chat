@@ -66,3 +66,22 @@ Chat reads and writes its models through core 0.13.0's global model, pinned in t
 - Requests carry their provider (`AgentRequest.of(choice, …)`, `embed(choice, …)`);
   `StoredProviderRoutes` is gone, replaced by core's `Models.routes()`.
 - `.agents/api/openrouter.md` and the repository map describe the chosen-provider route.
+
+### Task 3 — feat/custom-providers
+
+The Models hologram edits the whole global model.
+
+- Form: chat provider, its note, chat model, embedding provider, its note, embedding model,
+  switch, status; SAVE refuses a provider with no known address. The embedding tips are gone
+  to make room. Picking a provider moves the chat model only when the catalog suggests models
+  for it (`ModelCatalog.chatModelOn`); a custom provider keeps the id, so a host is sent the
+  whole name.
+- `common.ui.ProviderNotes` answers each note from the global model and the keyed providers:
+  called (green), called with no key (amber, the request fails asking for one), no address (red).
+- A Providers list beside the form: ADD opens the `mcagents.models.add` dialog (name, address,
+  optional key stored under the name), REMOVE calls `GlobalModels.withoutProvider`. Both save
+  at once.
+- The Keys page lost its address row and SET button, and offers the custom providers as
+  platforms. Lang keys `keys.address.*`, `models.provider`, `models.route.direct/gateway` and
+  `models.embedding.tip.*` were removed.
+- README, `wiki/information/overview.md` and `architecture.md` describe the pages.
