@@ -251,7 +251,9 @@ public final class ChatConversation {
         }
         if (cause instanceof ModelException modelFailure) {
             return switch (modelFailure.kind()) {
-                case NO_KEY -> "No usable API key. Add one with KEYS on the MCAgents menu.";
+                // Core's message names the provider, which is the one thing the player needs:
+                // a direct provider is called with its own key, never through OpenRouter.
+                case NO_KEY -> modelFailure.getMessage() + ". Add one with KEYS on the MCAgents menu.";
                 case AUTHENTICATION -> "The provider rejected every stored key: "
                         + modelFailure.getMessage();
                 case RATE_LIMIT -> "Rate limited by the provider: " + modelFailure.getMessage();

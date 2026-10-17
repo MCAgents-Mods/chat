@@ -174,16 +174,16 @@ class ChatConversationTest {
     void aFailedAnswerKeepsTheQuestionAndSaysWhyUntilTheNextQuestion() {
         ChatConversation conversation = sessions.open(null);
         agent.answers.add(CompletableFuture.failedFuture(
-                new ModelException(ModelException.Kind.NO_KEY, "no key")));
+                new ModelException(ModelException.Kind.NO_KEY, "No API key is configured for deepseek")));
 
         await(conversation.ask("Hello?"));
 
         assertEquals(List.of(ChatRole.USER),
                 conversation.messages().stream().map(ChatMessage::role).toList());
-        assertEquals("No usable API key. Add one with KEYS on the MCAgents menu.",
+        assertEquals("No API key is configured for deepseek. Add one with KEYS on the MCAgents menu.",
                 conversation.failure().orElseThrow());
         assertEquals(new TranscriptEntry("Agent",
-                        "Not answered: No usable API key. Add one with KEYS on the MCAgents menu."),
+                        "Not answered: No API key is configured for deepseek. Add one with KEYS on the MCAgents menu."),
                 conversation.transcript(LABELS).getLast());
         assertTrue(conversation.canSend());
 

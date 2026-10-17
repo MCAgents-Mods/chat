@@ -24,9 +24,10 @@ retrieved context to the provider and shows the answer on the chat hologram — 
 ready; responses are not streamed yet. Multiple keys can be stored, and a key the provider
 rejects is deactivated so the next one takes over without interrupting the conversation.
 
-Each key records the platform it opens, and is only ever sent there. OpenRouter is the
-default and the fallback; store a key for `openai`, `deepseek`, `groq`, or a gateway you run
-yourself, and questions for that platform's models go straight to it instead. Keys are
+Each key records the platform it opens, and is only ever sent there. Each model is called
+through the provider picked for it on the Models hologram: OpenRouter by default, or
+`openai`, `deepseek`, `groq`, or any OpenAI-compatible API you add there, called at its own
+address. Keys are
 encrypted in the database when `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set in the
 environment the game runs in, and stored as pasted when it is not.
 
@@ -80,6 +81,7 @@ Everything the mod remembers lives on the player's own machine:
 |---|---|
 | Chat sessions and messages | `{minecraft_dir}/MCAgents/data.db` |
 | API keys, and the platform each one opens | `{minecraft_dir}/MCAgents/data.db` |
+| The global model: chat and embedding models, their providers, custom providers | `{minecraft_dir}/MCAgents/agents/models.properties` (core's) |
 | Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
 | Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/data.db` |
 | Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
@@ -144,23 +146,30 @@ platform it opens from the arrow beside the box under it (`openrouter` unless yo
 otherwise). The list holds the platforms the mod knows and the ones you already hold keys for,
 and the box still takes anything you type, so a platform this release has never heard of needs
 no update to use. **ADD** stores the key and empties the box. Stored keys are only ever shown
-masked; pick one and press **REMOVE** to delete it. The third box sets the address the platform
-is called at, stored with **SET**: empty uses the address the mod knows, and only `https://` or
-a loopback address is taken. The line at the bottom says whether stored keys are encrypted.
+masked; pick one and press **REMOVE** to delete it. Where a platform is called is set on the
+Models hologram, under **Providers**. The line at the bottom says whether stored keys are
+encrypted.
 
-**MODEL** opens the Models hologram: a **Provider** box, then a chat model and an embedding
-model, each picked from the arrow's suggestions or typed as any id you like. The lists are a
-convenience, not a limit, because OpenRouter adds models faster than this mod ships. Nothing is
-stored until **SAVE**; **USE DEFAULTS** puts the defaults back in the boxes.
+**MODEL** opens the Models hologram, the **global model**: what every task without a model of
+its own is answered and embedded with. It has a **Chat provider** and a **Chat model**, then an
+**Embedding provider** and an **Embedding model**, each picked from the arrow's suggestions or
+typed. The model lists are a convenience, not a limit, because OpenRouter adds models faster
+than this mod ships. Nothing is stored until **SAVE**; **USE DEFAULTS** puts the defaults back
+in the boxes.
 
-Picking a provider rewrites the chat model, because a model id names both who serves it and
-which model it is: staying on the provider you are already on changes nothing, a provider that
-cannot serve your current model moves you to its own suggested one, and a provider the mod
-suggests nothing for carries your model id over for that provider to accept or refuse. The line
-under the box says whether that provider is **called directly** or **through OpenRouter**, and
-it is answered by the same code the real request goes through. Typing a model id directly moves
-the provider box to match it and keeps the id you typed. The **Embedding** switch turns
-retrieval on and off — green for on, red for off.
+The provider is the API the request is sent to, and nothing else: pick `deepseek` and the
+question goes to `api.deepseek.com` with your deepseek key. The line under each provider says
+where it is called, in amber when no key is stored for it yet (the question then fails asking
+for one, rather than going through OpenRouter), and in red when no address is known for it.
+Picking a provider the mod suggests models for moves the chat model onto one it serves; a
+provider it suggests nothing for, such as one you added, keeps your model id. The **Embedding**
+switch turns retrieval on and off — green for on, red for off.
+
+The **Providers** list beside the form holds the providers you added. **ADD** opens a form for
+a name, an address (`https://`, or a loopback address for one you run yourself) and, if you
+like, its API key, which is stored like one added on the Keys hologram. A name like a built-in
+provider's, such as `deepseek`, replaces that provider's address. Pick a row and **REMOVE** to
+drop it; a model that used it moves back to OpenRouter. Both take effect at once.
 
 **PERSONA** opens the editor for `AGENTS.md` as a hologram: type into its box, **SAVE** writes
 the file, and **RELOAD** reads it again, dropping what you typed. Closing it without saving

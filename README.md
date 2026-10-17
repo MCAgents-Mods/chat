@@ -51,9 +51,9 @@ do not share your `data.db`.
 * **Several API keys, with rotation** — a key the provider rejects is deactivated and the
   next takes over without interrupting the conversation. Each key records the platform it
   opens, and is only ever sent there.
-* **OpenRouter, or a platform directly** — store a key for `openai`, `deepseek`, `groq` or a
-  gateway you run yourself, with its address set on the KEYS page, and questions for that
-  platform's models go straight to it.
+* **OpenRouter, or a provider directly** — pick the provider each model is called through on
+  the MODEL page: OpenRouter, `openai`, `deepseek`, `groq`, or any OpenAI-compatible API you
+  add there, as many as you like, each called at its own address with its own key.
   Anything you have not set up goes through OpenRouter, as it always did.
 * **Model choice** — pick a chat model and an embedding model, or type any id your provider
   serves. The lists are suggestions, not limits.
@@ -82,7 +82,7 @@ right. Click one to open its chat hologram, its messages under **Conversation** 
 and **DELETE**, and a box under **User Prompt** where you type and press **SEND**; open
 conversations are faded in the list, and several can stand at once. Add an API key with **KEYS** before asking
 anything — the dropdown there is the platform the key opens, and `openrouter` is the default.
-**MODEL** picks the provider and the models, **PERSONA** edits `AGENTS.md`, and **WALLETS**
+**MODEL** picks the global model and its providers and adds your own, **PERSONA** edits `AGENTS.md`, and **WALLETS**
 holds your bound wallets. Hold `Z` while looking at a hologram to move it.
 
 ## Where the project lives

@@ -148,8 +148,8 @@ it one that runs each result at once.
 3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
    is playing, the session's prior messages from the local database, the retrieved content,
    and the prompt are assembled into a request (`common/`).
-4. The request goes to OpenRouter with the player's key — or straight to the platform's own
-   API, if the player has stored a key for the platform the model belongs to. The
+4. The request goes to the provider picked for the model on the Models hologram — OpenRouter,
+   a platform's own API, or one the player added — with the player's key for it. The
    conversation panel says `Thinking…` while the future is pending.
 5. The answer is written to the local database as the next message in the session and
    rendered.
@@ -159,14 +159,18 @@ stored. Only step 4 needs a model provider.
 
 ### Which provider a request reaches
 
-A stored model id is `{platform}/{model}` — the shape OpenRouter itself uses — so the same
-stored value serves both routes. A request goes **directly** to a platform when two things
-are true at once: an address is known for that platform, and the player has stored a key for
-it. Otherwise it goes through OpenRouter, which is what every request did before direct
-routes existed, and what a player who configures nothing keeps getting.
+A stored model id is `{platform}/{model}` — the shape OpenRouter itself uses — and beside it
+the player picks the provider it is called through: core's `ModelChoice`, kept in core's
+global model (`{minecraft_dir}/MCAgents/agents/models.properties`), which every task without a
+model of its own falls back to. The request goes to that provider at its address — the one a
+custom provider gives, else the one the mod ships — and nowhere else. A direct provider with
+no key stored fails asking for one; it is never quietly sent through OpenRouter. A player who
+configures nothing gets OpenRouter, as before. Chat's own older settings move into the global
+model once, on the first start of 0.12.0.
 
 The difference on the wire is small and total: the gateway is sent the whole
-`openai/gpt-4o-mini`, a platform is sent `gpt-4o-mini`, and the gateway's own extensions —
+`openai/gpt-4o-mini`, a platform is sent `gpt-4o-mini` (or the whole name, when the model is
+another platform's, as on a host like Together), and the gateway's own extensions —
 `usage.include`, the cache-control marker, the attribution headers — are left out of a direct
 call, because a platform's API rejects the whole request over an argument it does not know.
 
