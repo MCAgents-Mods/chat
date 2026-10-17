@@ -1,6 +1,6 @@
 ---
 name: memory-task-compile-only
-status: in progress
+status: done
 description: Replacing every implementation dependency with compileOnly (plus a dev-client runtimeOnly line in the unpublished loader modules), so published chat-common no longer asks for sqlite-jdbc, released as a patch.
 ---
 
@@ -41,9 +41,9 @@ core class. `implementation` was left in two places:
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/compile-only-plan` | |
-| 2 | compileOnly everywhere | `build/compile-only` | |
-| 3 | Release 0.10.1 | `release/0.10.1` | |
+| 1 | Task record | `chore/compile-only-plan` | #62 |
+| 2 | compileOnly everywhere | `build/compile-only` | #63 |
+| 3 | Release 0.10.1 | `release/0.10.1` | #64 |
 
 ### Task 1 — chore/compile-only-plan
 
@@ -61,3 +61,11 @@ say so. `./gradlew build` is green, and the three loader jars hold exactly the e
 sizes) of the v0.10.0 release jars. Chat's own dev clients on Fabric, NeoForge and Forge 26.3
 joined a world with core 0.11.0 beside them and opened the local database; in core's dev
 clients, chat loaded with the template and G then CHAT opened Chat Sessions on all three.
+
+### Task 3 — release/0.10.1
+
+`project-version` is `0.10.1`, a patch release: a build change, no behaviour change, jars with
+the same entries as 0.10.0's, and a `chat-common` POM without sqlite-jdbc. Chat stays on core
+0.11.0. `wiki/logs/0/10/1/` says what players and builders do; the logs index has its row at
+the top, and the repository rule, map, state and setup page name the version. The `PR` column
+is filled.
