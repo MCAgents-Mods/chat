@@ -86,8 +86,9 @@ every mod adds its tools to, the agent that picks categories, then tools, then a
 worker limit, and the menu `G` shows. Up to chat 0.8.0 tool calling was a separate mod,
 MCAgents agents; from core 0.10.0 it is part of core. Core is not bundled: `common/` compiles
 against it and the `mcagents_core` mod provides it in game. Core also draws the
-holograms: chat describes its three panels with core's hologram records, and core places
-them, takes the clicks and the typing, and closes them when the player walks away.
+holograms: chat describes the Chat Sessions list and each conversation's two panels with
+core's hologram records, and core places them side by side, takes the clicks and the typing,
+and closes them when the player walks away.
 
 Chat keeps what only it knows. `OpenRouterAgent` assembles the persona, where the player is,
 the earlier turns and the Knowledge Packs, and hands that conversation to core's

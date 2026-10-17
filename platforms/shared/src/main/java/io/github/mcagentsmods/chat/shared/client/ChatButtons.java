@@ -21,9 +21,9 @@ import java.util.function.Function;
  * Chat's buttons on the agents mod's menu, which is how the player reaches chat.
  *
  * <p>The agents mod owns the key: G shows its menu, a hologram, and every MCAgents mod adds
- * buttons there rather than taking a key of its own. Chat adds five: CHAT opens the chat
- * hologram in place of the menu, and KEYS, MODEL, PERSONA and WALLETS open their screens over
- * it. Each loader adds them first thing in its client start-up, before anything that can fail,
+ * buttons there rather than taking a key of its own. Chat adds five: CHAT opens the Chat
+ * Sessions hologram in place of the menu, and KEYS, MODEL, PERSONA and WALLETS open their
+ * screens over it. Each loader adds them first thing in its client start-up, before anything that can fail,
  * so chat can always be reached.
  *
  * <p>Every screen opened from here goes back to the game when it closes. A button whose screen
@@ -51,7 +51,7 @@ public final class ChatButtons {
     /** Adds the buttons to the agents menu. Called once, by each loader's entry point. */
     public static void register() {
         Agents.buttons().register(new AgentButton(CHAT, "gui.mcagents.agents.chat", 0,
-                ChatHologram::open));
+                ChatSessionsHologram::open));
         Agents.buttons().register(new AgentButton(KEYS, "gui.mcagents.agents.keys", 1,
                 () -> openWithStorage(database -> new ApiKeyScreen(database, null))));
         Agents.buttons().register(new AgentButton(MODEL, "gui.mcagents.agents.model", 2,

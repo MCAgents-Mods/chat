@@ -112,21 +112,30 @@ menu, a hologram standing in front of you with its buttons five to a row, and ch
 of them. Point at a hologram and hold `Z` to carry it with you; let go and it stays where it
 is. Walk more than two chunks away from it and it closes.
 
-**CHAT** opens the chat hologram in place of the menu, as three panels side by side:
+**CHAT** opens the **Chat Sessions** hologram in place of the menu: every conversation, the
+most recently used first, with **NEW CHAT** on the right of the bar across its top. It stays
+open while you pick.
 
-* **Sessions** lists every conversation, the most recently used first. Click one to pick it.
-  **NEW** starts an empty one, **RENAME** retitles the one picked, and **DELETE** removes it —
-  after asking, because it takes every message in that conversation with it and cannot be
-  undone.
-* **Conversation** shows the picked conversation, each line headed with your name or
-  `Agent`. While an answer is on its way the last line says `Thinking…`.
-* **User Prompt** is where you type. **SEND** asks the question in the picked conversation,
-  or in a new one when none is picked, and is greyed while an answer is on its way.
+* **Click a conversation** to open its chat hologram beside the list. While that hologram
+  stands, the conversation stays in the list but is faded, and clicking it does nothing; close
+  the chat hologram and it can be picked again.
+* **NEW CHAT** opens a chat hologram on a new conversation. It joins the list, faded, with
+  your first question.
+
+Several chat holograms can stand at once, up to eight holograms in all, and each waits for its
+own answer. A chat hologram has two panels side by side:
+
+* **Conversation**, headed with the conversation's title, shows each line headed with your
+  name or `Agent`. While an answer is on its way the last line says `Thinking…`. **RENAME**
+  retitles the conversation, and **DELETE** removes it and closes its hologram — after asking,
+  because it takes every message in that conversation with it and cannot be undone.
+* **User Prompt** is where you type. **SEND** asks the question in that conversation, and is
+  greyed while an answer is on its way in it.
 
 If the agent cannot answer — no key, a model the provider does not serve, a rate limit — the
 reason appears as the agent's line in that conversation, in the provider's own words, until
-the next question. Closing the chat hologram and opening it again keeps the conversation you
-had picked, and an answer still on its way lands in it.
+the next question. An answer still on its way when you close a chat hologram is still stored,
+and shows when you open the conversation again.
 
 **KEYS** opens API key management — add your key there, and pick the platform it opens
 from the dropdown beside it (`openrouter` unless you say otherwise). The list holds the
@@ -151,8 +160,8 @@ red for off.
 selected wallet's chain addresses on the right. Click any address to copy it in full.
 **PERSONA** opens the editor for `AGENTS.md`.
 
-If local storage cannot be opened, the chat hologram still opens and says so in its
-Conversation panel, and **NEW** tries again. KEYS, MODEL and WALLETS say why on the action
+If local storage cannot be opened, the Chat Sessions hologram still opens and says so in its
+list, and **NEW CHAT** tries again. KEYS, MODEL and WALLETS say why on the action
 bar instead of opening; PERSONA works either way, because `AGENTS.md` is a file. Nothing
 simply fails to appear.
 
