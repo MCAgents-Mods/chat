@@ -63,6 +63,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/artifact-ids.md`](../memory/tasks/artifact-ids.md) | Artifact ids `chat-{module}` without the repeated `mcagents-`, only `api`, `common` and `shared` published, on core 0.9.0 and agents 0.5.0, and the `0.8.0` release. |
 | [`../memory/tasks/core-agents.md`](../memory/tasks/core-agents.md) | Chat on core alone after the agents mod became part of core: tools, the agent and menu buttons from core's packages, the agents dependency and manifest entries dropped. |
 | [`../memory/tasks/session-picker.md`](../memory/tasks/session-picker.md) | A Chat Sessions hologram listing every conversation with NEW CHAT on its nav bar, one chat hologram per conversation, several at once, the open ones faded, on core 0.11.0. |
+| [`../memory/tasks/compile-only.md`](../memory/tasks/compile-only.md) | Every `implementation` dependency replaced by `compileOnly`, with a dev-client `runtimeOnly` twin in the loader modules; published `chat-common` stops asking for sqlite-jdbc. |
 
 ## Maintenance
 
