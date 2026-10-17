@@ -1,6 +1,6 @@
 ---
 name: memory-task-hologram-pages
-status: in progress
+status: done
 description: Every agents menu page chat adds (Keys, Models, Persona, Wallets) and every dialog they or the chat hologram open, rebuilt as holograms from core 0.12.0's form panel; the flat screens deleted; released as a minor.
 ---
 
@@ -42,11 +42,11 @@ released as core 0.12.0.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/hologram-pages-plan` | |
-| 2 | Dialogs as holograms | `feat/hologram-dialogs` | |
-| 3 | Keys, Models and Persona holograms | `feat/settings-holograms` | |
-| 4 | Wallets hologram | `feat/wallet-holograms` | |
-| 5 | Release 0.11.0 | `release/0.11.0` | |
+| 1 | Task record | `chore/hologram-pages-plan` | #65 |
+| 2 | Dialogs as holograms | `feat/hologram-dialogs` | #66 |
+| 3 | Keys, Models and Persona holograms | `feat/settings-holograms` | #67 |
+| 4 | Wallets hologram | `feat/wallet-holograms` | #68 |
+| 5 | Release 0.11.0 | `release/0.11.0` | #69 |
 
 ### Task 1 — chore/hologram-pages-plan
 
@@ -93,3 +93,10 @@ bridge stops in the hologram's `onClose`, so every way of closing it stops the l
 whole `client.gui` package is deleted, with `StackedRows`, `AccountColumns` and their tests.
 Text for the list titles, short buttons and notices added; the screen-only text removed.
 `wallet-binding.md`, overview, architecture and the repository map describe the hologram.
+
+### Task 5 — release/0.11.0
+
+`project-version` 0.11.0, `wiki/logs/0/11/0/CHANGELOG.md` and its row in the logs index, and
+the version in the state file, the repository rule, the repository map and the setup guide.
+Built green against core 0.12.0; every page and dialog was tried on Fabric, NeoForge and Forge
+26.3. The `PR` column is filled.
