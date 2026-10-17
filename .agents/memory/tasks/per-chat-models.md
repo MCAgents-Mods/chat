@@ -66,3 +66,21 @@ A conversation's models are stored and answered with.
 - Tests: `SqliteSessionModelsTest` (8, including a database from before the columns),
   `PerChatModelsTest` (4), three more in `KnowledgeRetrieverTest`; `:chat-common:test` passes,
   413 tests. The schema page, the architecture and retrieval pages and the state file describe it.
+
+### Task 3 — feat/chat-model-hologram
+
+MODEL under a conversation, between RENAME and DELETE, opens its Chat Model hologram,
+`mcagents.chatmodel.{the chat hologram's id after mcagents.chat.}`.
+
+- `ChatModelHologram` (a `HologramPage`) is a wide form in the Models page's style: "For
+  {title}", an **Own chat model** switch over the chat provider (with the route note) and model,
+  the same for embedding, a status line, **SAVE** and **USE GLOBAL**. A field whose switch is
+  off shows the global choice, greyed; turning it on starts from the global choice. SAVE refuses
+  a provider with no address, as the Models page does, and a blank model. DELETE closes the
+  conversation's model page with its chat hologram.
+- `ChatConversation` holds the conversation's `SessionModels`, read with its messages;
+  `chooseModels` stores them at once, or, for a new conversation, keeps them and stores them
+  with the conversation before its first question is appended, so the agent answers that
+  question with them. Three tests in `ChatConversationTest`; 416 in `common/`.
+- The overview, README, repository map and state file describe MODEL; nine
+  `gui.mcagents.chat_model.*` keys and `hologram.mcagents.model` are new.

@@ -3,6 +3,7 @@ package io.github.mcagentsmods.chat.common.ui;
 import io.github.mcagentsmods.chat.api.agent.Agent;
 import io.github.mcagentsmods.chat.api.model.ChatMessage;
 import io.github.mcagentsmods.chat.api.model.ChatSession;
+import io.github.mcagentsmods.chat.api.model.SessionModels;
 import io.github.mcagentsmods.chat.api.storage.ChatRepository;
 import io.github.mcagentsmods.core.api.chat.ChatRole;
 import io.github.mcagentsmods.core.api.hologram.TranscriptEntry;
@@ -72,6 +73,12 @@ public final class ChatConversation {
     private List<ChatMessage> messages = List.of();
     private boolean waiting;
 
+    /**
+     * The models this conversation chose; the global ones until read or chosen. A new
+     * conversation keeps them here until its first question stores it.
+     */
+    private SessionModels models = SessionModels.GLOBAL;
+
     /** Why the last question was not answered; cleared by the next one. */
     private String failure;
 
@@ -102,6 +109,11 @@ public final class ChatConversation {
     /** The messages, oldest first. Empty for a new conversation. */
     public List<ChatMessage> messages() {
         return messages;
+    }
+
+    /** The models this conversation chose for itself; {@link SessionModels#GLOBAL} for none. */
+    public SessionModels models() {
+        return models;
     }
 
     /** Whether a question is waiting for its answer. One is asked at a time per conversation. */
@@ -165,12 +177,47 @@ public final class ChatConversation {
         if (chat == null || id == null) {
             return CompletableFuture.completedFuture(null);
         }
-        return ChatSessions.logged(chat.findMessages(id).thenCompose(found -> onClientThread(() -> {
-            // A store opened again since does not get the old one's messages.
-            if (chat == sessions.repository() && id.equals(sessionId)) {
-                messages = List.copyOf(found);
+        return ChatSessions.logged(chat.findMessages(id)
+                .thenCombine(chat.findSessionModels(id), Stored::new)
+                .thenCompose(found -> onClientThread(() -> {
+                    // A store opened again since does not get the old one's messages.
+                    if (chat == sessions.repository() && id.equals(sessionId)) {
+                        messages = List.copyOf(found.messages());
+                        models = found.models();
+                    }
+                })), "Could not read the conversation");
+    }
+
+    /** What {@link #refresh()} reads together. */
+    private record Stored(List<ChatMessage> messages, SessionModels models) {
+    }
+
+    /**
+     * Chooses the models this conversation is answered and embedded with; an absent choice is
+     * the global model. A stored conversation keeps them at once; a new one keeps them here and
+     * stores them with its first question, before the agent is asked, so that question is
+     * already answered with them.
+     *
+     * @return a future that completes once the choice is kept, or fails when it could not be
+     */
+    public CompletableFuture<Void> chooseModels(SessionModels chosen) {
+        Objects.requireNonNull(chosen, "chosen");
+        String id = sessionId;
+        if (id == null) {
+            models = chosen;
+            changed();
+            return CompletableFuture.completedFuture(null);
+        }
+        ChatRepository chat = sessions.repository();
+        if (chat == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalStateException("The conversation store is not open yet"));
+        }
+        return chat.saveSessionModels(id, chosen).thenCompose(saved -> onClientThread(() -> {
+            if (id.equals(sessionId)) {
+                models = chosen;
             }
-        })), "Could not read the conversation");
+        }));
     }
 
     /**
@@ -203,14 +250,20 @@ public final class ChatConversation {
         ChatRepository chat = sessions.repository();
         Agent agent = sessions.agent();
         String askedIn = sessionId;
+        SessionModels chosen = models;
 
         waiting = true;
         failure = null;
         changed();
 
+        // A new conversation's chosen models are stored with it, before its first question is,
+        // so the agent reads them when it answers that question.
         CompletableFuture<String> session = askedIn != null
                 ? CompletableFuture.completedFuture(askedIn)
-                : chat.createSession(null).thenApply(ChatSession::id);
+                : chat.createSession(null).thenApply(ChatSession::id)
+                        .thenCompose(id -> chosen.isGlobal()
+                                ? CompletableFuture.completedFuture(id)
+                                : chat.saveSessionModels(id, chosen).thenApply(saved -> id));
         CompletableFuture<String> stored = session.thenCompose(id -> chat
                 .appendMessage(id, ChatRole.USER, question)
                 .thenApply(message -> id));

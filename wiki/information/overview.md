@@ -131,7 +131,11 @@ own answer. A chat hologram has two panels side by side:
   name or `Agent`. While an answer is on its way the last line says `Thinking…`. **RENAME**
   retitles the conversation, in a small hologram that opens beside it, and **DELETE** removes
   it and closes its hologram — after asking, in the same kind of hologram, because it takes
-  every message in that conversation with it and cannot be undone.
+  every message in that conversation with it and cannot be undone. **MODEL** opens **Chat
+  Model** for that conversation alone: switch on **Own chat model** or **Own embedding model**
+  and pick a provider and a model, as on the Models page, then **SAVE**. A switch left off
+  follows the Models page, so changing the global model there changes it here too; **USE
+  GLOBAL** turns both off. A new conversation can be set before its first question.
 * **User Prompt** is where you type. **SEND** asks the question in that conversation, and is
   greyed while an answer is on its way in it.
 
