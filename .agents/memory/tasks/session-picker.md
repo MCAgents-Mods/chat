@@ -67,3 +67,19 @@ first question, and the list is read again. `ChatControllerTest` became
 once. `ChatHologram` keeps its three panels on the new classes: picking a row opens that
 conversation, NEW opens a new one. The architecture page, the repository map and the state
 file name the two classes.
+
+### Task 3 — feat/session-picker
+
+Chat compiles against core 0.11.0, and the three manifests require it. `ChatSessionsHologram`
+(`mcagents.chat.sessions`) is a core `PickList` titled Chat Sessions with NEW CHAT on its nav
+bar; its rows are the conversations, each faded while `ChatHologram.isOpen` says its hologram
+stands, and while storage is not open, one faded row saying why. CHAT on the G menu opens it,
+and the menu runs CHAT through `Holograms.replacing`, so it opens where the menu stood.
+`ChatHologram` opens one hologram per conversation: `mcagents.chat.{session id}` for a stored
+one, `mcagents.chat.new-{n}` for a new one, which keeps that id once stored. Each holds its own
+`ChatConversation`: a Conversation transcript headed with the conversation's title (New Chat
+until stored) with RENAME and DELETE under it, and the User Prompt. DELETE, once confirmed,
+deletes the conversation and closes its hologram. The Sessions panel, the NEW button and the
+`hologram.mcagents.sessions` and `.new` keys are gone; `chat_sessions` and `new_chat` are new,
+and the storage messages name NEW CHAT. The overview, README, architecture page, repository
+map and state file describe the picker.

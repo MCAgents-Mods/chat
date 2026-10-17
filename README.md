@@ -38,8 +38,8 @@ do not share your `data.db`.
 
 ## Features
 
-* **Conversations that continue** — every chat kept and titled, and picked, renamed or
-  deleted from the chat hologram's Sessions panel.
+* **Conversations that continue** — every chat kept and titled, picked from the Chat Sessions
+  hologram, several open side by side, and renamed or deleted from its own chat hologram.
 * **Retrieval by embedding** — questions matched against stored packs by meaning rather than
   by keyword, with a switch to turn it off. Off means the question is sent on its own: no
   packs, no embedding call, nothing billed for it, and chat otherwise unchanged.
@@ -77,9 +77,10 @@ calling every MCAgents mod shares; without it the game refuses to load MCAgentsC
 separate MCAgents agents mod is part of core from core 0.10.0: remove its jar.
 
 Press `G` in game for the MCAgents menu, a hologram in front of you. Chat adds five buttons
-to it. **CHAT** opens the chat hologram: your conversations under **Sessions**, with **NEW**,
-**RENAME** and **DELETE**; the one you picked under **Conversation**; and a box under **User
-Prompt** where you type and press **SEND**. Add an API key with **KEYS** before asking
+to it. **CHAT** opens **Chat Sessions**, your conversations with **NEW CHAT** at the top
+right. Click one to open its chat hologram, its messages under **Conversation** with **RENAME**
+and **DELETE**, and a box under **User Prompt** where you type and press **SEND**; open
+conversations are faded in the list, and several can stand at once. Add an API key with **KEYS** before asking
 anything — the dropdown there is the platform the key opens, and `openrouter` is the default.
 **MODEL** picks the provider and the models, **PERSONA** edits `AGENTS.md`, and **WALLETS**
 holds your bound wallets. Hold `Z` while looking at a hologram to move it.
