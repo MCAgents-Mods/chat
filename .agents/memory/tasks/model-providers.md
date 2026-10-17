@@ -1,0 +1,51 @@
+---
+name: memory-task-model-providers
+status: in-progress
+description: The Models page calls the provider the player picks at that provider's own address, takes several custom providers, and edits core 0.13.0's global model that every task falls back to; released as 0.12.0.
+---
+
+# Model providers and the global model
+
+## The request
+
+On 2026-10-17 the owner asked, as the third of four tasks: "In model GUI page. If provider set
+as what it is then use that provider url. Also make it can add custom too, multiple as that.
+This model page will be global model if each task not set their specific model then fallback
+to these model. Plan then work immediately." The attached picture showed provider `deepseek`
+with the note "Called through OpenRouter": a platform with no key stored went through the
+gateway without saying so. The owner had already asked for every branch to be opened as a pull
+request and rebase-merged in order.
+
+Core's part (routing by a chosen provider, `ModelChoice`, `ModelProvider`, the global model
+store `Models`) is core's task record `model-providers.md`, released as core 0.13.0. This
+record is chat's part.
+
+## Decisions
+
+- **The provider is its own setting.** The Models page has a chat provider and an embedding
+  provider, each beside its model; OpenRouter is one of the choices. A request goes to the
+  provider picked and nowhere else; with no key stored for it, it fails saying which key.
+- **The Models page edits core's global model**, `{game_dir}/MCAgents/agents/models.properties`,
+  which every task with no model of its own uses. Only the embedding switch stays in chat's
+  database: it is chat's retrieval switch.
+- **Moving in once.** When core's store was never saved, chat's old `model.chat` and
+  `model.embedding` settings and its `api.base-url.{platform}` addresses move into it, each
+  model keeping the route it had (direct when a key and an address existed, else OpenRouter).
+- **Custom providers** are a list beside the Models form: ADD asks for a name, an address
+  (https, or http on loopback) and, optionally, a key stored under that name; REMOVE drops
+  one. One named like a built-in platform replaces that platform's address.
+- **The Keys page loses its address row**: addresses are set as custom providers now.
+- **A minor release, 0.12.0.**
+
+## Tasks
+
+| # | Title | Branch | PR |
+|---|---|---|---|
+| 1 | Task record | `chore/model-providers-plan` | |
+| 2 | Global models from core | `refactor/global-models` | |
+| 3 | Models page providers | `feat/custom-providers` | |
+| 4 | Release 0.12.0 | `release/0.12.0` | |
+
+### Task 1 — chore/model-providers-plan
+
+This record, and its row in the memory index.
