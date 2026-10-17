@@ -1,6 +1,6 @@
 ---
 name: memory-task-per-chat-models
-status: in-progress
+status: done
 description: Each conversation sets its own chat model and embedding model, each with its provider, falling back to core 0.13.0's global model when unset; released as 0.13.0.
 ---
 
@@ -38,10 +38,10 @@ in the project's shared files.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/per-chat-models-plan` | |
-| 2 | Per-chat models in storage and answers | `feat/session-models` | |
-| 3 | Chat Model hologram | `feat/chat-model-hologram` | |
-| 4 | Release 0.13.0 | `release/0.13.0` | |
+| 1 | Task record | `chore/per-chat-models-plan` | #74 |
+| 2 | Per-chat models in storage and answers | `feat/session-models` | #75 |
+| 3 | Chat Model hologram | `feat/chat-model-hologram` | #76 |
+| 4 | Release 0.13.0 | `release/0.13.0` | #77 |
 
 ### Task 1 — chore/per-chat-models-plan
 
@@ -88,3 +88,19 @@ MODEL under a conversation, between RENAME and DELETE, opens its Chat Model holo
   question with them. Three tests in `ChatConversationTest`; 416 in `common/`.
 - The overview, README, repository map and state file describe MODEL; ten
   `gui.mcagents.chat_model.*` keys and `hologram.mcagents.model` are new.
+
+### Task 4 — release/0.13.0
+
+`project-version` 0.13.0, `wiki/logs/0/13/0/CHANGELOG.md`, its row in the logs index, the
+version in the setup page, the map and the repository rule, and the repository state.
+
+Tried in 26.3 dev clients before the release, against a loopback stub provider `home` that
+logs the model of each call: Fabric (a new chat set to its own chat and embedding models said
+Kept, its first question logged `own-embed` and `own-chat`, the row held both after the
+question, and a second chat left alone logged `global-embed` and `global-chat`); NeoForge (own
+chat model only logged `global-embed` with `own-chat`; picking `openrouter`, which has no key,
+saved with the amber warning; USE GLOBAL cleared the row and the next question logged
+`global-chat`); Forge (a blank embedding model was refused, own embedding only logged
+`own-embed` with `global-chat`, and DELETE closed the Chat Model page with the chat). The
+no-key and blank-model messages were cut at the panel edge and were shortened. Shots are in the
+project's `reports/per-chat-models/`.
