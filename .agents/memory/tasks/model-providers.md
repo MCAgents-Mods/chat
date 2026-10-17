@@ -1,6 +1,6 @@
 ---
 name: memory-task-model-providers
-status: in-progress
+status: done
 description: The Models page calls the provider the player picks at that provider's own address, takes several custom providers, and edits core 0.13.0's global model that every task falls back to; released as 0.12.0.
 ---
 
@@ -41,10 +41,10 @@ record is chat's part.
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/model-providers-plan` | |
-| 2 | Global models from core | `refactor/global-models` | |
-| 3 | Models page providers | `feat/custom-providers` | |
-| 4 | Release 0.12.0 | `release/0.12.0` | |
+| 1 | Task record | `chore/model-providers-plan` | #70 |
+| 2 | Global models from core | `refactor/global-models` | #71 |
+| 3 | Models page providers | `feat/custom-providers` | #72 |
+| 4 | Release 0.12.0 | `release/0.12.0` | #73 |
 
 ### Task 1 — chore/model-providers-plan
 
@@ -85,3 +85,15 @@ The Models hologram edits the whole global model.
   platforms. Lang keys `keys.address.*`, `models.provider`, `models.route.direct/gateway` and
   `models.embedding.tip.*` were removed.
 - README, `wiki/information/overview.md` and `architecture.md` describe the pages.
+
+### Task 4 — release/0.12.0
+
+`project-version` 0.12.0, `wiki/logs/0/12/0/CHANGELOG.md`, its row in the logs index, core
+0.13.0 in the setup page and the map, and the repository state.
+
+Tried in 26.3 dev clients before the release: Fabric (a custom provider on loopback added,
+picked and saved; a question reached a stub there with its key and the bare model id), NeoForge
+(the choice survived a restart; `deepseek` showed it is called at api.deepseek.com with no key
+yet, and a question failed naming deepseek) and Forge (REMOVE dropped the provider; the notes and
+the status line fit after the notes were cut to one line each). Shots are in the project's
+`reports/model-providers/`.

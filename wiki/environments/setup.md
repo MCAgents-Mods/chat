@@ -15,7 +15,7 @@
 ```properties
 git-org=MCAgents-Mods
 git-repo=chat
-project-version=0.11.0
+project-version=0.12.0
 ```
 
 Every dependency coordinate lives in the Gradle version catalog at
@@ -29,7 +29,7 @@ Every dependency coordinate lives in the Gradle version catalog at
 | ForgeGradle | 7.0.40 |
 | Forge Jar-in-Jar plugin | 0.2.3 |
 | Java | 25 |
-| MCAgents core | 0.11.0 |
+| MCAgents core | 0.13.0 |
 
 The entries that move with Minecraft come in one block for the supported version, each
 suffixed with it (`fabric-api-26-3` for 26.3):

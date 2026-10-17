@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.11.0 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.12.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -34,6 +34,13 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   added with its format checked as typed, copied), and CONNECT, whose bridge answered on
   loopback and stopped when CANCEL closed the dialog. NeoForge and Forge 26.3 opened the same
   pages. See [`../tasks/hologram-pages.md`](../tasks/hologram-pages.md).
+* **Chosen providers and custom providers** (0.12.0, core 0.13.0), in 26.3 dev clients: on
+  Fabric a custom provider `homelab` at `http://127.0.0.1:8085/v1` was added with a key, picked
+  and saved, and a question reached a local stub there as `llama3` with that key; on NeoForge
+  the saved choice came back after a restart, `deepseek` picked from the arrow showed
+  "api.deepseek.com · no key yet" and a question failed naming deepseek rather than going
+  through OpenRouter; on Forge REMOVE dropped `homelab` from the file. See
+  [`../tasks/model-providers.md`](../tasks/model-providers.md).
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
 * **Storage.** `sqlite-jdbc` loads from the Jar-in-Jar nested jar on Windows and the
@@ -72,11 +79,13 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   its own connection: no token is legible in it, the same token encrypts differently on two
   writes, keys already in the clear are encrypted at the next open, and a wrong key hides rows
   without deleting them. **No real player's database has been migrated**.
-* **Direct platform routes.** A stored `{platform}/{model}` name routes to the platform's own
-  API when an address is known and a key is stored for it, and to OpenRouter otherwise. The
-  address, the bare model id, the dropped gateway extensions and the per-platform key are
-  asserted against a stub transport; **no request has ever reached a platform's real API**,
-  and the six shipped addresses have not been called.
+* **Chosen providers** (0.12.0, core 0.13.0). Each model is called through the provider picked
+  beside it on the Models hologram, kept in core's global model
+  (`MCAgents/agents/models.properties`), at that provider's address, a custom provider's first.
+  The address, the bare model id, the dropped gateway extensions and the per-provider key are
+  asserted against a stub transport, and the one-time move of 0.11.0's settings by
+  `LegacyModelSettings` is tested; **no request has ever reached a platform's real API**, and
+  the six shipped addresses have not been called.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
