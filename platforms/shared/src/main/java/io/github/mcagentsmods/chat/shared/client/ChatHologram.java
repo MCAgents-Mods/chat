@@ -2,7 +2,8 @@ package io.github.mcagentsmods.chat.shared.client;
 
 import io.github.mcagentsmods.chat.api.model.ChatSession;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
-import io.github.mcagentsmods.chat.common.ui.ChatController;
+import io.github.mcagentsmods.chat.common.ui.ChatConversation;
+import io.github.mcagentsmods.chat.common.ui.ChatSessions;
 import io.github.mcagentsmods.chat.shared.ChatRuntime;
 import io.github.mcagentsmods.chat.shared.client.gui.RenameScreen;
 import io.github.mcagentsmods.core.api.hologram.Hologram;
@@ -23,10 +24,11 @@ import java.util.List;
  * The chat hologram: three panels standing in front of the player, Sessions, Conversation and
  * User Prompt.
  *
- * <p>Core draws it and takes the clicks and the typing; this class builds it from a
- * {@link ChatController}, which holds the conversations and asks the agent. There is one
- * controller for the whole game, so closing the hologram and opening it again keeps the
- * conversation that was open, and an answer still on its way lands in it.
+ * <p>Core draws it and takes the clicks and the typing; this class builds it from
+ * {@link ChatSessions}, which holds the conversations, and the {@link ChatConversation} chosen
+ * in them, which asks the agent. There is one of each for the whole game, so closing the
+ * hologram and opening it again keeps the conversation that was open, and an answer still on
+ * its way lands in it.
  *
  * <p>The hologram opens whether or not storage is ready, and says which in the conversation
  * panel. Opening it is never the step that fails: a player who presses CHAT and sees nothing
@@ -45,9 +47,10 @@ public final class ChatHologram {
     private static final String RENAME = "hologram.mcagents.rename";
     private static final String DELETE = "hologram.mcagents.delete";
 
-    private static ChatController controller;
+    private static ChatSessions sessions;
+    private static ChatConversation conversation;
 
-    /** The session titles last handed to the list, and the controller version they came from. */
+    /** The session titles last handed to the list, and the list version they came from. */
     private static List<String> rows = List.of();
     private static long rowsVersion = -1;
 
@@ -57,9 +60,10 @@ public final class ChatHologram {
 
     /** Opens the chat hologram in front of the player, in place of the one open. */
     public static void open() {
-        ChatController chat = controller();
+        ChatSessions chat = sessions();
         if (!bindStorage(chat)) {
             chat.refresh();
+            conversation().refresh();
         }
         Holograms.open(build(chat));
     }
@@ -74,22 +78,50 @@ public final class ChatHologram {
         return Holograms.isOpen(ID);
     }
 
-    private static ChatController controller() {
-        if (controller == null) {
-            controller = new ChatController(Minecraft.getInstance());
+    private static ChatSessions sessions() {
+        if (sessions == null) {
+            sessions = new ChatSessions(Minecraft.getInstance());
         }
-        return controller;
+        return sessions;
     }
 
-    private static Hologram build(ChatController chat) {
+    /** The conversation the hologram shows; a new one until the player picks another. */
+    private static ChatConversation conversation() {
+        if (conversation == null) {
+            conversation = sessions().open(null);
+        }
+        return conversation;
+    }
+
+    private static Hologram build(ChatSessions chat) {
         return Hologram.of(ID,
-                new SelectList(SESSIONS, () -> rows(chat), chat::selectedIndex, chat::select,
+                new SelectList(SESSIONS, () -> rows(chat), () -> selectedIndex(chat),
+                        index -> select(chat, index),
                         List.of(new HologramButton(NEW, () -> newSession(chat)),
                                 new HologramButton(RENAME, () -> rename(chat)),
                                 new HologramButton(DELETE, () -> delete(chat)))),
                 new Transcript(CONVERSATION, () -> entries(chat)),
-                new PromptInput(PROMPT, PromptInput.SEND, ChatController.PROMPT_LIMIT,
-                        chat::canSend, text -> send(chat, text)));
+                new PromptInput(PROMPT, PromptInput.SEND, ChatConversation.PROMPT_LIMIT,
+                        () -> conversation().canSend(), ChatHologram::send));
+    }
+
+    /** Where the conversation shown is in the list, or -1 while it is new. */
+    private static int selectedIndex(ChatSessions chat) {
+        String id = conversation().sessionId().orElse(null);
+        List<ChatSession> listed = chat.sessions();
+        for (int i = 0; i < listed.size(); i++) {
+            if (listed.get(i).id().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static void select(ChatSessions chat, int index) {
+        List<ChatSession> listed = chat.sessions();
+        if (index >= 0 && index < listed.size() && index != selectedIndex(chat)) {
+            conversation = chat.open(listed.get(index).id());
+        }
     }
 
     /**
@@ -98,7 +130,7 @@ public final class ChatHologram {
      *
      * @return whether this call bound it
      */
-    private static boolean bindStorage(ChatController chat) {
+    private static boolean bindStorage(ChatSessions chat) {
         if (chat.hasStorage()) {
             return false;
         }
@@ -107,10 +139,11 @@ public final class ChatHologram {
             return false;
         }
         chat.bind(database.chat(), AgentFactory.create(database, ChatRuntime.paths()));
+        conversation().refresh();
         return true;
     }
 
-    private static List<String> rows(ChatController chat) {
+    private static List<String> rows(ChatSessions chat) {
         if (rowsVersion != chat.version()) {
             rows = chat.sessions().stream().map(ChatSession::title).toList();
             rowsVersion = chat.version();
@@ -118,12 +151,12 @@ public final class ChatHologram {
         return rows;
     }
 
-    private static List<TranscriptEntry> entries(ChatController chat) {
+    private static List<TranscriptEntry> entries(ChatSessions chat) {
         bindStorage(chat);
         if (!chat.hasStorage()) {
             return List.of(new TranscriptEntry(I18n.get("hologram.mcagents.storage"), storageState()));
         }
-        return chat.transcript(new ChatController.TranscriptLabels(
+        return conversation().transcript(new ChatConversation.TranscriptLabels(
                 playerName(),
                 I18n.get("gui.mcagents.role.assistant"),
                 I18n.get("gui.mcagents.role.system"),
@@ -146,25 +179,26 @@ public final class ChatHologram {
         return name == null || name.isBlank() ? I18n.get("hologram.mcagents.player") : name;
     }
 
-    private static void send(ChatController chat, String text) {
+    private static void send(String text) {
         // Thrown so core keeps the text in the box; SEND is greyed whenever this would happen.
-        if (!chat.send(text)) {
+        if (!conversation().send(text)) {
             throw new IllegalStateException("The question was not taken: nothing to send, "
                     + "no storage, or another question is waiting");
         }
     }
 
     /** NEW starts a conversation, or, while the store could not be opened, tries again. */
-    private static void newSession(ChatController chat) {
+    private static void newSession(ChatSessions chat) {
         if (chat.hasStorage()) {
-            chat.newSession();
+            // Stored with its first question, as every new conversation is.
+            conversation = chat.open(null);
         } else if (ChatRuntime.storageState() == ChatRuntime.StorageState.FAILED) {
             ChatRuntime.reopenDatabase();
         }
     }
 
-    private static void rename(ChatController chat) {
-        chat.selected().ifPresent(session -> Minecraft.getInstance().setScreenAndShow(
+    private static void rename(ChatSessions chat) {
+        conversation().session().ifPresent(session -> Minecraft.getInstance().setScreenAndShow(
                 RenameScreen.forSession(session, null, title -> chat.rename(session.id(), title))));
     }
 
@@ -172,13 +206,14 @@ public final class ChatHologram {
      * Asks before deleting: a conversation takes every message in it with it, and it cannot
      * be undone, so it is the one action here that does not happen on a single click.
      */
-    private static void delete(ChatController chat) {
-        chat.selected().ifPresent(session -> {
+    private static void delete(ChatSessions chat) {
+        conversation().session().ifPresent(session -> {
             Minecraft minecraft = Minecraft.getInstance();
             minecraft.setScreenAndShow(new ConfirmScreen(
                     confirmed -> {
                         if (confirmed) {
                             chat.delete(session.id());
+                            conversation = chat.open(null);
                         }
                         minecraft.setScreenAndShow(null);
                     },

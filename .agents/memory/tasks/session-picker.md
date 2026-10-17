@@ -54,3 +54,16 @@ that can be faded), and gives `Transcript` a live heading and buttons under it.
 ### Task 1 — chore/session-picker-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — refactor/chat-conversations
+
+`ChatController` is split in `common.ui`. `ChatSessions` binds the store and the agent, lists
+the conversations (`sessions`, `find`, `version`), renames and deletes them, and hands out a
+`ChatConversation` with `open(sessionId)`, `null` for a new one. A `ChatConversation` holds
+one conversation's messages, the question waiting in it and the reason the last was not
+answered, so two can wait for answers at once; a new one takes the id it is stored as with its
+first question, and the list is read again. `ChatControllerTest` became
+`ChatConversationTest` and `ChatSessionsTest`, with a test of two conversations waiting at
+once. `ChatHologram` keeps its three panels on the new classes: picking a row opens that
+conversation, NEW opens a new one. The architecture page, the repository map and the state
+file name the two classes.

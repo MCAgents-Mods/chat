@@ -110,10 +110,10 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   [`../tasks/agents-adoption.md`](../tasks/agents-adoption.md) and
   [`../tasks/core-agents.md`](../tasks/core-agents.md).
 * Every I/O method returns `CompletableFuture`. 415 tests in `common/`.
-* The chat hologram: `ChatController` in `common.ui` holds the conversations, the chosen one,
-  the question waiting and why the last was not answered, and hands results to the client
-  thread through an executor. `ChatHologram` in `platforms/shared/` builds core's three
-  panels from the one controller the game has.
+* The chat hologram: in `common.ui`, `ChatSessions` holds the store, the agent and the list of
+  conversations, and each `ChatConversation` one conversation's messages, the question waiting
+  in it and why the last was not answered; both hand results to the client thread through an
+  executor. `ChatHologram` in `platforms/shared/` builds core's panels from them.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
   game session**, held by `AgentFactory` and handed to every screen, so a save is the persona
   the next question uses. It generates the file when it is missing

@@ -22,7 +22,7 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 | Directory | Gradle module | Depends on | Contains |
 |---|---|---|---|
 | `api/` | `chat-api` | the JDK only | Interfaces, records, enums, abstract classes. No implementation, no I/O, no third-party libraries. |
-| `common/` | `chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatController`, what the chat hologram shows and does. Plain Java. |
+| `common/` | `chat-common` | `api/` | SQLite access, the OpenRouter client, embedding and retrieval, the wallet cryptography, the MCP host that runs external servers, and `ChatSessions` and `ChatConversation`, what the chat holograms show and do. Plain Java. |
 | `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the screens, chat's buttons on core's agents menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
@@ -131,16 +131,17 @@ a convenience method is how blocking calls get back in.
 result back to the client thread before touching any Minecraft state. `join()`, `get()`,
 and `getNow()` are never called from render or tick code.
 
-The chat hologram reads `ChatController` every frame, so the controller only ever answers from
-what it already holds. Each action starts the work and hands the result back through the
-executor it was built with — the game's own, in game — and the next frame shows it. That
-executor is also why the controller is tested without Minecraft: a test hands it one that runs
-each result at once.
+The chat hologram reads `ChatSessions`, the list of conversations, and its own
+`ChatConversation`, one conversation's messages and waiting question, every frame, so both
+only ever answer from what they already hold. Each action starts the work and hands the result
+back through the executor `ChatSessions` was built with — the game's own, in game — and the
+next frame shows it. That executor is also why both are tested without Minecraft: a test hands
+it one that runs each result at once.
 
 ## Data flow of one question
 
-1. The player types a prompt on the chat hologram (`platforms/shared/`), and `ChatController`
-   stores it in the picked conversation (`common/`).
+1. The player types a prompt on the chat hologram (`platforms/shared/`), and its
+   `ChatConversation` stores it in that conversation (`common/`).
 2. The prompt is embedded and matched against the stored Knowledge Pack embeddings
    (`common/`), returning only the closest content.
 3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
