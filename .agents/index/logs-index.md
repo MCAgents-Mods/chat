@@ -12,6 +12,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 
 | Version | File | Purpose |
 |---|---|---|
+| 0.11.0 | [`../../wiki/logs/0/11/0/CHANGELOG.md`](../../wiki/logs/0/11/0/CHANGELOG.md) | Every G menu page is a hologram: Keys, Models, Persona and Wallets, and their questions as dialog holograms; the flat screens are gone; core 0.12.0. |
 | 0.10.1 | [`../../wiki/logs/0/10/1/CHANGELOG.md`](../../wiki/logs/0/10/1/CHANGELOG.md) | Build only: nothing is `implementation` any more; sqlite-jdbc is `compileOnly` in `common/`, so published `chat-common` no longer asks for it; the jars are unchanged. |
 | 0.10.0 | [`../../wiki/logs/0/10/0/CHANGELOG.md`](../../wiki/logs/0/10/0/CHANGELOG.md) | CHAT opens a Chat Sessions list with NEW CHAT on its title bar; each conversation gets its own chat hologram, several at once, and the open ones are faded in the list; core 0.11.0. |
 | 0.9.0 | [`../../wiki/logs/0/9/0/CHANGELOG.md`](../../wiki/logs/0/9/0/CHANGELOG.md) | Chat on core alone: tools, the agent and menu buttons from core 0.10.0, which took in the agents mod; `mcagents_agents` no longer required. |

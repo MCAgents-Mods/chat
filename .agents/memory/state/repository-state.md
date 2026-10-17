@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.10.1 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.11.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -18,16 +18,22 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   0.2.0 draws with core 0.6.0's holograms. Run in a Fabric dev client: CHAT replaced the menu
   with Sessions, Conversation and User Prompt; a question typed into the prompt box started a
   conversation and, with no key, showed its reason as the agent's line; NEW, RENAME and DELETE
-  worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens. In 0.5.0, on core
+  worked by click; KEYS, MODEL, PERSONA and WALLETS opened their screens (holograms since
+  0.11.0). In 0.5.0, on core
   0.7.0 and agents 0.3.0, the menu buttons and CHAT's hologram were seen again in Fabric and
   NeoForge dev clients on both Minecraft 26.2 and 26.3, and then in Forge dev clients on both,
   where the built Forge jars also loaded SQLite from their Jar-in-Jar. See
   [`../tasks/chat-hologram.md`](../tasks/chat-hologram.md),
   [`../tasks/minecraft-26-3.md`](../tasks/minecraft-26-3.md) and
   [`../tasks/forge-platform.md`](../tasks/forge-platform.md).
-* **The API key screen** — a key was pasted, stored, and listed masked. Its address row
-  refused a plain `http://` address and stored a loopback one in a dev client.
-* **The model settings screen** — both dropdowns, editable and selectable.
+* **Every G menu page as a hologram** (0.11.0, core 0.12.0), in a Fabric 26.3 dev client:
+  KEYS (a key typed as stars, stored, listed masked, the box emptied; a platform picked from
+  its arrow filled its known address), MODEL (a provider picked from its arrow rewrote the
+  chat model, the Embedding switch flipped, SAVE said Saved), PERSONA (typed into and saved to
+  `AGENTS.md`), WALLETS (a wallet made, renamed in a dialog hologram, an Ethereum address
+  added with its format checked as typed, copied), and CONNECT, whose bridge answered on
+  loopback and stopped when CANCEL closed the dialog. NeoForge and Forge 26.3 opened the same
+  pages. See [`../tasks/hologram-pages.md`](../tasks/hologram-pages.md).
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
 * **Storage.** `sqlite-jdbc` loads from the Jar-in-Jar nested jar on Windows and the
@@ -36,16 +42,16 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 ## What is built but unproven in a real client
 
 * Renaming a conversation, and deleting one behind its confirmation.
-* **The whole wallet feature.** Compile-verified against Minecraft 26.2 and covered by tests
-  in `common/`, but no screen has been opened in a real client and **no signature from the
-  real MetaMask extension has ever been checked** — the tests sign with their own secp256k1
+* **The wallet handshake.** Covered by tests in `common/`, and the Wallets hologram has been
+  used in a dev client, but **no signature from the real MetaMask extension has ever been
+  checked** — the tests sign with their own secp256k1
   signer. The multi-address handshake makes that gap sharper: nothing has confirmed how many
   accounts a real extension shares by default, only that the mod binds however many it is
   given. See
   `.agents/memory/tasks/wallet-binding.md` and
   `.agents/memory/tasks/wallet-accounts.md`.
 * **The persona file and the server context.** `AGENTS.md` is written on first run, edited
-  from `PersonaScreen` in game, and reloaded
+  from the PERSONA hologram in game, and reloaded
   into the one shared `FilePersonaStore` as it is saved. The agent is told where the player
   is playing — a server address, or exactly `Player is playing in single player.` — through
   `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. **No
@@ -65,20 +71,12 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `MCAGENTS_CHAT_TOKEN_ENCRYPT_KEY` is set. Proven by reading the database file with
   its own connection: no token is legible in it, the same token encrypts differently on two
   writes, keys already in the clear are encrypted at the next open, and a wrong key hides rows
-  without deleting them. **No real player's database has been migrated**, and the in-game key
-  screen's platform box is compile-verified only.
+  without deleting them. **No real player's database has been migrated**.
 * **Direct platform routes.** A stored `{platform}/{model}` name routes to the platform's own
   API when an address is known and a key is stored for it, and to OpenRouter otherwise. The
   address, the bare model id, the dropped gateway extensions and the per-platform key are
   asserted against a stub transport; **no request has ever reached a platform's real API**,
   and the six shipped addresses have not been called.
-* **Provider selection in the game GUI.** The key screen picks a platform from an
-  `EditableDropdown`; the model screen has a provider row that rewrites the chat model through
-  `ModelCatalog.chatModelOn` and a line saying whether that provider is called directly, from
-  `StoredProviderRoutes`. Both offer `ModelCatalog.offeredPlatforms`. **Compile-verified only** — `./gradlew build` produces the jar and the layout
-  arithmetic is tested in `common.ui.ModelSettingsRows`, but no screen has been opened in a
-  real client, which this repository has been caught by before —
-  `.agents/memory/tasks/gui-play-testing.md`.
 * Prompt caching. The breakpoints and the request JSON are verified; **no `cached_tokens`
   figure has ever been read back**, so whether the provider actually reuses the prefix is
   still unknown. `usage.include` is requested so the first person to look will see it.
@@ -116,7 +114,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   executor. In `platforms/shared/`, `ChatSessionsHologram` is the Chat Sessions pick list CHAT
   opens, and `ChatHologram` one two-panel hologram per conversation, several at once.
 * The persona: `PersonaStore` in `api/`, `FilePersonaStore` in `common/`. **One store per
-  game session**, held by `AgentFactory` and handed to every screen, so a save is the persona
+  game session**, held by `AgentFactory` and handed to every page, so a save is the persona
   the next question uses. It generates the file when it is missing
   and never rewrites it after that, and its cache re-reads whenever the file's timestamp or
   size has moved — which is what keeps a text editor working without a disk read per turn.
@@ -139,7 +137,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   cosine similarity, and `PromptAssembler` places the best few after the last cache
   breakpoint and before the question. Governed by one setting,
   `model.embedding.enabled`, carried on `ModelPreferences` and set on the in-game
-  model screen. Off does no work at all rather than filtering afterwards, and
+  Models hologram. Off does no work at all rather than filtering afterwards, and
   a failed embedding call yields an ordinary answer rather than an error.
 * MCP: the mod is an MCP **client**. `api.mcp` holds the contracts; `common.mcp` holds
   `McpDiscovery` (reads files, starts nothing), `StdioMcpSession`, `HttpMcpSession`,
@@ -204,17 +202,12 @@ see [`../tasks/central-service-removal.md`](../tasks/central-service-removal.md)
 
 Two things are outstanding, and the second is the more interesting.
 
-1. Wallets — now a screen of account columns rather than one account behind a dropdown —
-   the embedding toggle on `ModelSettingsScreen`, the
-   persona editor, the join-event detection behind the server context, and now **the whole
-   MCP host and tool loop** are compile-verified and unopened. `platforms/fabric` has no test source set, so nothing here
+1. The join-event detection behind the server context and **the whole MCP host and tool
+   loop** are compile-verified and unopened; the pages are holograms now and were opened in
+   a dev client for 0.11.0. `platforms/fabric` has no test source set, so nothing here
    can prove any of them. One session in a real client would settle them all, plus a binding
-   through the real MetaMask extension. **A screenshot once found two collisions on a screen
-   that had survived several rounds** — screen arithmetic is under test now, in
-   `common/ui/StackedRows`, but what a screen *looks* like still is not. The two cheapest
-   checks in that session: open the AGENTS.md screen and type a long persona into it, and
-   watch `logs/latest.log` for the `Player environment is now …` line when joining a world,
-   a server, and a realm. A third is now worth as much: ask the agent to clone a real MCP
+   through the real MetaMask extension. The cheapest check in that session: watch `logs/latest.log` for the `Player environment is now …` line when joining a world,
+   a server, and a realm. A second is now worth as much: ask the agent to clone a real MCP
    server and then ask it something that needs one of that server's tools — it is the only
    way to learn what a real model does with these tool descriptions, and what a real
    third-party server does that the fake one does not. Since 0.3.0 it also shows whether a
