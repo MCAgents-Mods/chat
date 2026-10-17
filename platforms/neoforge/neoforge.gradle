@@ -63,17 +63,17 @@ neoForge {
 }
 
 dependencies {
-    // Compiled against, never shipped through a configuration: ModDevGradle provides NeoForge
-    // itself, and the jar task below merges chat's own modules.
-    compileOnly project(':chat-api')
-    compileOnly project(':chat-common')
-    compileOnly project(sharedModule)
+    // Chat's own modules are part of this mod: the jar task below merges their classes, and
+    // the dev client runs them from this module's class path. This module is never published,
+    // so implementation reaches nothing else. Core is not declared here: no class in this
+    // module uses it, and api/, common/ and platforms/shared compile against it with
+    // compileOnly, since the mcagents_core mod provides it in game.
+    implementation project(':chat-api')
+    implementation project(':chat-common')
+    implementation project(sharedModule)
 
-    // The dev client (runClient) runs from this module's class path, so it needs them there
-    // too. This module is never published, so runtimeOnly reaches nothing else.
-    runtimeOnly project(':chat-api')
-    runtimeOnly project(':chat-common')
-    runtimeOnly project(sharedModule)
+    // NeoForge itself is not declared here: ModDevGradle compiles against it and runs the dev
+    // client on it, and the game provides it at runtime.
 
     // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads
     // it as a library, which is what lets the mod store data on a machine that has never

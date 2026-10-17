@@ -196,9 +196,10 @@ Facts that cost time to establish, and will again if forgotten:
 
 * Minecraft 26.x has **no Yarn mappings and no intermediary**, and **no `remapJar` runs** —
   `jar` produces the final artifact.
-* No configuration bundles anything in Loom; only `include` does. Since 0.10.1 nothing is
-  declared `implementation`: the loader modules pair `compileOnly` with a `runtimeOnly` for
-  the dev client. Gson is `compileOnly` because Minecraft provides it; `sqlite-jdbc` is the
+* No configuration bundles anything in Loom; only `include` does. Since 0.13.1 the loader
+  modules declare chat's own modules `implementation` and nothing else is: Fabric Loader,
+  Fabric API and Forge are `compileOnly` with a `runtimeOnly` for the dev client, and core is
+  compile-only wherever it is declared. Gson is `compileOnly` because Minecraft provides it; `sqlite-jdbc` is the
   only bundled library. Fabric has no
   equivalent of Spigot's runtime Maven `libraries:`.
 * The 26.x client GUI API is reworked — see `.agents/wiki/context/repository-map.md`.

@@ -46,3 +46,12 @@ as `compileOnly` with a `runtimeOnly` twin. Core is `compileOnlyApi` in `api/` a
 ### Task 1 — chore/own-modules-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — build/own-modules
+
+The Fabric, Forge and NeoForge modules declare `chat-api`, `chat-common` and the shared module
+with `implementation` and nothing else; Fabric Loader, Fabric API and Forge stay `compileOnly`
+with the `runtimeOnly` line `runClient` needs, and sqlite-jdbc keeps its `include` or `jarJar`
+and dev-client `runtimeOnly`. No loader module declares core. The repository map and the state
+file say so. `./gradlew build` is green against core's `build/own-modules`, and the three loader
+jars hold exactly the entries, at the same sizes, of the v0.13.0 release jars.
