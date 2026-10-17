@@ -44,16 +44,28 @@ loom {
 
 dependencies {
     minecraft libraryFor('minecraft')
-    implementation libs.fabric.loader
-    implementation libraryFor('fabric-api')
 
-    implementation project(':chat-api')
-    implementation project(':chat-common')
-    implementation project(sharedModule)
+    // Compiled against, never shipped through a configuration: the game provides Fabric
+    // Loader and Fabric API, and the jar task below merges chat's own modules.
+    compileOnly libs.fabric.loader
+    compileOnly libraryFor('fabric-api')
+    compileOnly project(':chat-api')
+    compileOnly project(':chat-common')
+    compileOnly project(sharedModule)
+
+    // The dev client (runClient) runs from this module's class path, so it needs them there
+    // too. This module is never published, so runtimeOnly reaches nothing else.
+    runtimeOnly libs.fabric.loader
+    runtimeOnly libraryFor('fabric-api')
+    runtimeOnly project(':chat-api')
+    runtimeOnly project(':chat-common')
+    runtimeOnly project(sharedModule)
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
+    // common/ only compiles against it, so the dev client gets it here.
     include libs.sqlite.jdbc
+    runtimeOnly libs.sqlite.jdbc
 }
 
 // api/, common/ and platforms/shared are chat's own code, so their classes and

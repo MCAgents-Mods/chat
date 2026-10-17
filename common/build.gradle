@@ -41,9 +41,12 @@ dependencies {
     // never bundled, like core's API above.
     compileOnlyApi libs.core.common
 
-    // The only third-party runtime dependency. platforms/fabric bundles it into the mod
-    // jar with Loom's `include`.
-    implementation libs.sqlite.jdbc
+    // The only third-party runtime library. Each loader jar nests it (Loom's `include` on
+    // Fabric, `jarJar` on NeoForge and Forge), so the mod jar provides it at runtime and the
+    // published chat-common does not ask a consumer for it. Tests run outside any mod jar and
+    // open SQLite data sources themselves, so they need it on their own classpath.
+    compileOnly libs.sqlite.jdbc
+    testImplementation libs.sqlite.jdbc
 
     // Minecraft ships Gson, so it is present at runtime in the game and must NOT be
     // bundled. compileOnly here says exactly that: compile against it, ship nothing.
