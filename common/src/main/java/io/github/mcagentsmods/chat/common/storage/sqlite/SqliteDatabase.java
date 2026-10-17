@@ -11,6 +11,8 @@ import io.github.mcagentsmods.chat.api.storage.WalletRepository;
 import io.github.mcagentsmods.chat.common.security.TokenCipher;
 import io.github.mcagentsmods.chat.common.storage.CachingContentRepository;
 import io.github.mcagentsmods.chat.common.storage.RevisionedChatRepository;
+import io.github.mcagentsmods.core.api.model.GlobalModelStore;
+import io.github.mcagentsmods.core.api.model.GlobalModels;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
@@ -58,7 +60,7 @@ public final class SqliteDatabase implements LocalDatabase {
     private final AtomicLong chatRevision = new AtomicLong();
 
     private SqliteDatabase(Path file, Connection connection, ExecutorService executor,
-                           TokenCipher cipher) {
+                           TokenCipher cipher, GlobalModelStore models) {
         this.file = file;
         this.connection = connection;
         this.executor = executor;
@@ -75,7 +77,9 @@ public final class SqliteDatabase implements LocalDatabase {
         // Wrapped so that every chat write moves the same counter, whoever makes it. A
         // counter owned by one writer would only ever see that writer's own writes.
         this.chat = new RevisionedChatRepository(new SqliteChatRepository(worker), chatRevision);
-        this.settings = new SqliteSettingsRepository(worker);
+        // The model choices are core's global model, which every MCAgents mod reads; only the
+        // embedding switch is kept in this database.
+        this.settings = new SqliteSettingsRepository(worker, models);
         // Not cached. A player has a handful of wallets, they are read when a screen opens
         // rather than on every question, and a stale address is the one thing here that
         // would actually cost the player something.
@@ -117,8 +121,24 @@ public final class SqliteDatabase implements LocalDatabase {
      * @param cipher what encrypts and decrypts stored tokens
      */
     public static CompletableFuture<LocalDatabase> open(Path file, TokenCipher cipher) {
+        return open(file, cipher, GlobalModelStore.inMemory(GlobalModels.DEFAULTS));
+    }
+
+    /**
+     * Opens the store over the game's global model.
+     *
+     * <p>The two shorter forms keep the model choices in memory, starting from the defaults,
+     * which is what a test wants; the game passes core's store, {@code Models.store()}.
+     *
+     * @param file   the database file
+     * @param cipher what encrypts and decrypts stored tokens
+     * @param models where the chat and embedding choices are kept
+     */
+    public static CompletableFuture<LocalDatabase> open(Path file, TokenCipher cipher,
+                                                        GlobalModelStore models) {
         Objects.requireNonNull(file, "file");
         Objects.requireNonNull(cipher, "cipher");
+        Objects.requireNonNull(models, "models");
         Path absolute = file.toAbsolutePath().normalize();
         ExecutorService executor = newDatabaseThread(absolute);
 
@@ -142,7 +162,7 @@ public final class SqliteDatabase implements LocalDatabase {
                     throw e;
                 }
                 LOGGER.log(Level.INFO, "Opened the local database at {0}", absolute);
-                return (LocalDatabase) new SqliteDatabase(absolute, connection, executor, cipher);
+                return (LocalDatabase) new SqliteDatabase(absolute, connection, executor, cipher, models);
             } catch (SQLException | IOException e) {
                 executor.shutdownNow();
                 throw new DataAccessException("Opening the local database at " + absolute + " failed", e);

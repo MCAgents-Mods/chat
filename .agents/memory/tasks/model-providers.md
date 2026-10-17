@@ -49,3 +49,20 @@ record is chat's part.
 ### Task 1 — chore/model-providers-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — refactor/global-models
+
+Chat reads and writes its models through core 0.13.0's global model, pinned in the catalog.
+
+- `ModelPreferences` holds two `ModelChoice`s (provider and model) and the embedding switch;
+  `of(String, String, boolean)` still builds one through OpenRouter.
+- `SqliteSettingsRepository` keeps only `model.embedding.enabled` in SQLite and the choices in
+  the `GlobalModelStore` it is opened with, keeping the custom providers on save.
+  `SqliteDatabase.open(file)` and `open(file, cipher)` use an in-memory store, so tests stay
+  apart from the game's file; `ChatRuntime` passes `Models.store()`.
+- `LegacyModelSettings.migrate` runs once, while the store was never saved: old `model.chat`,
+  `model.embedding` and `api.base-url.*` rows become choices and custom providers, a model
+  keeping the direct route only when its platform had both an address and an active key.
+- Requests carry their provider (`AgentRequest.of(choice, …)`, `embed(choice, …)`);
+  `StoredProviderRoutes` is gone, replaced by core's `Models.routes()`.
+- `.agents/api/openrouter.md` and the repository map describe the chosen-provider route.

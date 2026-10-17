@@ -4,7 +4,6 @@ import io.github.mcagentsmods.chat.api.model.ApiKey;
 import io.github.mcagentsmods.chat.api.model.ModelCatalog;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
-import io.github.mcagentsmods.chat.common.agent.StoredProviderRoutes;
 import io.github.mcagentsmods.core.api.hologram.Form;
 import io.github.mcagentsmods.core.api.hologram.FormButton;
 import io.github.mcagentsmods.core.api.hologram.FormField;
@@ -12,7 +11,11 @@ import io.github.mcagentsmods.core.api.hologram.FormText;
 import io.github.mcagentsmods.core.api.hologram.FormToggle;
 import io.github.mcagentsmods.core.api.hologram.FormTone;
 import io.github.mcagentsmods.core.api.hologram.Hologram;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 import io.github.mcagentsmods.core.api.model.ModelName;
+import io.github.mcagentsmods.core.api.model.ModelPlatform;
+import io.github.mcagentsmods.core.api.model.ProviderRoutes;
+import io.github.mcagentsmods.core.common.model.Models;
 import net.minecraft.client.resources.language.I18n;
 
 import java.util.List;
@@ -34,8 +37,9 @@ import java.util.List;
  * that differs from the id's platform can only mean the player typed it on purpose, and SAVE
  * honours it then.
  *
- * <p>Under it, whether that provider is reached directly or through the gateway, answered by
- * {@link StoredProviderRoutes}, the same code the real request routes through.
+ * <p>Under it, where that provider is called, answered by core's {@link Models#routes()}, the
+ * same routing the real request goes through. The models are core's global model, which every
+ * task with no model of its own falls back to.
  *
  * <p>Nothing is stored until SAVE, the embedding switch included: a switch that saved itself
  * would be the one control that behaved differently.
@@ -48,7 +52,10 @@ final class ModelsHologram extends HologramPage {
     private static final String PREFIX = "gui.mcagents.models.";
 
     private final LocalDatabase database;
-    private final StoredProviderRoutes routes;
+    private final ProviderRoutes routes = Models.routes();
+
+    /** The embedding choice as loaded, carried through a save untouched. */
+    private ModelChoice embeddingChoice = ModelPreferences.defaults().embedding();
 
     private String provider = "";
     private String chatModel = "";
@@ -66,7 +73,6 @@ final class ModelsHologram extends HologramPage {
 
     private ModelsHologram(LocalDatabase database) {
         this.database = database;
-        this.routes = new StoredProviderRoutes(database.settings(), database.apiKeys());
         show(ModelPreferences.defaults());
     }
 
@@ -123,7 +129,8 @@ final class ModelsHologram extends HologramPage {
 
     private void show(ModelPreferences preferences) {
         chatModel = preferences.chatModel();
-        provider = platformOf(chatModel);
+        provider = preferences.chat().provider();
+        embeddingChoice = preferences.embedding();
         embeddingModel = preferences.embeddingModel();
         embeddingEnabled = preferences.embeddingEnabled();
     }
@@ -163,7 +170,7 @@ final class ModelsHologram extends HologramPage {
 
     /** Asks how {@code model} would be reached, through the code the request itself uses. */
     private void showRoute(String model) {
-        request(routes.route(model), answer -> {
+        request(routes.route(ModelChoice.qualified(provider, model)), answer -> {
             if (answer.isThroughOpenRouter()) {
                 route = I18n.get(PREFIX + "route.gateway");
                 routeTone = FormTone.SOFT;
@@ -182,7 +189,11 @@ final class ModelsHologram extends HologramPage {
         }
         // Blank fields are not an error: ModelPreferences substitutes the catalog default, so
         // "clear it and save" is how a player gets back to the default by hand.
-        ModelPreferences requested = ModelPreferences.of(chatModel, embeddingModel, embeddingEnabled);
+        ModelPreferences requested = ModelPreferences.of(
+                ModelChoice.qualified(provider.isBlank() ? ModelPlatform.OPENROUTER : provider, chatModel),
+                embeddingChoice.withModel(embeddingModel.isBlank()
+                        ? ModelCatalog.DEFAULT_EMBEDDING_MODEL : embeddingModel),
+                embeddingEnabled);
         request(database.settings().saveModelPreferences(requested), stored -> {
             // Show what was actually stored, which may differ from what was typed.
             show(stored);

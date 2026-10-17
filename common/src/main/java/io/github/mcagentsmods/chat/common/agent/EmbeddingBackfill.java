@@ -4,6 +4,7 @@ import io.github.mcagentsmods.chat.api.model.ContentQuery;
 import io.github.mcagentsmods.chat.api.model.KnowledgeContent;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 
 import java.lang.System.Logger;
@@ -91,7 +92,7 @@ public final class EmbeddingBackfill {
 
         return candidates(preferences)
                 .thenCompose(wanted ->
-                        embedEach(preferences.embeddingModel(), wanted, new Result(0, 0, List.of())))
+                        embedEach(preferences.embedding(), wanted, new Result(0, 0, List.of())))
                 .thenCompose(result -> record(preferences, result));
     }
 
@@ -140,7 +141,7 @@ public final class EmbeddingBackfill {
                 .thenApply(ignored -> result);
     }
 
-    private CompletableFuture<Result> embedEach(String model, List<KnowledgeContent> packs,
+    private CompletableFuture<Result> embedEach(ModelChoice model, List<KnowledgeContent> packs,
                                                 Result carried) {
         if (packs.isEmpty()) {
             return CompletableFuture.completedFuture(carried);

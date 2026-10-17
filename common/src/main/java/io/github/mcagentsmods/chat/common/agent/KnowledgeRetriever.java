@@ -90,7 +90,7 @@ public final class KnowledgeRetriever {
             return CompletableFuture.completedFuture(List.of());
         }
 
-        return client.embed(preferences.embeddingModel(), question)
+        return client.embed(preferences.embedding(), question)
                 .thenCompose(this::scoreAgainstStoredPacks)
                 .exceptionally(failure -> {
                     // Deliberately swallowed. The player asked a question; they get an

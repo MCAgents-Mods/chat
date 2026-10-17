@@ -3,16 +3,29 @@ package io.github.mcagentsmods.chat.common.storage.sqlite;
 import io.github.mcagentsmods.chat.api.model.ModelPreferences;
 import io.github.mcagentsmods.chat.api.storage.DataAccessException;
 import io.github.mcagentsmods.chat.api.storage.SettingsRepository;
+import io.github.mcagentsmods.core.api.model.GlobalModelStore;
+import io.github.mcagentsmods.core.api.model.GlobalModels;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 
-/** Player preferences, in the {@code settings} table. */
+/**
+ * Player preferences, in the {@code settings} table, and the model choices in core's global
+ * model.
+ *
+ * <p>The chat and embedding choices are core's {@link GlobalModelStore}: what every task with
+ * no model of its own uses, in every MCAgents mod. The embedding switch is chat's own and stays
+ * in this database. The rows {@value #CHAT_MODEL_KEY} and {@value #EMBEDDING_MODEL_KEY} are
+ * where the choices lived before; they are read once, by {@code LegacyModelSettings}, and never
+ * written again.
+ */
 final class SqliteSettingsRepository implements SettingsRepository {
 
     static final String CHAT_MODEL_KEY = "model.chat";
@@ -20,21 +33,22 @@ final class SqliteSettingsRepository implements SettingsRepository {
     static final String EMBEDDING_ENABLED_KEY = "model.embedding.enabled";
 
     private final SqlWorker worker;
+    private final GlobalModelStore models;
 
-    SqliteSettingsRepository(SqlWorker worker) {
+    SqliteSettingsRepository(SqlWorker worker, GlobalModelStore models) {
         this.worker = worker;
+        this.models = Objects.requireNonNull(models, "models");
     }
 
     @Override
     public CompletableFuture<ModelPreferences> loadModelPreferences() {
         return worker.submit("Reading the model preferences", connection -> {
-            // Read all three in one call rather than three round trips, and let
-            // ModelPreferences substitute the defaults for anything unset.
-            String chat = readValue(connection, CHAT_MODEL_KEY).orElse(null);
-            String embedding = readValue(connection, EMBEDDING_MODEL_KEY).orElse(null);
             boolean enabled = readFlag(connection, EMBEDDING_ENABLED_KEY,
                     ModelPreferences.DEFAULT_EMBEDDING_ENABLED);
-            return ModelPreferences.of(chat, embedding, enabled);
+            // Read on the database thread with the switch, so one answer holds both. The global
+            // model is read now rather than held, so a save in another mod shows here too.
+            GlobalModels global = models.current();
+            return ModelPreferences.of(global.chat(), global.embedding(), enabled);
         });
     }
 
@@ -44,18 +58,40 @@ final class SqliteSettingsRepository implements SettingsRepository {
         // Normalise before storing: a blank becomes the default, so nothing downstream has
         // to handle an empty model id.
         ModelPreferences normalised = ModelPreferences.of(
-                preferences.chatModel(),
-                preferences.embeddingModel(),
-                preferences.embeddingEnabled());
+                preferences.chat(), preferences.embedding(), preferences.embeddingEnabled());
 
-        return worker.submitInTransaction("Storing the model preferences", connection -> {
-            writeValue(connection, CHAT_MODEL_KEY, normalised.chatModel());
-            writeValue(connection, EMBEDDING_MODEL_KEY, normalised.embeddingModel());
-            // The embedding model id is written whether or not retrieval is on. Switching
-            // off is not a reason to forget which model the player picked.
+        return worker.submit("Storing the embedding switch", connection -> {
+            // The embedding choice is kept whether or not retrieval is on. Switching off is
+            // not a reason to forget which model the player picked.
             writeValue(connection, EMBEDDING_ENABLED_KEY,
                     Boolean.toString(normalised.embeddingEnabled()));
-            return normalised;
+            return null;
+        }).thenCompose(ignored -> {
+            // The custom providers are carried over from what is current: they are added and
+            // removed on their own, never by saving the models.
+            GlobalModels current = models.current();
+            return models.save(current.withChat(normalised.chat()).withEmbedding(normalised.embedding()));
+        }).thenApply(ignored -> normalised);
+    }
+
+    @Override
+    public CompletableFuture<Map<String, String>> findStartingWith(String prefix) {
+        Objects.requireNonNull(prefix, "prefix");
+        return worker.submit("Reading settings by prefix", connection -> {
+            Map<String, String> found = new TreeMap<>();
+            // substr rather than LIKE, so an underscore or a percent sign in the prefix is
+            // matched as itself.
+            String sql = "SELECT key, value FROM settings WHERE substr(key, 1, ?) = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, prefix.length());
+                statement.setString(2, prefix);
+                try (ResultSet rows = statement.executeQuery()) {
+                    while (rows.next()) {
+                        found.put(rows.getString("key"), rows.getString("value"));
+                    }
+                }
+            }
+            return found;
         });
     }
 

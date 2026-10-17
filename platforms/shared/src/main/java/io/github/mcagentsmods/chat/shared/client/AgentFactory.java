@@ -10,6 +10,7 @@ import io.github.mcagentsmods.chat.common.agent.FilePersonaStore;
 import io.github.mcagentsmods.chat.common.agent.OpenRouterAgent;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 import io.github.mcagentsmods.core.common.agent.Agents;
+import io.github.mcagentsmods.core.common.model.Models;
 
 /**
  * Builds the agent the chat hologram uses, and owns the model client's lifetime.
@@ -77,7 +78,7 @@ public final class AgentFactory {
                 // Embeddings are cached locally; completions are not, and the prompt
                 // itself is reused provider-side through the breakpoints the assembler
                 // places. See CachingModelClient and ChatModelClients.
-                modelClient = ChatModelClients.create(database);
+                modelClient = ChatModelClients.create(database, Models.routes());
             }
             return modelClient;
         }
