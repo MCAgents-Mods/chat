@@ -133,7 +133,8 @@ own answer. A chat hologram has two panels side by side:
   it and closes its hologram — after asking, in the same kind of hologram, because it takes
   every message in that conversation with it and cannot be undone. **MODEL** opens **Chat
   Model** for that conversation alone: switch on **Own chat model** or **Own embedding model**
-  and pick a provider and a model, as on the Models page, then **SAVE**. A switch left off
+  and pick a provider and a model, as on the Models page, then **SAVE**, which says so in
+  amber when no key is stored for the provider you picked. A switch left off
   follows the Models page, so changing the global model there changes it here too; **USE
   GLOBAL** turns both off. A new conversation can be set before its first question.
 * **User Prompt** is where you type. **SEND** asks the question in that conversation, and is

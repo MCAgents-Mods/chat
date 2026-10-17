@@ -72,15 +72,19 @@ A conversation's models are stored and answered with.
 MODEL under a conversation, between RENAME and DELETE, opens its Chat Model hologram,
 `mcagents.chatmodel.{the chat hologram's id after mcagents.chat.}`.
 
-- `ChatModelHologram` (a `HologramPage`) is a wide form in the Models page's style: "For
-  {title}", an **Own chat model** switch over the chat provider (with the route note) and model,
-  the same for embedding, a status line, **SAVE** and **USE GLOBAL**. A field whose switch is
-  off shows the global choice, greyed; turning it on starts from the global choice. SAVE refuses
-  a provider with no address, as the Models page does, and a blank model. DELETE closes the
-  conversation's model page with its chat hologram.
+- `ChatModelHologram` (a `HologramPage`) is a wide form in the Models page's style: one top
+  line ("For {title}", or what the last SAVE did), an **Own chat model** switch over the chat
+  provider and model, the same for embedding, **SAVE** and **USE GLOBAL**. A field whose switch
+  is off shows the global choice, greyed; turning it on starts from the global choice. SAVE
+  refuses a provider with no address, as the Models page does, and a blank model, and warns in
+  amber when a chosen provider has no key. DELETE closes the conversation's model page with its
+  chat hologram.
+- Core's `Form` leaves out rows that do not fit its fixed height, so the first build, with a
+  separate status line and the Models page's two route notes, lost the embedding model field
+  in game. Folding the status into the top line and dropping the notes fits all six fields.
 - `ChatConversation` holds the conversation's `SessionModels`, read with its messages;
   `chooseModels` stores them at once, or, for a new conversation, keeps them and stores them
   with the conversation before its first question is appended, so the agent answers that
   question with them. Three tests in `ChatConversationTest`; 416 in `common/`.
-- The overview, README, repository map and state file describe MODEL; nine
+- The overview, README, repository map and state file describe MODEL; ten
   `gui.mcagents.chat_model.*` keys and `hologram.mcagents.model` are new.
