@@ -18,6 +18,7 @@
   "hologram.mcagents.storage.failed": "The local database could not be opened: %s. Press NEW CHAT to try again.",
   "hologram.mcagents.storage.failed.short": "The local database could not be opened. Open CHAT and press NEW CHAT to try again.",
   "gui.mcagents.waiting": "Waiting",
+  "gui.mcagents.dialog.name": "Name",
   "gui.mcagents.session.rename": "Rename chat",
   "gui.mcagents.session.rename.save": "Rename",
   "gui.mcagents.session.delete.title": "Delete this chat?",

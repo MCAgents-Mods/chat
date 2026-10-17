@@ -5,7 +5,6 @@ import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ui.ChatConversation;
 import io.github.mcagentsmods.chat.common.ui.ChatSessions;
 import io.github.mcagentsmods.chat.shared.ChatRuntime;
-import io.github.mcagentsmods.chat.shared.client.gui.RenameScreen;
 import io.github.mcagentsmods.core.api.hologram.Hologram;
 import io.github.mcagentsmods.core.api.hologram.HologramButton;
 import io.github.mcagentsmods.core.api.hologram.PromptInput;
@@ -13,9 +12,7 @@ import io.github.mcagentsmods.core.api.hologram.Transcript;
 import io.github.mcagentsmods.core.api.hologram.TranscriptEntry;
 import io.github.mcagentsmods.core.client.hologram.Holograms;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +45,11 @@ public final class ChatHologram {
     private static final String PROMPT = "hologram.mcagents.prompt";
     private static final String RENAME = "hologram.mcagents.rename";
     private static final String DELETE = "hologram.mcagents.delete";
+    private static final String RENAME_TITLE = "gui.mcagents.session.rename";
+    private static final String RENAME_SAVE = "gui.mcagents.session.rename.save";
+    private static final String DELETE_TITLE = "gui.mcagents.session.delete.title";
+    private static final String DELETE_MESSAGE = "gui.mcagents.session.delete.message";
+    private static final String DELETE_CONFIRM = "gui.mcagents.session.delete.confirm";
 
     private static ChatSessions sessions;
 
@@ -192,9 +194,9 @@ public final class ChatHologram {
 
     /** Does nothing until the conversation is stored: a new one has no title to change. */
     private static void rename(ChatConversation conversation) {
-        conversation.session().ifPresent(session -> Minecraft.getInstance().setScreenAndShow(
-                RenameScreen.forSession(session, null,
-                        title -> sessions().rename(session.id(), title))));
+        conversation.session().ifPresent(session -> HologramDialogs.name(RENAME_TITLE,
+                session.title(), session.title(), RENAME_SAVE,
+                title -> sessions().rename(session.id(), title)));
     }
 
     /**
@@ -203,21 +205,11 @@ public final class ChatHologram {
      * deleted, its hologram closes. A new conversation not stored yet has nothing to delete.
      */
     private static void delete(String hologramId, ChatConversation conversation) {
-        conversation.session().ifPresent(session -> {
-            Minecraft minecraft = Minecraft.getInstance();
-            minecraft.setScreenAndShow(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            sessions().delete(session.id());
-                            Holograms.close(hologramId);
-                            open.remove(hologramId);
-                        }
-                        minecraft.setScreenAndShow(null);
-                    },
-                    Component.translatable("gui.mcagents.session.delete.title"),
-                    Component.translatable("gui.mcagents.session.delete.message", session.title()),
-                    Component.translatable("gui.mcagents.session.delete.confirm"),
-                    Component.translatable("gui.cancel")));
-        });
+        conversation.session().ifPresent(session -> HologramDialogs.confirm(DELETE_TITLE,
+                I18n.get(DELETE_MESSAGE, session.title()), DELETE_CONFIRM, () -> {
+                    sessions().delete(session.id());
+                    Holograms.close(hologramId);
+                    open.remove(hologramId);
+                }));
     }
 }

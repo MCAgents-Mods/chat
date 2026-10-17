@@ -127,8 +127,9 @@ own answer. A chat hologram has two panels side by side:
 
 * **Conversation**, headed with the conversation's title, shows each line headed with your
   name or `Agent`. While an answer is on its way the last line says `Thinking…`. **RENAME**
-  retitles the conversation, and **DELETE** removes it and closes its hologram — after asking,
-  because it takes every message in that conversation with it and cannot be undone.
+  retitles the conversation, in a small hologram that opens beside it, and **DELETE** removes
+  it and closes its hologram — after asking, in the same kind of hologram, because it takes
+  every message in that conversation with it and cannot be undone.
 * **User Prompt** is where you type. **SEND** asks the question in that conversation, and is
   greyed while an answer is on its way in it.
 
