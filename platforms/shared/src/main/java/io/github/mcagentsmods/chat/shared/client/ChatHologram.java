@@ -29,6 +29,8 @@ import java.util.Objects;
  * {@code mcagents.chat.{session id}}, so opening it again moves it rather than doubling it; a
  * new conversation's has {@code mcagents.chat.new-{n}} and keeps it once its first question
  * stores the conversation. {@link ChatSessionsHologram} fades the conversations open here.
+ * Under the conversation, RENAME, MODEL and DELETE act on it; MODEL opens its
+ * {@link ChatModelHologram}, where it picks its own chat and embedding models.
  *
  * <p>A hologram opens whether or not storage is ready, and says which in the conversation
  * panel. Opening it is never the step that fails: a player who presses CHAT and sees nothing
@@ -45,6 +47,7 @@ public final class ChatHologram {
     private static final String PROMPT = "hologram.mcagents.prompt";
     private static final String RENAME = "hologram.mcagents.rename";
     private static final String DELETE = "hologram.mcagents.delete";
+    private static final String MODEL = "hologram.mcagents.model";
     private static final String RENAME_TITLE = "gui.mcagents.session.rename";
     private static final String RENAME_SAVE = "gui.mcagents.session.rename.save";
     private static final String DELETE_TITLE = "gui.mcagents.session.delete.title";
@@ -129,6 +132,7 @@ public final class ChatHologram {
         return Hologram.of(id,
                 new Transcript(CONVERSATION, () -> entries(conversation), () -> heading(conversation),
                         List.of(new HologramButton(RENAME, () -> rename(conversation)),
+                                new HologramButton(MODEL, () -> ChatModelHologram.open(id, conversation)),
                                 new HologramButton(DELETE, () -> delete(id, conversation)))),
                 new PromptInput(PROMPT, PromptInput.SEND, ChatConversation.PROMPT_LIMIT,
                         conversation::canSend, text -> send(conversation, text)));
@@ -208,6 +212,7 @@ public final class ChatHologram {
         conversation.session().ifPresent(session -> HologramDialogs.confirm(DELETE_TITLE,
                 I18n.get(DELETE_MESSAGE, session.title()), DELETE_CONFIRM, () -> {
                     sessions().delete(session.id());
+                    ChatModelHologram.close(hologramId);
                     Holograms.close(hologramId);
                     open.remove(hologramId);
                 }));
