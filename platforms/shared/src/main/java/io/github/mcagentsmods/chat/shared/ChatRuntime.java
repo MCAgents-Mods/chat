@@ -3,9 +3,13 @@ package io.github.mcagentsmods.chat.shared;
 import io.github.mcagentsmods.chat.api.MCAgents;
 import io.github.mcagentsmods.chat.api.storage.LocalDatabase;
 import io.github.mcagentsmods.chat.common.ClientPaths;
+import io.github.mcagentsmods.chat.common.agent.LegacyModelSettings;
+import io.github.mcagentsmods.chat.common.security.TokenCipher;
 import io.github.mcagentsmods.chat.common.storage.sqlite.SqliteDatabase;
 import io.github.mcagentsmods.chat.shared.client.AgentFactory;
 import io.github.mcagentsmods.chat.shared.client.McpHostFactory;
+import io.github.mcagentsmods.core.common.agent.AgentsPaths;
+import io.github.mcagentsmods.core.common.model.Models;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +76,10 @@ public final class ChatRuntime {
 
         paths = ClientPaths.under(gameDirectory);
         LOGGER.info("{} initialising, data directory {}", MCAgents.MOD_NAME, paths.dataDirectory());
+
+        // Core's global model, which the Models page edits. Core reads the same file when its
+        // own start-up runs; whichever start runs first reads it, and the other does nothing.
+        Models.start(AgentsPaths.under(gameDirectory).modelsFile());
 
         ensurePersonaFile();
         startMcpHost();
@@ -143,7 +151,8 @@ public final class ChatRuntime {
             return CompletableFuture.completedFuture(false);
         }
 
-        return SqliteDatabase.open(paths.database()).handle((database, failure) -> {
+        return SqliteDatabase.open(paths.database(), TokenCipher.fromEnvironment(), Models.store())
+                .handle((database, failure) -> {
             OPENING.set(false);
             if (failure != null) {
                 fail("Could not open " + paths.database(), failure);
@@ -152,7 +161,20 @@ public final class ChatRuntime {
             DATABASE.set(database);
             STATE.set(StorageState.READY);
             LOGGER.info("{} is ready, storing data in {}", MCAgents.MOD_NAME, paths.dataDirectory());
+            moveModelSettings(database);
             return true;
+        });
+    }
+
+    /**
+     * Moves the models chat stored before core held the global model into core's store, once.
+     * Nothing waits on it: until it lands the global model is the defaults, as it was before.
+     */
+    private static void moveModelSettings(LocalDatabase database) {
+        LegacyModelSettings.migrate(database, Models.store()).whenComplete((moved, failure) -> {
+            if (failure != null) {
+                LOGGER.warn("Could not move the stored models into the global model", failure);
+            }
         });
     }
 

@@ -5,6 +5,7 @@ import io.github.mcagentsmods.chat.api.cache.CacheStats;
 import io.github.mcagentsmods.chat.common.cache.TtlCache;
 import io.github.mcagentsmods.core.api.model.ChatCompletion;
 import io.github.mcagentsmods.core.api.model.ChatRequest;
+import io.github.mcagentsmods.core.api.model.ModelChoice;
 import io.github.mcagentsmods.core.api.model.ModelClient;
 
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * Caches embeddings locally, on top of whatever the provider caches for itself.
@@ -61,13 +63,27 @@ public final class CachingModelClient implements ModelClient {
 
     @Override
     public CompletableFuture<float[]> embed(String model, String text) {
+        return cached(model, text, () -> delegate.embed(model, text));
+    }
+
+    /**
+     * Keyed by the model alone, not the provider: one model gives one vector for one text
+     * whichever API served it, so a vector fetched through OpenRouter answers a direct call too.
+     */
+    @Override
+    public CompletableFuture<float[]> embed(ModelChoice choice, String text) {
+        return cached(choice.model(), text, () -> delegate.embed(choice, text));
+    }
+
+    private CompletableFuture<float[]> cached(String model, String text,
+                                              Supplier<CompletableFuture<float[]>> fetch) {
         String key = cacheKey(model, text);
 
         return embeddings.get(key)
                 // Copied on the way out: the array is mutable, and a caller that sorted or
                 // normalised it in place would corrupt the entry for everyone after.
                 .map(vector -> CompletableFuture.completedFuture(vector.clone()))
-                .orElseGet(() -> delegate.embed(model, text).thenApply(vector -> {
+                .orElseGet(() -> fetch.get().thenApply(vector -> {
                     embeddings.put(key, vector.clone());
                     return vector;
                 }));

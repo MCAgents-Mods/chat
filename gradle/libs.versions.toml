@@ -23,7 +23,7 @@ gson = "2.14.0"
 junit = "6.1.3"
 # MCAgents core, tools and agent included. Compiled against, never bundled: the mcagents_core
 # mod provides it in game.
-mcagents-core = "0.12.0"
+mcagents-core = "0.13.0"
 # The block for the one Minecraft version this mod supports, the latest release, each entry
 # suffixed with the version (26.3 -> -26-3). Every Minecraft-facing module has a subproject
 # for it, platforms/{module}/{version}, which finds its entries by that suffix; the version

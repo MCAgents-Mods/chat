@@ -10,22 +10,26 @@ key has a working mod that cannot produce new answers, not a broken one.
 
 ## Two routes, one wire format
 
-**OpenRouter is the default and the fallback.** A request goes through the gateway unless the
-player has deliberately made a platform reachable on its own, which takes two things at once:
-an address for it, and a key stored for it.
+**The provider is chosen, not inferred.** The Models page stores a provider beside each model
+(a `ModelChoice`: provider and model, core's `api.model`), and a request goes to that provider
+and nowhere else. OpenRouter is one of the choices and the default.
 
-| | Sent to | `"model"` in the body | Key used |
+| Provider picked | Sent to | `"model"` in the body | Key used |
 |---|---|---|---|
-| Through the gateway | `openrouter.ai/api/v1` | `openai/gpt-4o-mini` | an `openrouter` key |
-| Direct | `api.openai.com/v1` | `gpt-4o-mini` | an `openai` key |
+| `openrouter` | `openrouter.ai/api/v1` | `openai/gpt-4o-mini` | an `openrouter` key |
+| `openai` | `api.openai.com/v1` | `gpt-4o-mini` | an `openai` key |
+| `together` | `api.together.xyz/v1` | `meta-llama/llama-3.3-70b` | a `together` key |
 
+The bare id is sent when the model's platform is the provider, the whole name otherwise.
 Both are built from one stored `{platform}/{model}` name — see
-`{shared}/rules/model-naming-convention.md`, which is why moving a model between the routes
-changes no stored data. `StoredProviderRoutes` resolves the route per request, from the same
-store the keys are in, so a key added while the game is running needs no restart.
+`{shared}/rules/model-naming-convention.md`, which is why changing the provider changes no
+stored model name. Core's `GlobalModels.routes` resolves the route per request from the
+global model, so a provider added while the game is running needs no restart.
 
-**Anything unresolved is the gateway**: an unqualified model id, a platform with no address,
-a platform with no key of its own, an address that is neither https nor loopback.
+**A direct provider with no key is still called** — the request fails with `NO_KEY` naming
+that provider. It never falls back to the gateway silently; that is what made a `deepseek`
+choice go "through OpenRouter" before 0.12.0. A provider with no known address fails asking
+for it to be added as a custom provider.
 
 `OpenRouterClient` serves both. It speaks the wire format OpenRouter defines, which is
 OpenAI's — that is precisely why one client covers a gateway and a platform's own API.
@@ -38,8 +42,8 @@ every MCAgents mod calls the same code. Chat compiles against core and ships non
 `mcagents_core` mod provides it in game. A change to how a request is built, retried or
 rotated is made in core. What stays here is what is chat's: `ChatModelClients` builds the
 one stack every caller in the game shares — chat's keys through `RepositoryApiKeySource`,
-chat's routes through `StoredProviderRoutes`, `CachingModelClient` around it, and chat's own
-attribution.
+core's routes from the global model (`Models.routes()`), `CachingModelClient` around it, and
+chat's own attribution.
 
 ### What a direct request must not carry
 
@@ -51,11 +55,14 @@ attribution.
 
 ### Where an address comes from
 
-`api.base-url.{platform}` in `settings` first, then the addresses `ModelPlatform` ships. A
-configured address must be `https`, or loopback for a gateway the player runs themselves;
-anything else is ignored rather than sent a key. Only OpenAI-compatible platforms are shipped
-— Anthropic and Google are deliberately absent, because their own APIs are a different path,
-header and body, and a direct call would be a request they reject.
+The player's custom providers in core's global model first — one named like a shipped
+platform replaces that platform's address — then the addresses `ModelPlatform` ships. An
+address must be `https`, or loopback for a gateway the player runs themselves; `ModelProvider`
+refuses anything else, so no key is ever sent to it. Chat's old `api.base-url.{platform}`
+settings are moved into custom providers once, by `LegacyModelSettings`, and never read again.
+Only OpenAI-compatible platforms are shipped — Anthropic and Google are deliberately absent,
+because their own APIs are a different path, header and body, and a direct call would be a
+request they reject.
 
 ## The seam
 
@@ -112,14 +119,18 @@ An exchange with tools is still one request shape, extended:
 
 ## Model selection
 
-* The player chooses a chat model and an embedding model. Both are stored in `settings` and
-  read at request time — never hardcoded at a call site.
+* The player chooses a chat model and an embedding model, each with its provider. Both live in
+  core's global model, `{minecraft_dir}/MCAgents/agents/models.properties`, which every task
+  without a model of its own falls back to (`GlobalModels.chatOr` / `embeddingOr`), and are
+  read at request time — never hardcoded at a call site. Only the embedding switch stays in
+  chat's `settings`.
 * **Both are stored as `{platform}/{model}`, lowercased before the write.** `ModelName` is the
   only thing that builds or parses one; never assemble a stored id by hand, and never store
   one straight from a text box without `ModelPreferences.of` normalising it.
-* An id with no platform segment is kept as the player typed it and goes through the gateway.
-  Do not complete it — `openrouter/gpt-4o-mini` is not a longer spelling of `gpt-4o-mini`, it
-  is a model nobody serves.
+* An id with no platform segment, picked for a direct provider, is stored as
+  `{provider}/{id}` (`ModelChoice.qualified`). For the gateway it is kept as typed: do not
+  complete it — `openrouter/gpt-4o-mini` is not a longer spelling of `gpt-4o-mini`, it is a
+  model nobody serves.
 * **The suggested lists are suggestions, not a whitelist.** The interface offers them and
   also accepts anything the player types, because OpenRouter adds models faster than this
   mod ships. Never reject a model id the player entered; let the API reject it and report

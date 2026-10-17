@@ -130,7 +130,7 @@ public final class OpenRouterAgent implements Agent {
                         // since this agent was built, or since their last question.
                         personaText, environment.current(), conversation.messages(), knowledge))
                 .thenCompose(messages -> tools.answer(AgentRequest.of(
-                                conversation.preferences().chatModel(), promptOf(question, messages))
+                                conversation.preferences().chat(), promptOf(question, messages))
                         // The whole conversation is what the answer is written from; the
                         // newest question alone is what the categories and tools are picked by.
                         .withConversation(messages)));
