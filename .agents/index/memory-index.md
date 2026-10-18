@@ -68,6 +68,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/model-providers.md`](../memory/tasks/model-providers.md) | The Models page calling the provider the player picks, custom providers, and editing core's global model every task falls back to. |
 | [`../memory/tasks/per-chat-models.md`](../memory/tasks/per-chat-models.md) | Each conversation choosing its own chat and embedding model, falling back to core's global model, and retrieval in a model other than the library's. |
 | [`../memory/tasks/own-modules.md`](../memory/tasks/own-modules.md) | Each loader module declaring chat's own submodules with `implementation` while the loader, Fabric API and core stay `compileOnly`, with no jar changing. |
+| [`../memory/tasks/flat-platforms.md`](../memory/tasks/flat-platforms.md) | One `build.gradle` per platform module, with no `26.3/` subproject, `{module}.gradle` or `minecraft.gradle` left, and the catalog naming the Minecraft version once. |
 
 ## Maintenance
 
