@@ -5,12 +5,15 @@
 // appear here. Minecraft 26.x ships unobfuscated, so the same classes link against any
 // loader's game. platforms/fabric, platforms/neoforge and platforms/forge each bundle this
 // module into their jar and add only their entry point, key registration and events.
+//
+// Built for the one Minecraft version chat supports, libs.versions.minecraft in the catalog,
+// with Loom used for the vanilla game alone (no loader, no mod metadata, no run configs).
 
-// Built for the Minecraft version chat supports: platforms/shared/{version}/build.gradle
-// applies Loom, used for the vanilla game alone (no loader, no mod metadata, no run
-// configs), then this.
+plugins {
+    id 'net.fabricmc.fabric-loom'
+}
 
-apply from: '../../minecraft.gradle'
+def minecraftVersion = libs.versions.minecraft.get()
 
 base {
     archivesName = 'MCAgentsChatShared'
@@ -37,14 +40,19 @@ repositories {
 }
 
 dependencies {
-    minecraft libraryFor('minecraft')
+    minecraft libs.minecraft
 
     api project(':chat-api')
     api project(':chat-common')
 
     // Core's holograms, for the chat hologram CHAT opens. The mcagents_core mod supplies them
     // in game.
-    compileOnly coreClient
+    compileOnly libs.core.client
+}
+
+tasks.named('jar', Jar) {
+    // MCAgentsChatShared-0.13.2+26.3.jar: the mod's version, then the game's.
+    archiveVersion = "${project.version}+${minecraftVersion}"
 }
 
 publishing {

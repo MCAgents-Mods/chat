@@ -5,10 +5,19 @@
 // This is the only module that may reference NeoForge types. The screens and start-up live
 // in platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-// Built for the Minecraft version chat supports: platforms/neoforge/{version}/build.gradle
-// applies ModDevGradle, then this.
+// Built for the one Minecraft version chat supports, libs.versions.minecraft in the catalog.
 
-apply from: '../../minecraft.gradle'
+plugins {
+    id 'net.neoforged.moddev'
+}
+
+def minecraftVersion = libs.versions.minecraft.get()
+
+// The first Minecraft version this one does not cover, for the closed range the mod metadata
+// declares: 26.3 -> 26.4.
+def minecraftNext = minecraftVersion.tokenize('.').with { parts ->
+    "${parts[0]}.${(parts[1] as int) + 1}"
+}
 
 base {
     archivesName = 'MCAgentsChatNeoforge'
@@ -36,7 +45,7 @@ repositories {
 def bundledModules = [
         ':chat-api',
         ':chat-common',
-        sharedModule
+        ':chat-shared'
 ]
 
 // The dev client loads the modules above as one mod, as the jar does; loaded apart, NeoForge
@@ -44,7 +53,7 @@ def bundledModules = [
 bundledModules.each { path -> evaluationDependsOn(path) }
 
 neoForge {
-    version = versionFor('neoforge')
+    version = libs.versions.neoforge.get()
 
     // A development client: ./gradlew :chat-neoforge:runClient, in run/.
     runs {
@@ -70,7 +79,7 @@ dependencies {
     // compileOnly, since the mcagents_core mod provides it in game.
     implementation project(':chat-api')
     implementation project(':chat-common')
-    implementation project(sharedModule)
+    implementation project(':chat-shared')
 
     // NeoForge itself is not declared here: ModDevGradle compiles against it and runs the dev
     // client on it, and the game provides it at runtime.
@@ -83,6 +92,9 @@ dependencies {
 }
 
 tasks.named('jar', Jar) {
+    // MCAgentsChatNeoforge-0.13.2+26.3.jar: the mod's version, then the game's.
+    archiveVersion = "${project.version}+${minecraftVersion}"
+
     bundledModules.each { path ->
         from project(path).sourceSets.main.output
     }

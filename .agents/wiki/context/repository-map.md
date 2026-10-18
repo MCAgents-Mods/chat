@@ -26,11 +26,10 @@ gradle.properties    project identity only — organization, repository, version
 gradle/              the wrapper and libs.versions.toml
 api/                 chat-api
 common/              chat-common
-platforms/minecraft.gradle  applied by each Minecraft version subproject below
-platforms/shared/    shared sources; {minecraft}/ is chat-shared
-platforms/fabric/    shared sources; {minecraft}/ is chat-fabric
-platforms/neoforge/  shared sources; {minecraft}/ is chat-neoforge
-platforms/forge/     shared sources; {minecraft}/ is chat-forge
+platforms/shared/    chat-shared: build.gradle and src/
+platforms/fabric/    chat-fabric: build.gradle and src/
+platforms/neoforge/  chat-neoforge: build.gradle and src/
+platforms/forge/     chat-forge: build.gradle and src/
 ```
 
 The build works end to end: `./gradlew build` produces a loadable mod jar and
@@ -48,7 +47,7 @@ three documents for a long time before any code called `ModelClient.embed`.
 | `platforms/shared/` | `chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on core's agents menu; the loader adds them), `client.ChatSessionsHologram` (the Chat Sessions pick list CHAT opens, NEW CHAT on its nav bar, open conversations faded), `client.ChatHologram` (one two-panel hologram per conversation, several at once, built on core's holograms from `ChatSessions` and one `ChatConversation` each), `client.ChatModelHologram` (the Chat Model page MODEL under a conversation opens: its own chat and embedding models, or the global ones), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — `client.HologramDialogs` (the name and confirm dialog holograms), `client.KeysHologram`, `client.ModelsHologram`, `client.PersonaHologram` and `client.WalletsHologram` (the KEYS, MODEL, PERSONA and WALLETS pages, on `client.HologramPage`), and `client.WalletDialogs` (add an address, connect MetaMask). | Further context injection. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
 | `platforms/neoforge/` | `chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
-| `platforms/forge/` | `chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml`; the version folder's `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
+| `platforms/forge/` | `chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml` and `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:core-api` and
 `core-common` (`compileOnlyApi`), and `platforms/shared/` against
@@ -86,8 +85,8 @@ before a chat release is.
 **Releasing the jars.** `.github/workflows/release.yml` runs after each Publish run on
 `master` and on demand. When `v{version}` exists and has no GitHub release, it builds the
 tagged commit with `./gradlew assemble` and the same token, attaches
-`platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/*-{version}+{minecraft}.jar`, one jar per
-loader and Minecraft version, to a new release whose notes are that version's changelog, and
+`platforms/{fabric,neoforge,forge}/build/libs/*-{version}+{minecraft}.jar`, one jar per
+loader, to a new release whose notes are that version's changelog, and
 deletes the run's `mod-jars` artifact afterwards.
 
 `settings.gradle` maps the Gradle names to those directories; the directory names and the
@@ -273,7 +272,7 @@ these.
 | Run the tests | `./gradlew :chat-common:test` — seconds, no Minecraft needed |
 | Compile one module | `./gradlew :chat-common:build` |
 | Run the client | `./gradlew :chat-fabric:runClient`, `:chat-neoforge:runClient` or `:chat-forge:runClient` |
-| Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge,Forge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge,forge}/{minecraft}/build/libs/` |
+| Produce the mod jars | `./gradlew assemble` — `MCAgentsChat{Fabric,Neoforge,Forge}-{version}+{minecraft}.jar` in `platforms/{fabric,neoforge,forge}/build/libs/` |
 
 Tests live in `common/` because that is where the logic is and because Minecraft is not on
 its classpath. Put a test there whenever you can; a behaviour that can only be checked by

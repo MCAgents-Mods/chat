@@ -26,15 +26,13 @@ platforms/fabric/  platforms/neoforge/  platforms/forge/    each loader's entry 
 | `platforms/shared/` | `chat-shared` | all of the above, vanilla Minecraft | `ChatRuntime` (the client start-up every loader calls), the chat hologram, the page holograms (keys, models, persona, wallets) and their dialogs, chat's buttons on core's agents menu, the factories that wire `common/` together. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | all of the above, Fabric | `MCAgentsClientMod`: adds chat's menu buttons, registers the connection events, and passes the game directory to `ChatRuntime`. |
 | `platforms/neoforge/` | `chat-neoforge` | all of the above, NeoForge | `MCAgentsNeoForgeClient`, client distribution only: the same registrations through NeoForge's events, and `FMLPaths.GAMEDIR`. |
-| `platforms/forge/` | `chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its version folder keeps the `pack.mcmeta`, which Forge does not make for a mod. |
+| `platforms/forge/` | `chat-forge` | all of the above, Forge | `MCAgentsForgeMod`, which starts `MCAgentsForgeClient` on the client only: the same registrations through Forge's events, and `FMLPaths.GAMEDIR`. Its `src/main/resources/` keeps the `pack.mcmeta`, which Forge does not make for a mod. |
 
 The directory names and the Gradle module names differ on purpose: `settings.gradle` maps
 `chat-api` to `api/`, `chat-common` to `common/`,
-and `chat-{module}` to `platforms/{module}/{minecraft}/`, the subproject
-of `shared`, `fabric`, `neoforge` and `forge` for the one Minecraft version chat supports, the
-latest release. Each of those four is a folder of shared sources, `platforms/{module}/src/`,
-which the version subproject compiles together with its own `src/`, holding only what is
-particular to that version; see
+and `chat-{module}` to `platforms/{module}/`, for `shared`, `fabric`, `neoforge` and `forge`.
+Each of those four is one module with one `build.gradle` and one `src/`, built for the one
+Minecraft version chat supports, the latest release; see
 [`../environments/setup.md`](../environments/setup.md#the-minecraft-version). A
 loader module is a few lines on top of `platforms/shared/`, so another loader is one more
 folder under `platforms/`.
@@ -45,8 +43,8 @@ unobfuscated, so the classes it compiles link against any loader's game.
 The Gradle module name is also the Maven artifact id, so every library module publishes as
 `io.github.mcagentsmods:chat-{module}`; the loader modules publish nothing, and their jars go
 to the GitHub release. Every module's jar is named `MCAgentsChat{Module}-{version}.jar` by its
-own `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a version
-subproject. The `chat-` prefix keeps chat's modules apart from core's, which share the group.
+own `archivesName`, or `MCAgentsChat{Module}-{version}+{minecraft}.jar` for a module built
+against Minecraft. The `chat-` prefix keeps chat's modules apart from core's, which share the group.
 Up to 0.7.0 every id started with `mcagents-`, as in `mcagents-chat-common`, and the loader
 modules were published too.
 
