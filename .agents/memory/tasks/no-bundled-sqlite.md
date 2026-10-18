@@ -31,8 +31,8 @@ time with it nested. The v0.13.1 jars are 12,309,311 (Fabric), 12,306,583 (NeoFo
   told that no Minecraft or loader install provides SQLite, so a game must supply it.
 - **Forge loses its Jar-in-Jar plugin**, which existed only for sqlite-jdbc: the plain `jar`
   task builds the player's jar again, and the catalog drops `forge-jarjar`.
-- **A missing driver is named plainly.** The storage failure reads "SQLite (sqlite-jdbc) is not
-  installed" instead of a class name.
+- **A missing driver is named plainly.** A new `StorageState.NO_SQLITE` makes the holograms say
+  "SQLite is not installed, so chat cannot save anything." instead of a cut-off class name.
 - **A minor release, 0.14.0**, still on core 0.13.0: a game without SQLite now cannot store data.
 
 ## Tasks

@@ -75,10 +75,11 @@ public final class ChatButtons {
             open.accept(database);
             return;
         }
-        Component reason = Component.translatable(
-                ChatRuntime.storageState() == ChatRuntime.StorageState.FAILED
-                        ? "hologram.mcagents.storage.failed.short"
-                        : "hologram.mcagents.storage.opening");
+        Component reason = Component.translatable(switch (ChatRuntime.storageState()) {
+            case FAILED -> "hologram.mcagents.storage.failed.short";
+            case NO_SQLITE -> "hologram.mcagents.storage.no_sqlite";
+            case OPENING, READY -> "hologram.mcagents.storage.opening";
+        });
         if (minecraft.player != null) {
             minecraft.player.sendOverlayMessage(reason);
         }

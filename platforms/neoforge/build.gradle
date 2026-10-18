@@ -40,8 +40,7 @@ repositories {
 }
 
 // api/, common/ and platforms/shared are chat's own code, so their classes and
-// resources are merged into the mod jar rather than nested. Third-party runtime libraries
-// are nested with jarJar instead.
+// resources are merged into the mod jar rather than nested.
 def bundledModules = [
         ':chat-api',
         ':chat-common',
@@ -84,10 +83,8 @@ dependencies {
     // NeoForge itself is not declared here: ModDevGradle compiles against it and runs the dev
     // client on it, and the game provides it at runtime.
 
-    // sqlite-jdbc is a plain library, not a mod. NeoForge nests it as Jar-in-Jar and loads
-    // it as a library, which is what lets the mod store data on a machine that has never
-    // been online. common/ only compiles against it, so the dev client gets it here.
-    jarJar libs.sqlite.jdbc
+    // sqlite-jdbc is not bundled: its native libraries would make up nearly all of the jar.
+    // common/ only compiles against it, and the dev client gets it here.
     runtimeOnly libs.sqlite.jdbc
 }
 
