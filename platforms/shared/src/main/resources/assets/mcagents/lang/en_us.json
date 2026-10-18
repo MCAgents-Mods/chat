@@ -18,6 +18,7 @@
   "hologram.mcagents.storage.opening": "Opening the local database…",
   "hologram.mcagents.storage.failed": "The local database could not be opened: %s. Press NEW CHAT to try again.",
   "hologram.mcagents.storage.failed.short": "The local database could not be opened. Open CHAT and press NEW CHAT to try again.",
+  "hologram.mcagents.storage.no_sqlite": "SQLite is not installed, so chat cannot save anything.",
   "gui.mcagents.waiting": "Waiting",
   "gui.mcagents.dialog.name": "Name",
   "gui.mcagents.session.rename": "Rename chat",

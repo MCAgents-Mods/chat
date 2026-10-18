@@ -15,8 +15,6 @@ fabric-loader = "0.19.5"
 fabric-loom = "1.18.4"
 moddevgradle = "2.0.148"
 forgegradle = "7.0.40"
-# Forge's Jar-in-Jar plugin, which nests sqlite-jdbc in the Forge jar.
-forge-jarjar = "0.2.3"
 sqlite-jdbc = "3.53.2.1"
 # Provided by Minecraft at runtime — declared so common/ can compile, never bundled.
 gson = "2.14.0"
@@ -53,4 +51,3 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
 moddevgradle = { id = "net.neoforged.moddev", version.ref = "moddevgradle" }
 forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle" }
-forge-jarjar = { id = "net.minecraftforge.jarjar", version.ref = "forge-jarjar" }

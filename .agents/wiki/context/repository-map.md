@@ -46,8 +46,8 @@ three documents for a long time before any code called `ModelClient.embed`.
 | `common/` | `chat-common` | `ClientPaths`, `common.storage.sqlite` — the SQLite implementation of every storage contract — `common.security` — `TokenCipher`, which encrypts a stored token and is reached only by `SqliteApiKeyRepository` — `common.agent` — `ChatModelClients`, which builds chat's stack around core's OpenRouter client, `CachingModelClient`, `LegacyModelSettings`, which moves chat's old model settings into core's global model once, `PromptAssembler`, `KnowledgeRetriever`, `Vectors`, and `FilePersonaStore`/`DefaultPersona`, which own `AGENTS.md` — `common.wallet` — the MetaMask bridge, `AccountWallets`, and the cryptography they need — `common.ui`, `ChatSessions` and `ChatConversation`, what the chat hologram shows and does (a conversation's own models included), and `ProviderNotes`, the Models page's line under a provider, all tested without Minecraft — and `common.mcp` — the MCP host: discovery, the stdio and HTTP sessions, the directory watch, the git cloner, `CloneRepositoryTool`, and `McpTools`, which registers every server's tools in core's tool registry, one category per server, and calls each on the server that owns it. `OpenRouterAgent` assembles the conversation and answers through core's agent. Its `src/testFixtures/` holds `TestSigner`, which signs the way MetaMask would. | Streaming and further context injection. No Minecraft on the classpath. |
 | `platforms/shared/` | `chat-shared` | `ChatRuntime` (the client start-up every loader calls, and the storage state), `client.ChatButtons` (CHAT, KEYS, MODEL, PERSONA and WALLETS on core's agents menu; the loader adds them), `client.ChatSessionsHologram` (the Chat Sessions pick list CHAT opens, NEW CHAT on its nav bar, open conversations faded), `client.ChatHologram` (one two-panel hologram per conversation, several at once, built on core's holograms from `ChatSessions` and one `ChatConversation` each), `client.ChatModelHologram` (the Chat Model page MODEL under a conversation opens: its own chat and embedding models, or the global ones), `client.PlayerAccounts`, `client.GameEnvironment` — the one place that knows which server the player is on — `client.HologramDialogs` (the name and confirm dialog holograms), `client.KeysHologram`, `client.ModelsHologram`, `client.PersonaHologram` and `client.WalletsHologram` (the KEYS, MODEL, PERSONA and WALLETS pages, on `client.HologramPage`), and `client.WalletDialogs` (add an address, connect MetaMask). | Further context injection. No loader type. |
 | `platforms/fabric/` | `chat-fabric` | `MCAgentsClientMod` (the `ClientModInitializer`): adds chat's menu buttons, registers the connection events, and starts `ChatRuntime` with Fabric's game directory. `fabric.mod.json`. | Mixins. |
-| `platforms/neoforge/` | `chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`; `sqlite-jdbc` nested with `jarJar`. | Nothing yet beyond parity with Fabric. |
-| `platforms/forge/` | `chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml` and `pack.mcmeta`; `sqlite-jdbc` nested with Forge's `net.minecraftforge.jarjar` plugin. | Nothing yet beyond parity with Fabric. |
+| `platforms/neoforge/` | `chat-neoforge` | `MCAgentsNeoForgeClient` (`@Mod`, client distribution only): adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/neoforge.mods.toml`. | Nothing yet beyond parity with Fabric. |
+| `platforms/forge/` | `chat-forge` | `MCAgentsForgeMod` (`@Mod`; starts `MCAgentsForgeClient` on the client distribution only), which adds chat's menu buttons, registers `ClientPlayerNetworkEvent.LoggingIn` and `LoggingOut`, and starts `ChatRuntime` with `FMLPaths.GAMEDIR`. `META-INF/mods.toml` and `pack.mcmeta`. | Nothing yet beyond parity with Fabric. |
 
 **MCAgents core.** `api/` and `common/` compile against `io.github.mcagentsmods:core-api` and
 `core-common` (`compileOnlyApi`), and `platforms/shared/` against
@@ -100,18 +100,17 @@ gone.
 `api/` and `common/` are plain `java-library` modules, and `platforms/shared/` is
 built with Loom against vanilla Minecraft alone. Their classes are **merged into the mod jar**
 by the `jar` task in each loader module's `build.gradle` rather than nested as Jar-in-Jar mods —
-they are not mods and have no manifest of their own. Third-party
-runtime libraries go the other way: `sqlite-jdbc` is nested with Loom's `include` at
-`META-INF/jars/` in the Fabric jar, and with `jarJar` at `META-INF/jarjar/` in the NeoForge and
-Forge jars. It carries native binaries for every platform, so
-it alone is about 12 MB of the built jar.
+they are not mods and have no manifest of their own. No jar carries a third-party library:
+`sqlite-jdbc`, the only one, is about 12 MB of native binaries for every platform, so since 0.14.0
+the game has to provide it. When it does not, `ChatRuntime` enters `StorageState.NO_SQLITE` and
+the holograms say "SQLite is not installed, so chat cannot save anything." A plain sqlite-jdbc jar
+in `mods/` does not count: Fabric and NeoForge skip it as not a mod.
 
 **Only the loader modules declare `implementation`, and only for chat's own modules.** Each of
 `platforms/{fabric,forge,neoforge}` implements `chat-api`, `chat-common` and the shared module.
 Everything provided at runtime by someone else is `compileOnly`: core (`compileOnlyApi` in
 `api/` and `common/`, `compileOnly` in `platforms/shared/`), Fabric Loader, Fabric API and Forge.
-What reaches a jar is decided only by the `jar` task's merge and by `include` / `jarJar`, never by
-a configuration. `common/` compiles against `sqlite-jdbc` and runs its tests with it
+What reaches a jar is decided only by the `jar` task's merge, never by a configuration. `common/` compiles against `sqlite-jdbc` and runs its tests with it
 (`testImplementation`), so published `chat-common` lists no runtime dependency. The loader
 modules add Fabric Loader, Fabric API, Forge and sqlite-jdbc to `runClient` with `runtimeOnly`;
 they are never published, so neither scope reaches anything else.
@@ -244,7 +243,7 @@ names cannot be dereferenced as `project.gitOrg`.
 | NeoForge | 26.3.0.76 |
 | ModDevGradle | 2.0.148 |
 | Forge | 26.3-66.0.11 |
-| ForgeGradle | 7.0.40, with Forge's Jar-in-Jar plugin 0.2.3 |
+| ForgeGradle | 7.0.40 |
 | MCAgents core | 0.13.0 |
 | Java | 25 (Minecraft 26.x requires it) |
 | Gradle | 9.7.1, via the committed wrapper |

@@ -48,7 +48,12 @@ public final class ChatRuntime {
         /** Open and usable. */
         READY,
         /** Could not be opened. The reason is in the log. */
-        FAILED
+        FAILED,
+        /**
+         * Could not be opened because the game has no SQLite driver: no mod jar carries
+         * sqlite-jdbc, so the game must provide it. Trying again changes nothing until it does.
+         */
+        NO_SQLITE
     }
 
     private static ClientPaths paths;
@@ -180,10 +185,21 @@ public final class ChatRuntime {
 
     private static void fail(String what, Throwable cause) {
         OPENING.set(false);
-        STATE.set(StorageState.FAILED);
+        STATE.set(missingSqlite(cause) ? StorageState.NO_SQLITE : StorageState.FAILED);
         FAILURE.set(what + " — " + cause.getClass().getSimpleName()
                 + (cause.getMessage() == null ? "" : ": " + cause.getMessage()));
         LOGGER.error("{}; chat history, API keys, and downloaded packs are unavailable", what, cause);
+    }
+
+    /** Whether the failure is the SQLite driver missing, which only the player can fix. */
+    private static boolean missingSqlite(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if ((cause instanceof NoClassDefFoundError || cause instanceof ClassNotFoundException)
+                    && String.valueOf(cause.getMessage()).replace('/', '.').contains("org.sqlite.")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

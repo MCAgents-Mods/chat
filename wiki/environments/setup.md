@@ -27,7 +27,6 @@ Every dependency coordinate lives in the Gradle version catalog at
 | Fabric Loom | 1.18.4 |
 | ModDevGradle | 2.0.148 |
 | ForgeGradle | 7.0.40 |
-| Forge Jar-in-Jar plugin | 0.2.3 |
 | Java | 25 |
 | MCAgents core | 0.13.0 |
 
@@ -114,10 +113,10 @@ loader, such as
 `platforms/fabric/build/libs/MCAgentsChatFabric-{version}+26.3.jar`, with
 `MCAgentsChatNeoforge-{version}+26.3.jar` and `MCAgentsChatForge-{version}+26.3.jar` beside it
 under `neoforge` and `forge`. Each carries the classes of `api/`, `common/` and
-`platforms/shared/`, merged into it rather than nested as separate mods, and nests
-`sqlite-jdbc` its loader's way: Loom's `include` for Fabric, Jar-in-Jar for NeoForge and
-Forge. Forge's Jar-in-Jar plugin builds the jar a second time with `sqlite-jdbc` nested, so
-the first, which could not open the database, goes to `build/slim/` instead.
+`platforms/shared/`, merged into it rather than nested as separate mods. None carries
+`sqlite-jdbc`: its native libraries for every platform would make up nearly all of the jar, so
+the game has to provide it; when it does not, chat says "SQLite is not installed, so chat cannot
+save anything." `runClient` puts it on the class path itself.
 `runClient` opens a real Minecraft window and needs a display; it will not work over a
 headless connection. Minecraft 26.3 draws through Vulkan or OpenGL with an sRGB surface. On a
 virtual display (Xvfb), which offers no sRGB OpenGL surface, a 26.3 client needs a Vulkan

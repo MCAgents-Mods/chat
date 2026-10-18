@@ -4,10 +4,8 @@ name: Release
 # MCAgentsChatForge, one per loader module, platforms/{loader}, for the one
 # Minecraft version the tag builds, and attaches them to a
 # GitHub release for the v{version} tag that Publish created:
-# MCAgentsChatFabric-{version}+{minecraft}.jar and so on. The Forge jar is the one
-# with SQLite nested; the build keeps the jar without it in build/slim, out of
-# build/libs. api, common and shared are bundled inside each jar, so they are not
-# attached on their own.
+# MCAgentsChatFabric-{version}+{minecraft}.jar and so on. api, common and shared
+# are bundled inside each jar, so they are not attached on their own.
 #
 # A tag pushed with the workflow's own token starts no other workflow, so this
 # one runs when a Publish run on master finishes instead. It releases the

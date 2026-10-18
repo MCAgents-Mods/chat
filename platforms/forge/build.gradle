@@ -12,7 +12,6 @@
 plugins {
     id 'java'
     id 'net.minecraftforge.gradle'
-    id 'net.minecraftforge.jarjar'
 }
 
 def minecraftVersion = libs.versions.minecraft.get()
@@ -46,13 +45,8 @@ repositories {
     mavenCentral()
 }
 
-// sqlite-jdbc is a plain library, not a mod. Forge nests it as Jar-in-Jar and loads it as a
-// library, which is what lets the mod store data on a machine that has never been online.
-jarJar.register()
-
 dependencies {
-    // asProvider(): the catalog also has forge-jarjar, so libs.versions.forge is a group too.
-    def forge = minecraft.dependency("net.minecraftforge:forge:${libs.versions.forge.asProvider().get()}")
+    def forge = minecraft.dependency("net.minecraftforge:forge:${libs.versions.forge.get()}")
 
     // Chat's own modules are part of this mod: the jar task below merges their classes, and
     // the dev client runs them from this module's class path. This module is never published,
@@ -69,14 +63,13 @@ dependencies {
     // The dev client (runClient) is the one place no game provides it, so it gets it here.
     runtimeOnly forge
 
-    // common/ only compiles against sqlite-jdbc, so the dev client gets it here.
-    jarJar libs.sqlite.jdbc
+    // sqlite-jdbc is not bundled: its native libraries would make up nearly all of the jar.
+    // common/ only compiles against it, and the dev client gets it here.
     runtimeOnly libs.sqlite.jdbc
 }
 
 // api/, common/ and platforms/shared are chat's own code, so their classes and resources are
-// merged into the mod jar rather than nested. Third-party runtime libraries are nested with
-// jarJar instead.
+// merged into the mod jar rather than nested.
 def bundledModules = [
         ':chat-api',
         ':chat-common',
@@ -121,13 +114,9 @@ tasks.withType(JavaExec).matching { it.name == 'runClient' }.configureEach {
     }
 }
 
-// The jar task builds the mod without SQLite, and the Jar-in-Jar plugin's jarJar task builds
-// it again with SQLite nested. A player only ever wants the second, so it takes the plain name,
-// MCAgentsChatForge-{version}+{minecraft}.jar, and the first is kept out of build/libs.
 tasks.named('jar', Jar) {
-    archiveClassifier = 'slim'
+    // MCAgentsChatForge-0.13.2+26.3.jar: the mod's version, then the game's.
     archiveVersion = "${project.version}+${minecraftVersion}"
-    destinationDirectory = layout.buildDirectory.dir('slim')
 
     bundledModules.each { path ->
         from project(path).sourceSets.main.output
@@ -141,11 +130,6 @@ tasks.named('jar', Jar) {
     }
 }
 
-tasks.named('jarJar', Jar) {
-    archiveClassifier = ''
-    archiveVersion = "${project.version}+${minecraftVersion}"
-}
-
 processResources {
     def modVersion = project.version
     // The core this build compiled against is the oldest the jar may run with.
@@ -153,7 +137,7 @@ processResources {
     def minecraft = minecraftVersion
     def next = minecraftNext
     // The loader's major version, which mods.toml ranges are in: 66 from 26.3-66.0.11.
-    def forgeMajor = libs.versions.forge.asProvider().get().tokenize('-')[1].tokenize('.')[0]
+    def forgeMajor = libs.versions.forge.get().tokenize('-')[1].tokenize('.')[0]
     inputs.property 'version', modVersion
     inputs.property 'coreVersion', coreVersion
     inputs.property 'minecraft', minecraft

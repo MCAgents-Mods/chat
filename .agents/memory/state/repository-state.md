@@ -199,8 +199,8 @@ Facts that cost time to establish, and will again if forgotten:
 * No configuration bundles anything in Loom; only `include` does. Since 0.13.1 the loader
   modules declare chat's own modules `implementation` and nothing else is: Fabric Loader,
   Fabric API and Forge are `compileOnly` with a `runtimeOnly` for the dev client, and core is
-  compile-only wherever it is declared. Gson is `compileOnly` because Minecraft provides it; `sqlite-jdbc` is the
-  only bundled library. Fabric has no
+  compile-only wherever it is declared. Gson is `compileOnly` because Minecraft provides it. Since 0.14.0 no jar bundles
+  anything third-party: `sqlite-jdbc` is `compileOnly`, with the dev client's `runtimeOnly`. Fabric has no
   equivalent of Spigot's runtime Maven `libraries:`.
 * The 26.x client GUI API is reworked — see `.agents/wiki/context/repository-map.md`.
 * `gradle.properties` holds project identity only; every coordinate lives in

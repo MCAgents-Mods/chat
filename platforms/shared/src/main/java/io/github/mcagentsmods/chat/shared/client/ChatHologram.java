@@ -180,6 +180,7 @@ public final class ChatHologram {
             case OPENING, READY -> I18n.get("hologram.mcagents.storage.opening");
             case FAILED -> I18n.get("hologram.mcagents.storage.failed",
                     ChatRuntime.storageFailure().orElse("?"));
+            case NO_SQLITE -> I18n.get("hologram.mcagents.storage.no_sqlite");
         };
     }
 
