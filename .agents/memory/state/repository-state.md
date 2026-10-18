@@ -5,7 +5,7 @@ description: Current state of MCAgentsClient — what is built, what is not, and
 
 # Repository State
 
-**Version:** 0.13.2 · **Default branch:** `master` · **Mode:** B (consumer)
+**Version:** 0.14.0 · **Default branch:** `master` · **Mode:** B (consumer)
 
 This file is **state, not history**. It is overwritten, never appended to. What happened and
 why belongs in `.agents/memory/tasks/` and in `wiki/logs/`.
@@ -49,8 +49,12 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   DELETE closing the Chat Model page. See [`../tasks/per-chat-models.md`](../tasks/per-chat-models.md).
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
-* **Storage.** `sqlite-jdbc` loads from the Jar-in-Jar nested jar on Windows and the
-  database opens at `{minecraft_dir}/MCAgents/data.db`.
+* **Storage.** Up to 0.13.2, `sqlite-jdbc` loaded from the Jar-in-Jar nested jar on Windows
+  and the database opened at `{minecraft_dir}/MCAgents/data.db`. Since 0.14.0 no jar carries
+  it: in a game without it (core's dev client with chat's jar on Fabric, NeoForge and Forge
+  26.3) the game does not crash, and CHAT says "SQLite is not installed, so chat cannot save
+  anything."; a plain sqlite-jdbc jar in `mods/` is skipped on Fabric and NeoForge. Chat's own
+  dev clients still open the database. See [`../tasks/no-bundled-sqlite.md`](../tasks/no-bundled-sqlite.md).
 
 ## What is built but unproven in a real client
 

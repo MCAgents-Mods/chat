@@ -1,6 +1,6 @@
 ---
 name: memory-task-no-bundled-sqlite
-status: in-progress
+status: done
 description: Taking sqlite-jdbc out of the Fabric, NeoForge and Forge mod jars, declaring it compileOnly and dev-client runtimeOnly only, released as a minor version.
 ---
 
@@ -39,9 +39,9 @@ time with it nested. The v0.13.1 jars are 12,309,311 (Fabric), 12,306,583 (NeoFo
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/no-bundled-sqlite-plan` | |
-| 2 | Stop bundling sqlite-jdbc | `build/no-bundled-sqlite` | |
-| 3 | Release 0.14.0 | `release/0.14.0` | |
+| 1 | Task record | `chore/no-bundled-sqlite-plan` | #84 |
+| 2 | Stop bundling sqlite-jdbc | `build/no-bundled-sqlite` | #85 |
+| 3 | Release 0.14.0 | `release/0.14.0` | #86 |
 
 ### Task 1 — chore/no-bundled-sqlite-plan
 
@@ -60,3 +60,11 @@ dev clients open the database, and a game without the driver says so instead of 
 `project-version` is `0.14.0`. `wiki/logs/0/14/0/` tells players the jar no longer carries
 SQLite; the logs index has its row at the top, and the repository rule, map, state and setup
 page name the version. The `PR` column is filled.
+
+Done: `./gradlew build` was green against core's master, and each loader jar held exactly the
+entries of the v0.13.2 release jar less `sqlite-jdbc` (Fabric's `META-INF/jars/`, NeoForge's and
+Forge's `META-INF/jarjar/`): 359 KB, 357 KB and 357 KB in place of about 12.3 MB. In core's dev
+client with chat's jar and no SQLite, Fabric, NeoForge and Forge 26.3 reached a world and CHAT said
+"SQLite is not installed, so chat cannot save anything."; a plain sqlite-jdbc jar in `mods/` was
+skipped as not a mod on Fabric and NeoForge. Chat's own dev clients opened the database on all
+three loaders.
