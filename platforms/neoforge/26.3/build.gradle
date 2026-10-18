@@ -1,7 +1,0 @@
-// MCAgents chat's NeoForge jar for Minecraft 26.3. Everything but the version is in ../neoforge.gradle.
-
-plugins {
-    id 'net.neoforged.moddev'
-}
-
-apply from: '../neoforge.gradle'

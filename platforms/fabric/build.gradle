@@ -5,10 +5,13 @@
 // This is the only module that may reference Fabric types. The screens and start-up live in
 // platforms/shared, the logic in common/ — see .agents/rules/repository.md.
 
-// Built for the Minecraft version chat supports: platforms/fabric/{version}/build.gradle
-// applies Loom, then this.
+// Built for the one Minecraft version chat supports, libs.versions.minecraft in the catalog.
 
-apply from: '../../minecraft.gradle'
+plugins {
+    id 'net.fabricmc.fabric-loom'
+}
+
+def minecraftVersion = libs.versions.minecraft.get()
 
 base {
     archivesName = 'MCAgentsChatFabric'
@@ -37,13 +40,13 @@ loom {
             // The dev client loads platforms/shared as part of this mod, as the jar merges it,
             // so it finds the screens' strings there. Only a Loom module can be named here;
             // api/ and common/ carry no game assets.
-            sourceSet 'main', sharedModule
+            sourceSet 'main', ':chat-shared'
         }
     }
 }
 
 dependencies {
-    minecraft libraryFor('minecraft')
+    minecraft libs.minecraft
 
     // Chat's own modules are part of this mod: the jar task below merges their classes, and
     // the dev client runs them from this module's class path. This module is never published,
@@ -52,15 +55,15 @@ dependencies {
     // compileOnly, since the mcagents_core mod provides it in game.
     implementation project(':chat-api')
     implementation project(':chat-common')
-    implementation project(sharedModule)
+    implementation project(':chat-shared')
 
     // Only compiled against: the game provides Fabric Loader and Fabric API at runtime.
     compileOnly libs.fabric.loader
-    compileOnly libraryFor('fabric-api')
+    compileOnly libs.fabric.api
 
     // The dev client (runClient) is the one place no game provides them, so it gets them here.
     runtimeOnly libs.fabric.loader
-    runtimeOnly libraryFor('fabric-api')
+    runtimeOnly libs.fabric.api
 
     // sqlite-jdbc is a plain library, not a mod, so Loom wraps it before nesting it.
     // Bundling it is what lets the mod store data on a machine that has never been online.
@@ -75,10 +78,13 @@ dependencies {
 def bundledModules = [
         ':chat-api',
         ':chat-common',
-        sharedModule
+        ':chat-shared'
 ]
 
 tasks.named('jar', Jar) {
+    // MCAgentsChatFabric-0.13.2+26.3.jar: the mod's version, then the game's.
+    archiveVersion = "${project.version}+${minecraftVersion}"
+
     bundledModules.each { path ->
         from project(path).sourceSets.main.output
     }

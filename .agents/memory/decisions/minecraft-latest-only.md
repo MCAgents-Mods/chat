@@ -13,10 +13,11 @@ description: The owner's permanent decision that every MCAgents mod supports onl
 - Jar names keep the game's version as a suffix: `MCAgentsChatFabric-{version}+26.3.jar`.
 - Gradle project names and artifact ids do not carry it: `:mcagents-chat-shared`,
   `mcagents-chat-shared`.
-- The build keeps one folder per Minecraft-facing module for the version,
-  `platforms/{module}/{minecraft}/`, listed once in `settings.gradle`, with one catalog block.
-  Moving to a new release replaces that entry, the block and the folders in one change, and
-  bumps the minor version; the old version's files are deleted in the same change.
+- The catalog names the version once, in one block (`minecraft`, `fabric-api`, `neoforge`,
+  `forge`). Up to 0.13.1 each Minecraft-facing module also kept a `platforms/{module}/{minecraft}/`
+  subproject; from 0.13.2 (owner, 2026-10-18) each is one folder, `platforms/{module}/`, with one
+  `build.gradle`. Moving to a new release replaces that block, and Forge's pack format, in one
+  change and bumps the minor version.
 
 **Why:** the owner: "we will not have another version support". Keeping two versions doubled
 every build, release and dev-client check for players who can update the game.

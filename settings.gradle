@@ -24,16 +24,6 @@ plugins {
 
 rootProject.name = 'chat'
 
-// The Minecraft version this mod builds for: only ever the latest release, never an older
-// one beside it. platforms/shared and each loader compile against Minecraft, so each is a
-// folder of shared sources, platforms/{module}/src, with a subproject for the version in
-// platforms/{module}/{version}, holding only what is particular to that version. The
-// subproject is named chat-{module}, without the version, which is also its
-// published artifact id; the jar's name carries the version. The catalog carries the
-// version's block of coordinates. Moving to a new Minecraft release replaces the version
-// here, the catalog block and each module's version folder; nothing else names it.
-def minecraftVersion = '26.3'
-
 // MCAgents core — the model client, the holograms, the tool registry and the tool-calling
 // agent chat runs on. With a checkout of
 // MCAgents-Mods/core beside this one (or wherever -Pcore-build points), Gradle builds chat
@@ -58,7 +48,11 @@ project(':chat-api').projectDir = file('api')
 include 'chat-common'
 project(':chat-common').projectDir = file('common')
 
+// platforms/shared and each loader compile against Minecraft: one module each, for the one
+// Minecraft version chat supports, which the catalog names. The project is named
+// chat-{module}, without the version, which is also its published artifact id; the jar's
+// name carries the version.
 ['shared', 'fabric', 'neoforge', 'forge'].each { module ->
     include "chat-${module}"
-    project(":chat-${module}").projectDir = file("platforms/${module}/${minecraftVersion}")
+    project(":chat-${module}").projectDir = file("platforms/${module}")
 }
