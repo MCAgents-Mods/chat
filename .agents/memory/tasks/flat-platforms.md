@@ -1,6 +1,6 @@
 ---
 name: memory-task-flat-platforms
-status: in-progress
+status: done
 description: Folding each platform module's 26.3 subproject and its {module}.gradle into one platforms/{module}/build.gradle, with no version folder left, released as a patch.
 ---
 
@@ -41,9 +41,9 @@ game version from the folder's name. Only Forge's `pack.mcmeta` lives in a versi
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/flat-platforms-plan` | |
-| 2 | One build.gradle per platform | `build/flat-platforms` | |
-| 3 | Release 0.13.2 | `release/0.13.2` | |
+| 1 | Task record | `chore/flat-platforms-plan` | #81 |
+| 2 | One build.gradle per platform | `build/flat-platforms` | #82 |
+| 3 | Release 0.13.2 | `release/0.13.2` | #83 |
 
 ### Task 1 — chore/flat-platforms-plan
 
@@ -65,3 +65,8 @@ NeoForge and Forge.
 `wiki/logs/0/13/2/` says players and builders need do nothing; the logs index has its row at
 the top, and the repository rule, map, state and setup page name the version. The `PR` column
 is filled.
+
+Done: `./gradlew build` was green against core's master, the three loader jars held exactly the
+entries, at the same sizes, of the v0.13.1 release jars, with the same `fabric.mod.json`,
+`neoforge.mods.toml`, `mods.toml` and `pack.mcmeta`, and chat loaded with core 0.13.1 into a 26.3
+world on Fabric, NeoForge and Forge, its buttons on the G menu and its holograms opening.
