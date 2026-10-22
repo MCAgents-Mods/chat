@@ -143,7 +143,7 @@ it one that runs each result at once.
    `ChatConversation` stores it in that conversation (`common/`).
 2. The prompt is embedded and matched against the stored Knowledge Pack embeddings
    (`common/`), returning only the closest content.
-3. The persona and instructions from `{minecraft_dir}/MCAgents/AGENTS.md`, where the player
+3. The persona and instructions from `{minecraft_dir}/MCAgents/chat/AGENTS.md`, where the player
    is playing, the session's prior messages from the local database, the retrieved content,
    and the prompt are assembled into a request (`common/`).
 4. The request goes to the provider picked for the model on the Models hologram — OpenRouter,
@@ -159,7 +159,7 @@ stored. Only step 4 needs a model provider.
 
 A stored model id is `{platform}/{model}` — the shape OpenRouter itself uses — and beside it
 the player picks the provider it is called through: core's `ModelChoice`, kept in core's
-global model (`{minecraft_dir}/MCAgents/agents/models.properties`), which every task without a
+global model (`{minecraft_dir}/MCAgents/core/models.properties`), which every task without a
 model of its own falls back to. The request goes to that provider at its address — the one a
 custom provider gives, else the one the mod ships — and nowhere else. A direct provider with
 no key stored fails asking for one; it is never quietly sent through OpenRouter. A player who
@@ -207,7 +207,7 @@ machine.
 
 ## Local database
 
-SQLite at `{minecraft_dir}/MCAgents/data.db`, via `org.xerial:sqlite-jdbc`. Eight tables:
+SQLite at `{minecraft_dir}/MCAgents/chat/data.db`, via `org.xerial:sqlite-jdbc`. Eight tables:
 `api_keys`, `content_categories`, `contents`, `chat_sessions`, `chat_messages`, `settings`,
 `player_wallets`, and `wallet_platform_addresses`. Chat
 messages are stored one row per turn with a `role` of `user` or `assistant`, which is the

@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * The editor for {@code {minecraft_dir}/MCAgents/AGENTS.md}, as a hologram PERSONA opens.
+ * The editor for {@code {minecraft_dir}/MCAgents/chat/AGENTS.md}, as a hologram PERSONA opens.
  *
  * <p>The persona is the one thing that changes how every answer reads, so it is one button away
  * from the conversation it governs rather than a file the player has to go and find. The path is

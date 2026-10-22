@@ -15,8 +15,15 @@ public final class MCAgents {
     /** Human-readable mod name, used for logging and in the interface. */
     public static final String MOD_NAME = "MCAgentsClient";
 
-    /** Directory the mod creates inside the Minecraft game directory. */
+    /** Directory every MCAgents mod keeps its files under, inside the Minecraft game directory. */
     public static final String DATA_DIRECTORY = "MCAgents";
+
+    /**
+     * This mod's own directory inside {@link #DATA_DIRECTORY}, named for its repository. Every
+     * MCAgents mod keeps its files in {@code MCAgents/{mod}/}; chat kept them loose in
+     * {@code MCAgents/} until 0.15.0.
+     */
+    public static final String MOD_DIRECTORY = "chat";
 
     /** SQLite database holding chat history, API keys, and downloaded Knowledge Packs. */
     public static final String DATABASE_FILE = "data.db";

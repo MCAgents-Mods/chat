@@ -19,7 +19,7 @@ import java.util.List;
  * chosen to keep the stable material at the front:
  *
  * <ol>
- *   <li>the persona from {@code {minecraft_dir}/MCAgents/AGENTS.md} — unchanged for as
+ *   <li>the persona from {@code {minecraft_dir}/MCAgents/chat/AGENTS.md} — unchanged for as
  *       long as the player does not edit it;</li>
  *   <li>where the player is playing — unchanged for as long as they stay there;</li>
  *   <li>the conversation so far — grows by appending, so every earlier turn stays

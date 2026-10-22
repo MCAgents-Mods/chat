@@ -99,7 +99,7 @@ public final class SqliteDatabase implements LocalDatabase {
      * {@value TokenCipher#KEY_VARIABLE} if this machine has one, and stored as they are if it
      * does not — see {@link #open(Path, TokenCipher)}.
      *
-     * @param file the database file, usually {@code {minecraft_dir}/MCAgents/data.db}
+     * @param file the database file, usually {@code {minecraft_dir}/MCAgents/chat/data.db}
      */
     public static CompletableFuture<LocalDatabase> open(Path file) {
         return open(file, TokenCipher.fromEnvironment());

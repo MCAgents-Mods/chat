@@ -95,14 +95,21 @@ Minecraft's client thread renders the game. Blocking it freezes the game.
 
 ## Local data
 
-* The local database is SQLite at `{minecraft_dir}/MCAgents/data.db`. The game directory is
+* **Every file the mod keeps on a player's disk lives in `{minecraft_dir}/MCAgents/chat/`.** The
+  owner's rule for every MCAgents mod (2026-10-22): mod `{mod}` keeps its files in
+  `.minecraft/MCAgents/{mod}/`, named for its repository — `chat` here, `core` in core.
+  Nothing goes loose at the root of `MCAgents/` or in the game directory; `ClientPaths` is the
+  one place that resolves them. A file that moves keeps working for players who update: move it
+  from the old place on start with core's `ModFiles.moveIfAbsent`, as
+  `ClientPaths.moveLegacyFiles()` does for what chat kept in `MCAgents/` before 0.15.0.
+* The local database is SQLite at `{minecraft_dir}/MCAgents/chat/data.db`. The game directory is
   resolved by the loader module and handed to `platforms/shared/`; `common/` receives a path.
-* Player-facing configuration lives beside it at `{minecraft_dir}/MCAgents/AGENTS.md` —
+* Player-facing configuration lives beside it at `{minecraft_dir}/MCAgents/chat/AGENTS.md` —
   the player's own agent personas and instructions. It is read at runtime and must never
   be overwritten by an update without the player asking.
 * The database schema is created idempotently at startup. A schema change ships with a
   migration; never with a "delete the database and start again".
-* External MCP servers are cloned to `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`,
+* External MCP servers are cloned to `{minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/`,
   with an optional `mcp_servers.json` beside them. **That file is as sensitive as the
   database**: an MCP server entry carries the environment the server is started with, which
   is where its credentials sit. Never log it, never attach it to an issue.

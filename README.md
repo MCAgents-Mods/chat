@@ -11,7 +11,7 @@ It works in single-player and on any multiplayer server you are allowed to use i
 ## How it works
 
 Everything the mod remembers lives on your own machine, in a SQLite database at
-`.minecraft/MCAgents/data.db`: your conversations, your API keys, your bound wallets, and
+`.minecraft/MCAgents/chat/data.db`: your conversations, your API keys, your bound wallets, and
 the Knowledge Packs you have stored. When you ask a question, the mod turns it into an
 embedding, compares it against the stored packs, and sends only the closest content to the
 model — never your whole library.
@@ -64,8 +64,8 @@ do not share your `data.db`.
   a private key or a recovery phrase.
 * **External tools over MCP** — ask the agent to add a Model Context Protocol server and it
   clones, runs, and uses it from your next question, with no restart. Servers live in
-  `.minecraft/MCAgents/mcps/{owner}/{repository}/`.
-* **Player-defined personas** in `.minecraft/MCAgents/AGENTS.md`.
+  `.minecraft/MCAgents/chat/mcps/{owner}/{repository}/`.
+* **Player-defined personas** in `.minecraft/MCAgents/chat/AGENTS.md`.
 * **Offline-first throughout.**
 
 ## Quick start

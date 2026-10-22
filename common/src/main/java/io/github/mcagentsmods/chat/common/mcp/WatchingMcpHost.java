@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  * The MCP host: discovers servers, keeps sessions to them, and publishes one merged
  * registry.
  *
- * <p>It watches {@code {minecraft_dir}/MCAgents/mcps/} so a repository cloned while the
+ * <p>It watches {@code {minecraft_dir}/MCAgents/chat/mcps/} so a repository cloned while the
  * game is running is picked up without a restart. That is the whole reason the watcher
  * exists — asking a player to restart Minecraft to use a server they just added would make
  * the clone tool nearly pointless.

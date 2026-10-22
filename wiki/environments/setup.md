@@ -28,7 +28,7 @@ Every dependency coordinate lives in the Gradle version catalog at
 | ModDevGradle | 2.0.148 |
 | ForgeGradle | 7.0.40 |
 | Java | 25 |
-| MCAgents core | 0.13.0 |
+| MCAgents core | 0.14.0 |
 
 The entries that move with Minecraft come in one block for the supported version:
 
@@ -157,8 +157,8 @@ workflow's page does the same by hand, and its `tag` input releases an earlier t
 ## Runtime files
 
 Running the client creates a game directory in that loader module, such as
-`platforms/fabric/run/`. The mod's own data goes to its `MCAgents/` folder,
-`platforms/fabric/run/MCAgents/`:
+`platforms/fabric/run/`. The mod's own data goes to its own folder,
+`platforms/fabric/run/MCAgents/chat/`; core's settings go beside it, in `MCAgents/core/`:
 
 | File | Contents |
 |---|---|

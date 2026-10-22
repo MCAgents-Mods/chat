@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  *
  * <p>This type exists to make one class of bug impossible. The coordinate is frequently
  * chosen by a language model rather than by a person, and it is turned straight into a
- * filesystem path under {@code {minecraft_dir}/MCAgents/mcps/}. An unvalidated
+ * filesystem path under {@code {minecraft_dir}/MCAgents/chat/mcps/}. An unvalidated
  * {@code ../../..} there writes anywhere the game process can reach. So validation happens
  * in the constructor, once, and every other class can take a {@code RepositoryCoordinate}
  * and stop thinking about it.

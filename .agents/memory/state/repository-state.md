@@ -50,7 +50,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
 * **A full exchange.** The agent answers. OpenRouter is reached with the player's key and
   the reply is stored and rendered.
 * **Storage.** Up to 0.13.2, `sqlite-jdbc` loaded from the Jar-in-Jar nested jar on Windows
-  and the database opened at `{minecraft_dir}/MCAgents/data.db`. Since 0.14.0 no jar carries
+  and the database opened at `{minecraft_dir}/MCAgents/chat/data.db`. Since 0.14.0 no jar carries
   it: in a game without it (core's dev client with chat's jar on Fabric, NeoForge and Forge
   26.3) the game does not crash, and CHAT says "SQLite is not installed, so chat cannot save
   anything."; a plain sqlite-jdbc jar in `mods/` is skipped on Fabric and NeoForge. Chat's own
@@ -74,7 +74,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   `EnvironmentSource`, recorded by `GameEnvironment` from the Fabric connection events. **No
   join event has ever fired.** See `.agents/memory/tasks/server-context-and-persona.md`.
 * **The whole MCP client.** The mod can clone external MCP servers into
-  `{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/`, discover and run them over stdio or
+  `{minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/`, discover and run them over stdio or
   HTTP, register their tools in core's tool registry, one category per server, and route the
   model's tool calls back to the server that owns each one. Covered by tests in `common/`, seventeen of which drive a
   **real child process** — but **no game has ever started the host**, **no real
@@ -91,7 +91,7 @@ Run on Minecraft 26.2 against a live multiplayer server, and observed working:
   without deleting them. **No real player's database has been migrated**.
 * **Chosen providers** (0.12.0, core 0.13.0). Each model is called through the provider picked
   beside it on the Models hologram, kept in core's global model
-  (`MCAgents/agents/models.properties`), at that provider's address, a custom provider's first.
+  (`MCAgents/core/models.properties`), at that provider's address, a custom provider's first.
   The address, the bare model id, the dropped gateway extensions and the per-provider key are
   asserted against a stub transport, and the one-time move of 0.11.0's settings by
   `LegacyModelSettings` is tested; **no request has ever reached a platform's real API**, and
