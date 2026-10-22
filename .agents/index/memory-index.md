@@ -70,6 +70,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/own-modules.md`](../memory/tasks/own-modules.md) | Each loader module declaring chat's own submodules with `implementation` while the loader, Fabric API and core stay `compileOnly`, with no jar changing. |
 | [`../memory/tasks/flat-platforms.md`](../memory/tasks/flat-platforms.md) | One `build.gradle` per platform module, with no `26.3/` subproject, `{module}.gradle` or `minecraft.gradle` left, and the catalog naming the Minecraft version once. |
 | [`../memory/tasks/no-bundled-sqlite.md`](../memory/tasks/no-bundled-sqlite.md) | Taking sqlite-jdbc out of every mod jar, `compileOnly` plus the dev client's `runtimeOnly` only, and Forge's Jar-in-Jar plugin with it. |
+| [`../memory/tasks/config-paths.md`](../memory/tasks/config-paths.md) | Every file chat keeps — `data.db`, `AGENTS.md`, `mcps/` — in `MCAgents/chat/`, a player's old files moved there on first start, on core 0.14.0. |
 
 ## Maintenance
 
