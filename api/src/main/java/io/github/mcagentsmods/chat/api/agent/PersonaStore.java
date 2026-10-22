@@ -3,7 +3,7 @@ package io.github.mcagentsmods.chat.api.agent;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * The player's own instructions, at {@code {minecraft_dir}/MCAgents/AGENTS.md}.
+ * The player's own instructions, at {@code {minecraft_dir}/MCAgents/chat/AGENTS.md}.
  *
  * <p>One store per game session, shared by everything that reads or writes the file: the
  * agent that puts it at the front of every prompt, and the in-game editor.

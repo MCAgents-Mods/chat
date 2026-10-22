@@ -81,14 +81,41 @@ public final class ChatRuntime {
 
         paths = ClientPaths.under(gameDirectory);
         LOGGER.info("{} initialising, data directory {}", MCAgents.MOD_NAME, paths.dataDirectory());
+        moveLegacyFiles();
 
         // Core's global model, which the Models page edits. Core reads the same file when its
         // own start-up runs; whichever start runs first reads it, and the other does nothing.
-        Models.start(AgentsPaths.under(gameDirectory).modelsFile());
+        // Core's own files move first, in case chat starts before core does.
+        AgentsPaths core = AgentsPaths.under(gameDirectory);
+        try {
+            core.moveLegacyFiles();
+        } catch (IOException | RuntimeException failure) {
+            LOGGER.warn("Could not move core's files from {} to {}", core.legacyDirectory(),
+                    core.dataDirectory(), failure);
+        }
+        Models.start(core.modelsFile());
 
         ensurePersonaFile();
         startMcpHost();
         reopenDatabase();
+    }
+
+    /**
+     * Moves the database, {@code AGENTS.md} and {@code mcps/} from {@code MCAgents/}, where chat
+     * kept them before 0.15.0, into {@code MCAgents/chat/}, so a player who updates keeps their
+     * chats, keys, persona and MCP servers. Runs before anything opens them; a failure is logged
+     * and the mod starts on whatever is in the new place.
+     */
+    private static void moveLegacyFiles() {
+        try {
+            for (Path moved : paths.moveLegacyFiles()) {
+                LOGGER.info("Moved {} from {} to {}", moved.getFileName(), paths.legacyDirectory(),
+                        paths.dataDirectory());
+            }
+        } catch (IOException | RuntimeException failure) {
+            LOGGER.warn("Could not move chat's files from {} to {}; move them by hand to keep them",
+                    paths.legacyDirectory(), paths.dataDirectory(), failure);
+        }
     }
 
     /**
@@ -264,7 +291,7 @@ public final class ChatRuntime {
         return McpHostFactory.host();
     }
 
-    /** Clones an external MCP repository into {@code MCAgents/mcps/{owner}/{repository}/}. */
+    /** Clones an external MCP repository into {@code MCAgents/chat/mcps/{owner}/{repository}/}. */
     public static io.github.mcagentsmods.chat.api.mcp.McpRepositoryCloner mcpCloner() {
         return McpHostFactory.cloner(paths());
     }

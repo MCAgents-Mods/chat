@@ -45,3 +45,13 @@ MCAgents mod. `ChatRuntime` reads core's global model from `AgentsPaths.under(..
 ### Task 1 — chore/config-paths-plan
 
 This record, and its row in the memory index.
+
+### Task 2 — fix/config-paths
+
+Chat compiles against core 0.14.0. `MCAgents.MOD_DIRECTORY` is `chat`; `ClientPaths` resolves
+`MCAgents/chat/` and its `moveLegacyFiles()` moves `data.db` (with `-wal`, `-shm` or `-journal`,
+first and only together with it), `AGENTS.md` and `mcps/` from `MCAgents/`, never over a file
+already in place. `ChatRuntime.start` calls it before anything opens a file, then calls core's
+`AgentsPaths.moveLegacyFiles()` before `Models.start`. The rule is in
+`.agents/rules/repository.md`; README, `AGENTS.md`, the wiki, `.agents/` and the javadoc name
+the new paths, and the default persona tells the player where its file is.

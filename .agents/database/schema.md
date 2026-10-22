@@ -5,7 +5,7 @@ description: The local SQLite schema — what each table is for, the invariants 
 
 # Local Database Schema
 
-The store is SQLite at `{minecraft_dir}/MCAgents/data.db`. It is the player's data, on the
+The store is SQLite at `{minecraft_dir}/MCAgents/chat/data.db`. It is the player's data, on the
 player's machine, and it is the only place chat history, API keys, and downloaded Knowledge
 Packs exist.
 

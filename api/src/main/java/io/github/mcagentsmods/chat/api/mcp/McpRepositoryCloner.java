@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 public interface McpRepositoryCloner {
 
     /**
-     * Clones {@code cloneUrl} to {@code {minecraft_dir}/MCAgents/mcps/{owner}/{repository}/}.
+     * Clones {@code cloneUrl} to {@code {minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/}.
      *
      * <p>An existing clone is updated in place rather than re-cloned, so calling this twice
      * is not an error and does not discard local state.

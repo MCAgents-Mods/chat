@@ -85,7 +85,7 @@ point.
   expects. Mapping is the only step; if you find yourself parsing or reassembling, the
   storage shape has been broken — see [`../database/schema.md`](../database/schema.md).
 * The system message is assembled at request time from the player's
-  `{minecraft_dir}/MCAgents/AGENTS.md` and the retrieved Knowledge Pack content. It is
+  `{minecraft_dir}/MCAgents/chat/AGENTS.md` and the retrieved Knowledge Pack content. It is
   stored with `role = 'system'` only when it should persist in the transcript.
 
 ## Tool calls
@@ -120,7 +120,7 @@ An exchange with tools is still one request shape, extended:
 ## Model selection
 
 * The player chooses a chat model and an embedding model, each with its provider. Both live in
-  core's global model, `{minecraft_dir}/MCAgents/agents/models.properties`, which every task
+  core's global model, `{minecraft_dir}/MCAgents/core/models.properties`, which every task
   without a model of its own falls back to (`GlobalModels.chatOr` / `embeddingOr`), and are
   read at request time — never hardcoded at a call site. Only the embedding switch stays in
   chat's `settings`.

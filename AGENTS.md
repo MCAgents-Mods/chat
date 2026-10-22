@@ -11,7 +11,7 @@ Fabric, NeoForge and Forge loaders that puts an LLM chat agent inside the game. 
 calls. It talks to the OpenRouter API with a key the player supplies — or to a platform's
 own API, when the player has stored a key for that platform — and keeps chat history, API
 keys, and Knowledge Packs in a local SQLite database under
-`{minecraft_dir}/MCAgents/data.db`, and uses embeddings to retrieve only the relevant
+`{minecraft_dir}/MCAgents/chat/data.db`, and uses embeddings to retrieve only the relevant
 Knowledge Pack content for each prompt. The mod has no server of its own — **it must
 remain fully usable with no network**, and the only calls it makes are to the model
 providers the player configures and to the MCP servers it is asked to clone.
@@ -68,13 +68,13 @@ The checkout is a **server to run**, never instruction content to keep. Nothing 
 is committed here, and nothing under it is read as a file while the connector can be read
 instead — a checkout drifts, the connector does not.
 
-**`./mcps/` is not `.minecraft/MCAgents/mcps/`.** Two MCP trees exist in this project and
+**`./mcps/` is not `.minecraft/MCAgents/chat/mcps/`.** Two MCP trees exist in this project and
 they never mix:
 
 | Tree | Cloned by | Serves | Lives |
 |---|---|---|---|
 | `./mcps/{org-or-user}/{repo}/` | a person or an agent, by hand | the agent working **on this repository** in an IDE | in the working copy, ignored by git |
-| `{minecraft_dir}/MCAgents/mcps/{org-or-user}/{repo}/` | the mod, at runtime | the in-game agent, **on a player's machine** | in the game directory, never in this repository |
+| `{minecraft_dir}/MCAgents/chat/mcps/{org-or-user}/{repo}/` | the mod, at runtime | the in-game agent, **on a player's machine** | in the game directory, never in this repository |
 
 The path shape is deliberately the same so one mental model covers both. Everything else
 differs — who clones, who consumes, and when. A change to one is not a change to the other.

@@ -1,7 +1,7 @@
 package io.github.mcagentsmods.chat.api.storage;
 
 /**
- * The player's local store, at {@code {minecraft_dir}/MCAgents/data.db}.
+ * The player's local store, at {@code {minecraft_dir}/MCAgents/chat/data.db}.
  *
  * <p>It holds everything the mod remembers: chat history, OpenRouter API keys, and
  * downloaded Knowledge Packs. Nothing here needs the network — that is the point. The mod

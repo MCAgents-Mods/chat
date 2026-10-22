@@ -176,7 +176,7 @@ merges their tools into one registry the agent is shown. Player-facing documenta
 [`../../../wiki/information/mcp-servers.md`](../../../wiki/information/mcp-servers.md).
 What matters before changing any of it:
 
-* **`{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/` is the layout, and it is not
+* **`{minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/` is the layout, and it is not
   negotiable.** `ClientPaths.mcpRepository` resolves it and refuses anything that escapes
   the root. `RepositoryCoordinate` has already refused traversal before that. Both checks
   stay: the values reaching them are frequently chosen by a language model, not a person.
@@ -244,7 +244,7 @@ names cannot be dereferenced as `project.gitOrg`.
 | ModDevGradle | 2.0.148 |
 | Forge | 26.3-66.0.11 |
 | ForgeGradle | 7.0.40 |
-| MCAgents core | 0.13.0 |
+| MCAgents core | 0.14.0 |
 | Java | 25 (Minecraft 26.x requires it) |
 | Gradle | 9.7.1, via the committed wrapper |
 | Group | `io.github.mcagentsmods` |
@@ -300,7 +300,7 @@ exception for it.
 
 ## Player data — never in the repository
 
-`{minecraft_dir}/MCAgents/data.db` and `{minecraft_dir}/MCAgents/AGENTS.md` live on the
+`{minecraft_dir}/MCAgents/chat/data.db` and `{minecraft_dir}/MCAgents/chat/AGENTS.md` live on the
 player's machine. `data.db` holds OpenRouter API keys in the clear as a design decision, so
 **never log its contents, never attach it to an issue, and never write a fixture copy into
 this repository.**
@@ -352,7 +352,7 @@ There is no command and no browser page, and adding either would be treating a s
   tick code. The game freezes and the player blames the mod.
 * **`common/` must not see Minecraft.** If you reach for a `net.minecraft` import there,
   the value belongs in an `api/` contract passed in from the platform module.
-* The repository root `AGENTS.md` is the agent entry point. `{minecraft_dir}/MCAgents/AGENTS.md`
+* The repository root `AGENTS.md` is the agent entry point. `{minecraft_dir}/MCAgents/chat/AGENTS.md`
   is the *player's* persona file at runtime. They are unrelated files with the same name —
   do not confuse them. The runtime one is written by `FilePersonaStore` when it is missing
   and **never rewritten afterwards**; there is one store per game session and every page

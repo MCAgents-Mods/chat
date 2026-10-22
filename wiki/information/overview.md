@@ -35,7 +35,7 @@ environment the game runs in, and stored as pasted when it is not.
 
 The agent is not limited to what the mod can do. Ask it to add an **MCP server** — a small
 program someone else wrote that publishes a set of tools — and it clones it into
-`.minecraft/MCAgents/mcps/`, runs it, and can use its tools from your next question on. No
+`.minecraft/MCAgents/chat/mcps/`, runs it, and can use its tools from your next question on. No
 restart, no configuration file to write.
 
 You never call these tools yourself. The agent decides it needs one, calls it, reads the
@@ -79,12 +79,16 @@ Everything the mod remembers lives on the player's own machine:
 
 | What | Where |
 |---|---|
-| Chat sessions and messages | `{minecraft_dir}/MCAgents/data.db` |
-| API keys, and the platform each one opens | `{minecraft_dir}/MCAgents/data.db` |
-| The global model: chat and embedding models, their providers, custom providers | `{minecraft_dir}/MCAgents/agents/models.properties` (core's) |
-| Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/data.db` |
-| Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/data.db` |
-| Agent personas and player instructions | `{minecraft_dir}/MCAgents/AGENTS.md` |
+| Chat sessions and messages | `{minecraft_dir}/MCAgents/chat/data.db` |
+| API keys, and the platform each one opens | `{minecraft_dir}/MCAgents/chat/data.db` |
+| The global model: chat and embedding models, their providers, custom providers | `{minecraft_dir}/MCAgents/core/models.properties` (core's) |
+| Knowledge Packs and their embeddings | `{minecraft_dir}/MCAgents/chat/data.db` |
+| Bound wallets and their public chain addresses | `{minecraft_dir}/MCAgents/chat/data.db` |
+| Agent personas and player instructions | `{minecraft_dir}/MCAgents/chat/AGENTS.md` |
+
+Chat's files are all in its own folder, `MCAgents/chat/`, beside core's `MCAgents/core/`. Before
+0.15.0 they were loose in `MCAgents/`; the first start after the update moves them across, so
+nothing is lost.
 
 `data.db` is SQLite. `AGENTS.md` is a plain markdown file the player edits to define how
 the agent should behave. **The mod writes it the first time it runs** — with a starting

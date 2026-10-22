@@ -11,14 +11,14 @@ nothing about the game or the chat hologram changes when there are none.
 ## Where they live
 
 ```
-{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/
+{minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/
 ```
 
 One directory per repository, grouped by the owner it came from — the same shape GitHub
 uses, so a checkout is identifiable at a glance:
 
 ```
-MCAgents/mcps/
+MCAgents/chat/mcps/
   LXAgents-MCP/
     shared-instruction/
   acme/
@@ -102,7 +102,7 @@ Without one, the mod reads `package.json` and uses the `bin` entry, or failing t
 listed as a problem rather than guessed at, because a wrong guess produces a server that
 starts and then fails in a way nobody can diagnose.
 
-**2. `mcp_servers.json`, if you have one.** It sits at `MCAgents/mcps/mcp_servers.json` and
+**2. `mcp_servers.json`, if you have one.** It sits at `MCAgents/chat/mcps/mcp_servers.json` and
 does two jobs — correcting what was inferred, and adding servers that are not on your disk
 at all:
 

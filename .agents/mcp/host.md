@@ -32,7 +32,7 @@ other rule here.
 ## The directory layout is fixed
 
 ```
-{minecraft_dir}/MCAgents/mcps/{owner}/{repository}/
+{minecraft_dir}/MCAgents/chat/mcps/{owner}/{repository}/
 ```
 
 * One directory per repository, grouped by owner. Nothing else is written to the `mcps`
