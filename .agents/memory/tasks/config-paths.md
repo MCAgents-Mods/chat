@@ -1,6 +1,6 @@
 ---
 name: memory-task-config-paths
-status: in progress
+status: done
 description: Moving every file chat keeps on disk into MCAgents/chat/ — the database, AGENTS.md and the MCP folder — moving a player's old files there on first start, on core 0.14.0, released as 0.15.0.
 ---
 
@@ -38,9 +38,9 @@ MCAgents mod. `ChatRuntime` reads core's global model from `AgentsPaths.under(..
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `chore/config-paths-plan` | |
-| 2 | Chat's files in MCAgents/chat/ | `fix/config-paths` | |
-| 3 | Release 0.15.0 | `release/0.15.0` | |
+| 1 | Task record | `chore/config-paths-plan` | #87 |
+| 2 | Chat's files in MCAgents/chat/ | `fix/config-paths` | #88 |
+| 3 | Release 0.15.0 | `release/0.15.0` | #89 |
 
 ### Task 1 — chore/config-paths-plan
 
@@ -55,3 +55,18 @@ already in place. `ChatRuntime.start` calls it before anything opens a file, the
 `AgentsPaths.moveLegacyFiles()` before `Models.start`. The rule is in
 `.agents/rules/repository.md`; README, `AGENTS.md`, the wiki, `.agents/` and the javadoc name
 the new paths, and the default persona tells the player where its file is.
+
+### Task 3 — release/0.15.0
+
+`project-version` is `0.15.0`. `wiki/logs/0/15/0/` tells players their files move on the first
+start and that core 0.14.0 is needed; the logs index has its row at the top, and the repository
+rule, map, state and setup page name the version. The `PR` column is filled.
+
+Done: `./gradlew build` was green against core's `release/0.14.0`, with the new `ClientPathsTest`.
+In chat's dev clients with core 0.14.0's jar in `run/mods`, each loader's run directory was
+seeded with the old layout (`mcagents.json` loose, `MCAgents/agents/*.properties`,
+`MCAgents/data.db` holding a marker table, `MCAgents/AGENTS.md`, `MCAgents/mcps/`). On Fabric,
+NeoForge and Forge 26.3 the first start logged every move, left only `MCAgents/core/` and
+`MCAgents/chat/`, and reached the world; the marker row was still in the moved database, and
+the Settings (Fabric), Persona (NeoForge) and Models (Forge) holograms showed the moved values.
+Screenshots and file listings are in `reports/config-paths/` in the project's shared files.
