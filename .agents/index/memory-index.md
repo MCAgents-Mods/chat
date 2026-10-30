@@ -71,6 +71,7 @@ description: Index of .agents/memory/ — MCAgentsClient's dynamic state and tas
 | [`../memory/tasks/flat-platforms.md`](../memory/tasks/flat-platforms.md) | One `build.gradle` per platform module, with no `26.3/` subproject, `{module}.gradle` or `minecraft.gradle` left, and the catalog naming the Minecraft version once. |
 | [`../memory/tasks/no-bundled-sqlite.md`](../memory/tasks/no-bundled-sqlite.md) | Taking sqlite-jdbc out of every mod jar, `compileOnly` plus the dev client's `runtimeOnly` only, and Forge's Jar-in-Jar plugin with it. |
 | [`../memory/tasks/config-paths.md`](../memory/tasks/config-paths.md) | Every file chat keeps — `data.db`, `AGENTS.md`, `mcps/` — in `MCAgents/chat/`, a player's old files moved there on first start, on core 0.14.0. |
+| [`../memory/tasks/code-cleanup.md`](../memory/tasks/code-cleanup.md) | The wallet bridge's loopback HTTP plumbing and the MCP host's watch loop split into classes of their own, with no behaviour change, and no command to gate. |
 
 ## Maintenance
 
