@@ -54,3 +54,13 @@ parameter read and decode, the JSON member read, and the JSON, error and empty r
 their headers. The bridge keeps everything wallet-specific — the handlers, the method, `Host`
 and token guard, and its page. No reply, header or limit changes. `LocalWalletBridge` is down
 from 489 to 424 lines; `wiki/information/wallet-binding.md` names the new class.
+
+### Task 3 — refactor/mcp-watcher
+
+The file-system watch loop moved out of `WatchingMcpHost` into the package-private
+`common/mcp/McpConfigWatcher`: the watch service, the daemon thread `MCAgents-mcp-watch`, the
+two-second settle window and the owner-directory registration. The host builds it with
+`this::refresh` as the reload, starts it after the first refresh and closes it first in
+`close()`, before the sessions, as before. Behaviour and threads are unchanged and
+`WatchingMcpHostTest` needs no change. `WatchingMcpHost` is down from 437 to 312 lines; the
+repository map names the watcher.
