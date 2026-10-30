@@ -45,3 +45,12 @@ order and checked in CI. The plan is `plans/code-cleanup.md` in the project's sh
 ### Task 1 — plan/code-cleanup
 
 This record, and its row in the memory index.
+
+### Task 2 — refactor/wallet-http
+
+The generic HTTP plumbing moved out of `LocalWalletBridge` into the package-private
+`common/wallet/LoopbackHttp`: the bounded body read (`MAX_BODY_BYTES` with it), the query
+parameter read and decode, the JSON member read, and the JSON, error and empty replies with
+their headers. The bridge keeps everything wallet-specific — the handlers, the method, `Host`
+and token guard, and its page. No reply, header or limit changes. `LocalWalletBridge` is down
+from 489 to 424 lines; `wiki/information/wallet-binding.md` names the new class.
