@@ -11,7 +11,6 @@ import io.github.mcagentsmods.chat.api.wallet.WalletBridgeException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
@@ -84,9 +83,6 @@ public final class LocalWalletBridge implements WalletBridge {
 
     private static final String PAGE_RESOURCE = "/mcagents/wallet-bridge.html";
     private static final int TOKEN_BYTES = 32;
-
-    /** Enough for a signature and an address; anything larger is not a reply we sent for. */
-    private static final int MAX_BODY_BYTES = 8 * 1024;
 
     private final HttpServer server;
     private final ScheduledExecutorService scheduler;
@@ -257,7 +253,7 @@ public final class LocalWalletBridge implements WalletBridge {
         // Nothing here should ever be reused, and least of all by another page.
         exchange.getResponseHeaders().add("Cache-Control", "no-store");
         exchange.getResponseHeaders().add("Referrer-Policy", "no-referrer");
-        send(exchange, 200, page);
+        LoopbackHttp.send(exchange, 200, page);
     }
 
     /**
@@ -271,9 +267,10 @@ public final class LocalWalletBridge implements WalletBridge {
         if (!guard(exchange, "GET")) {
             return;
         }
-        String address = decode(queryValue(exchange.getRequestURI().getRawQuery(), "address"));
+        String address = LoopbackHttp.decode(
+                LoopbackHttp.queryValue(exchange.getRequestURI().getRawQuery(), "address"));
         if (address == null || address.isBlank()) {
-            sendError(exchange, 400, "A challenge has to name the address it proves.");
+            LoopbackHttp.sendError(exchange, 400, "A challenge has to name the address it proves.");
             return;
         }
 
@@ -281,7 +278,7 @@ public final class LocalWalletBridge implements WalletBridge {
         JsonObject body = new JsonObject();
         body.addProperty("nonce", challenge.nonce());
         body.addProperty("message", challenge.message());
-        sendJson(exchange, 200, body);
+        LoopbackHttp.sendJson(exchange, 200, body);
     }
 
     /**
@@ -301,23 +298,23 @@ public final class LocalWalletBridge implements WalletBridge {
         }
         JsonObject request;
         try {
-            request = JsonParser.parseString(readBody(exchange)).getAsJsonObject();
+            request = JsonParser.parseString(LoopbackHttp.readBody(exchange)).getAsJsonObject();
         } catch (JsonSyntaxException | IllegalStateException | IllegalArgumentException e) {
-            sendError(exchange, 400, "That reply was not something this bridge asked for.");
+            LoopbackHttp.sendError(exchange, 400, "That reply was not something this bridge asked for.");
             return;
         }
 
         Optional<WalletBinding> verified = challenges.redeem(
-                string(request, "nonce"),
+                LoopbackHttp.string(request, "nonce"),
                 accountId,
-                string(request, "address"),
-                string(request, "signature"),
-                string(request, "chainId"));
+                LoopbackHttp.string(request, "address"),
+                LoopbackHttp.string(request, "signature"),
+                LoopbackHttp.string(request, "chainId"));
 
         if (verified.isEmpty()) {
             // Deliberately not saying which of the three was wrong: to anyone probing this
             // endpoint the distinction is the only useful information it could give.
-            sendError(exchange, 400,
+            LoopbackHttp.sendError(exchange, 400,
                     "That signature does not match the address it arrived with.");
             return;
         }
@@ -333,7 +330,7 @@ public final class LocalWalletBridge implements WalletBridge {
         body.addProperty("address", binding.address());
         body.addProperty("platform", binding.platform().displayName());
         body.addProperty("proved", count);
-        sendJson(exchange, 200, body);
+        LoopbackHttp.sendJson(exchange, 200, body);
     }
 
     /**
@@ -348,7 +345,7 @@ public final class LocalWalletBridge implements WalletBridge {
         if (!guard(exchange, "POST")) {
             return;
         }
-        send(exchange, 204, new byte[0]);
+        LoopbackHttp.send(exchange, 204, new byte[0]);
 
         // Proved, answered, done. The listener closes before the bindings are handed over —
         // see stop() for why that order matters.
@@ -359,7 +356,7 @@ public final class LocalWalletBridge implements WalletBridge {
         if (!guard(exchange, "POST")) {
             return;
         }
-        send(exchange, 204, new byte[0]);
+        LoopbackHttp.send(exchange, 204, new byte[0]);
         stopLater("The wallet connection was cancelled in the browser.");
     }
 
@@ -375,15 +372,15 @@ public final class LocalWalletBridge implements WalletBridge {
      */
     private boolean guard(HttpExchange exchange, String method) throws IOException {
         if (!method.equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendError(exchange, 405, "Method not allowed.");
+            LoopbackHttp.sendError(exchange, 405, "Method not allowed.");
             return false;
         }
         if (!isLoopbackHost(exchange.getRequestHeaders().getFirst("Host"))) {
-            sendError(exchange, 403, "Forbidden.");
+            LoopbackHttp.sendError(exchange, 403, "Forbidden.");
             return false;
         }
-        if (!tokenMatches(queryValue(exchange.getRequestURI().getRawQuery(), "t"))) {
-            sendError(exchange, 403, "Forbidden.");
+        if (!tokenMatches(LoopbackHttp.queryValue(exchange.getRequestURI().getRawQuery(), "t"))) {
+            LoopbackHttp.sendError(exchange, 403, "Forbidden.");
             return false;
         }
         return true;
@@ -424,66 +421,4 @@ public final class LocalWalletBridge implements WalletBridge {
             return stream.readAllBytes();
         }
     }
-
-    private static String readBody(HttpExchange exchange) throws IOException {
-        try (InputStream stream = exchange.getRequestBody()) {
-            // Bounded: an unbounded read on a socket anyone local can open is a way to make
-            // the game run out of memory.
-            byte[] bytes = stream.readNBytes(MAX_BODY_BYTES);
-            return new String(bytes, StandardCharsets.UTF_8);
-        }
-    }
-
-    private static String string(JsonObject object, String member) {
-        return object.has(member) && object.get(member).isJsonPrimitive()
-                ? object.get(member).getAsString()
-                : "";
-    }
-
-    private static String decode(String value) {
-        return value == null
-                ? null
-                : java.net.URLDecoder.decode(value, StandardCharsets.UTF_8);
-    }
-
-    private static String queryValue(String rawQuery, String key) {
-        if (rawQuery == null) {
-            return null;
-        }
-        for (String pair : rawQuery.split("&")) {
-            int equals = pair.indexOf('=');
-            if (equals > 0 && pair.substring(0, equals).equals(key)) {
-                return pair.substring(equals + 1);
-            }
-        }
-        return null;
-    }
-
-    private static void sendJson(HttpExchange exchange, int status, JsonObject body)
-            throws IOException {
-        exchange.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
-        exchange.getResponseHeaders().add("Cache-Control", "no-store");
-        send(exchange, status, body.toString().getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static void sendError(HttpExchange exchange, int status, String reason)
-            throws IOException {
-        JsonObject body = new JsonObject();
-        body.addProperty("error", reason);
-        sendJson(exchange, status, body);
-    }
-
-    private static void send(HttpExchange exchange, int status, byte[] body) throws IOException {
-        // No CORS headers, on purpose: without them the browser refuses to let another
-        // origin read anything this bridge says.
-        exchange.getResponseHeaders().add("X-Content-Type-Options", "nosniff");
-        exchange.sendResponseHeaders(status, body.length == 0 ? -1 : body.length);
-        if (body.length > 0) {
-            try (OutputStream out = exchange.getResponseBody()) {
-                out.write(body);
-            }
-        }
-        exchange.close();
-    }
-
 }

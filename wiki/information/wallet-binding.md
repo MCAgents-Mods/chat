@@ -158,7 +158,7 @@ itself, which lives in MetaMask and knows nothing about any of this.
 | Layer | What it holds |
 |---|---|
 | `api/` | `ChainPlatform`, `ChainAddress`, `Wallet`, `WalletBinding`, `WalletBridge`, `WalletRepository` |
-| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge` and its page; `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser` |
+| `common/` | `SqliteWalletRepository`; `WalletChallenges` (issuing and checking), `AccountWallets` (where results may land), `LocalWalletBridge`, its page and `LoopbackHttp` (the bridge's request and reply plumbing); `EvmSignatures`, `Keccak256`, `Secp256k1`, `AddressFormats`, `SystemBrowser` |
 | `platforms/shared/` | `WalletsHologram` (the three lists), `WalletDialogs` (add an address, connect MetaMask), `HologramDialogs` (names and confirmations), `PlayerAccounts` |
 
 `WalletChallenges` and `AccountWallets` sit in `common/`, apart from the holograms, so the
