@@ -1,6 +1,6 @@
 ---
 name: memory-tasks-code-cleanup
-status: in progress
+status: done
 description: Splitting chat's two largest mixed-purpose classes — the wallet bridge's HTTP plumbing and the MCP host's watch loop — with no behaviour change, and releasing 0.15.1.
 ---
 
@@ -37,10 +37,10 @@ order and checked in CI. The plan is `plans/code-cleanup.md` in the project's sh
 
 | # | Title | Branch | PR |
 |---|---|---|---|
-| 1 | Task record | `plan/code-cleanup` | |
-| 2 | Loopback HTTP out of the wallet bridge | `refactor/wallet-http` | |
-| 3 | Watch loop out of the MCP host | `refactor/mcp-watcher` | |
-| 4 | Release 0.15.1 | `release/0.15.1` | |
+| 1 | Task record | `plan/code-cleanup` | #90 |
+| 2 | Loopback HTTP out of the wallet bridge | `refactor/wallet-http` | #91 |
+| 3 | Watch loop out of the MCP host | `refactor/mcp-watcher` | #92 |
+| 4 | Release 0.15.1 | `release/0.15.1` | #93 |
 
 ### Task 1 — plan/code-cleanup
 
@@ -64,3 +64,11 @@ two-second settle window and the owner-directory registration. The host builds i
 `close()`, before the sessions, as before. Behaviour and threads are unchanged and
 `WatchingMcpHostTest` needs no change. `WatchingMcpHost` is down from 437 to 312 lines; the
 repository map names the watcher.
+
+### Task 4 — release/0.15.1
+
+`project-version` is `0.15.1`. `wiki/logs/0/15/1/` tells players it is a clean-up with no
+change they can see and that core 0.14.0 is still enough; the logs index has its row at the
+top, and the repository rule, map, state and setup page name the version.
+
+Done: `./gradlew build` was green with the two new classes and every existing test unchanged.

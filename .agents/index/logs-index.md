@@ -12,6 +12,7 @@ description: Version list for MCAgentsClient, newest first — each row points a
 
 | Version | File | Purpose |
 |---|---|---|
+| 0.15.1 | [`../../wiki/logs/0/15/1/CHANGELOG.md`](../../wiki/logs/0/15/1/CHANGELOG.md) | A clean-up with no player-visible change: the wallet bridge's HTTP plumbing (`LoopbackHttp`) and the MCP host's watch loop (`McpConfigWatcher`) are classes of their own; still on core 0.14.0. |
 | 0.15.0 | [`../../wiki/logs/0/15/0/CHANGELOG.md`](../../wiki/logs/0/15/0/CHANGELOG.md) | Every file chat keeps (`data.db`, `AGENTS.md`, `mcps/`) is in `MCAgents/chat/`, moved there from `MCAgents/` on first start; on core 0.14.0, whose files moved to `MCAgents/core/`. |
 | 0.14.0 | [`../../wiki/logs/0/14/0/CHANGELOG.md`](../../wiki/logs/0/14/0/CHANGELOG.md) | The mod jars no longer carry `sqlite-jdbc` (about 12.3 MB to about 360 KB); a game without SQLite says chat cannot save anything; Forge's Jar-in-Jar plugin is gone; core stays 0.13.0. |
 | 0.13.2 | [`../../wiki/logs/0/13/2/CHANGELOG.md`](../../wiki/logs/0/13/2/CHANGELOG.md) | Build only: one `build.gradle` per platform module with no `26.3/` subproject, the catalog naming the Minecraft version once; the jars are unchanged; core stays 0.13.0. |
