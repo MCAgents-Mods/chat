@@ -13,12 +13,6 @@ import io.github.mcagentsmods.chat.common.ClientPaths;
 import io.github.mcagentsmods.core.api.http.HttpTransport;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,10 +29,10 @@ import java.util.function.Consumer;
  * The MCP host: discovers servers, keeps sessions to them, and publishes one merged
  * registry.
  *
- * <p>It watches {@code {minecraft_dir}/MCAgents/chat/mcps/} so a repository cloned while the
- * game is running is picked up without a restart. That is the whole reason the watcher
- * exists — asking a player to restart Minecraft to use a server they just added would make
- * the clone tool nearly pointless.
+ * <p>It watches {@code {minecraft_dir}/MCAgents/chat/mcps/}, through {@link McpConfigWatcher},
+ * so a repository cloned while the game is running is picked up without a restart. That is
+ * the whole reason the watcher exists — asking a player to restart Minecraft to use a server
+ * they just added would make the clone tool nearly pointless.
  *
  * <p><b>A reload is a diff, not a restart.</b> Servers whose wiring is unchanged keep their
  * live sessions; only what actually changed is stopped and started. Restarting everything
@@ -49,15 +43,6 @@ import java.util.function.Consumer;
  * {@link McpServerStatus.State#FAILED} row and the rest carry on.
  */
 public final class WatchingMcpHost implements McpHost {
-
-    /**
-     * How long to wait after a filesystem event before reloading.
-     *
-     * <p>A clone writes hundreds of files and each one is an event. Reloading on the first
-     * would connect to a half-written repository, so the window is reset by every further
-     * event and the reload happens once the directory goes quiet.
-     */
-    private static final Duration SETTLE = Duration.ofSeconds(2);
 
     private final ClientPaths paths;
     private final McpDiscovery discovery;
@@ -72,9 +57,9 @@ public final class WatchingMcpHost implements McpHost {
     private volatile McpContextRegistry registry = McpContextRegistry.empty();
     private volatile List<McpServerSpec> configured = List.of();
     private volatile boolean closed;
-    private final Object watchLock = new Object();
-    private WatchService watcher;
-    private Thread watchThread;
+
+    /** Reloads this host once the mcps directory goes quiet after a change. */
+    private final McpConfigWatcher watcher;
 
     /**
      * @param paths          where the mcps directory is
@@ -90,6 +75,7 @@ public final class WatchingMcpHost implements McpHost {
         this.executor = executor;
         this.requestTimeout = requestTimeout;
         this.discovery = new McpDiscovery(paths.mcpDirectory());
+        this.watcher = new McpConfigWatcher(paths.mcpDirectory(), this::refresh);
     }
 
     /** A host with a thirty-second request limit, which is long enough for a slow tool. */
@@ -108,7 +94,7 @@ public final class WatchingMcpHost implements McpHost {
                         List.of(), List.of(), List.of(), List.of(), null));
             }
             McpContextRegistry first = refresh();
-            beginWatching();
+            watcher.start();
             return first;
         }, executor);
     }
@@ -299,114 +285,11 @@ public final class WatchingMcpHost implements McpHost {
     }
 
     /**
-     * Watches the mcps directory and reloads once it settles.
-     *
-     * <p>Only the root and the owner directories are registered, not every repository.
-     * {@link WatchService} is not recursive, and registering every checkout would mean a
-     * key per node_modules tree — thousands of watches to notice something the settle
-     * window already handles.
-     */
-    private void beginWatching() {
-        synchronized (watchLock) {
-            if (closed) {
-                return;
-            }
-            WatchService service;
-            try {
-                service = FileSystems.getDefault().newWatchService();
-            } catch (IOException cannotWatch) {
-                return; // Discovery still works; only automatic pickup is lost.
-            }
-            try {
-                registerWatch(service, paths.mcpDirectory());
-                registerOwners(service);
-            } catch (IOException cannotWatch) {
-                // Nothing else holds the service yet, and an open one keeps its native handles.
-                closeQuietly(service);
-                return;
-            }
-            watcher = service;
-            watchThread = new Thread(() -> watchLoop(service), "MCAgents-mcp-watch");
-            watchThread.setDaemon(true);
-            watchThread.start();
-        }
-    }
-
-    private void registerOwners(WatchService service) throws IOException {
-        try (var owners = Files.list(paths.mcpDirectory())) {
-            owners.filter(Files::isDirectory).forEach(owner -> registerWatch(service, owner));
-        }
-    }
-
-    private static void registerWatch(WatchService service, Path directory) {
-        try {
-            directory.register(service,
-                    StandardWatchEventKinds.ENTRY_CREATE,
-                    StandardWatchEventKinds.ENTRY_DELETE,
-                    StandardWatchEventKinds.ENTRY_MODIFY);
-        } catch (IOException | java.nio.file.ClosedWatchServiceException ignored) {
-            // One unwatchable directory does not stop the others.
-        }
-    }
-
-    private static void closeQuietly(WatchService service) {
-        try {
-            service.close();
-        } catch (IOException ignored) {
-            // Nothing further to do; the thread is a daemon and exits on its own.
-        }
-    }
-
-    /** Takes the service as a parameter so a close that clears the field cannot null it here. */
-    private void watchLoop(WatchService service) {
-        while (!closed) {
-            WatchKey key;
-            try {
-                key = service.take();
-            } catch (InterruptedException | java.nio.file.ClosedWatchServiceException stopping) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-
-            // Drain the burst: a clone produces events continuously, and reloading in the
-            // middle of one connects to a repository that is still being written.
-            boolean settled = false;
-            while (!settled && !closed) {
-                key.pollEvents();
-                key.reset();
-                try {
-                    WatchKey next = service.poll(SETTLE.toMillis(), TimeUnit.MILLISECONDS);
-                    if (next == null) {
-                        settled = true;
-                    } else {
-                        key = next;
-                    }
-                } catch (InterruptedException | java.nio.file.ClosedWatchServiceException stopping) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-
-            if (closed) {
-                return;
-            }
-            try {
-                // A new owner directory needs its own key; the root's events do not
-                // describe what happens two levels down.
-                registerOwners(service);
-                refresh();
-            } catch (IOException | RuntimeException reloadFailed) {
-                // Reported through the statuses on the next successful pass.
-            }
-        }
-    }
-
-    /**
      * Stops watching and stops every server.
      *
-     * <p>The flag is set before anything is taken apart. The watcher is closed under the lock
-     * {@link #beginWatching} holds, so a start still running either sees the flag or has
-     * finished before this closes what it made; and {@link #sessionFor} checks the flag under
+     * <p>The flag is set before anything is taken apart. The watcher is closed first, under the
+     * lock its own start holds, so a start still running either sees its flag or has finished
+     * before this closes what it made; and {@link #sessionFor} checks the flag under
      * the sessions lock, so no server is started after the map below is emptied.
      *
      * <p>It does not wait for a reload in progress. That would hold the game's shutdown for as
@@ -418,15 +301,7 @@ public final class WatchingMcpHost implements McpHost {
             return;
         }
         closed = true;
-        synchronized (watchLock) {
-            if (watcher != null) {
-                closeQuietly(watcher);
-                watcher = null;
-            }
-            if (watchThread != null) {
-                watchThread.interrupt();
-            }
-        }
+        watcher.close();
         synchronized (sessions) {
             sessions.values().forEach(McpSession::close);
             sessions.clear();

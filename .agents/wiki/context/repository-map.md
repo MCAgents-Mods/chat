@@ -187,10 +187,11 @@ What matters before changing any of it:
   changed, and an unchanged server keeps its live process. Restarting everything on every
   filesystem event would drop working connections constantly — servers write inside their
   own directories.
-* **The watcher is not recursive and must not become so.** `WatchService` would need a key
-  per directory; registering every checkout means a key per `node_modules` tree. Only the
-  root and the owner directories are watched, and the two-second settle window covers the
-  rest.
+* **The watcher (`McpConfigWatcher`) is not recursive and must not become so.**
+  `WatchService` would need a key per directory; registering every checkout means a key per
+  `node_modules` tree. Only the root and the owner directories are watched, and the
+  two-second settle window covers the rest. `WatchingMcpHost` owns what a reload does; the
+  watcher owns only noticing that one is due.
 * **Tool names are qualified `{server}__{tool}` and capped at 64 characters**, because
   OpenAI-compatible providers reject a function name outside `[A-Za-z0-9_-]{1,64}` — and
   they reject the *whole request*, not just the offending tool. `McpContextRegistry.merge`
